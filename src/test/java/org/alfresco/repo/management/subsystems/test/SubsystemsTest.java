@@ -33,6 +33,7 @@ import org.alfresco.repo.management.subsystems.InvalidPropertyValueException;
 import org.alfresco.repo.management.subsystems.SubsystemEarlyPropertyChecker;
 import org.alfresco.test_category.OwnJVMTestsCategory;
 import org.alfresco.util.BaseSpringTest;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -63,6 +64,7 @@ public class SubsystemsTest extends BaseSpringTest
      * @throws Exception
      *             the exception
      */
+    @Test
     public void testSubsystems() throws Exception
     {
         ApplicationContextFactory subsystem = (ApplicationContextFactory) applicationContext.getBean(
@@ -97,6 +99,7 @@ public class SubsystemsTest extends BaseSpringTest
         assertEquals("Global Instance Default", testBeans[2].getAnotherStringProperty());
     }
 
+    @Test
     public void testAbstractPropertyBackedBean_performEarlyPropertyChecks_PortEarlyPropertyChecker()
     {
         int testPortNumber = (Integer) applicationContext.getBean("testPortNumber");
@@ -144,6 +147,7 @@ public class SubsystemsTest extends BaseSpringTest
 
     }
 
+    @Test
     public void testAbstractPropertyBackedBean_performEarlyPropertyChecks_CustomEarlyPropertyChecker()
     {
         ChildApplicationContextFactory testBean = new ChildApplicationContextFactory();
