@@ -25,23 +25,17 @@
  */
 package org.alfresco.repo.management.subsystems.test;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.alfresco.repo.management.subsystems.ApplicationContextFactory;
 import org.alfresco.repo.management.subsystems.ChildApplicationContextFactory;
 import org.alfresco.repo.management.subsystems.InvalidPropertyValueException;
 import org.alfresco.repo.management.subsystems.SubsystemEarlyPropertyChecker;
 import org.alfresco.test_category.OwnJVMTestsCategory;
-import org.alfresco.util.ApplicationContextHelper;
 import org.alfresco.util.BaseSpringTest;
-import org.apache.commons.logging.LogFactory;
 import org.junit.experimental.categories.Category;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.context.ContextConfiguration;
 
 /**
  * Ensures the following features of subsystems are working:
@@ -58,23 +52,11 @@ import org.springframework.context.ConfigurableApplicationContext;
  * @author dward
  */
 @Category(OwnJVMTestsCategory.class)
+@ContextConfiguration({"classpath:alfresco/application-context.xml", "classpath:subsystem-test-context.xml"})
 public class SubsystemsTest extends BaseSpringTest
 {
     volatile boolean shouldBlockPort;
     
-    /*
-     * (non-Javadoc)
-     * @see org.alfresco.util.BaseSpringTest#getConfigLocations()
-     */
-    @Override
-    protected String[] getConfigLocations()
-    {
-        return new String[]
-        {
-            ApplicationContextHelper.CONFIG_LOCATIONS[0], "classpath:subsystem-test-context.xml"
-        };
-    }
-
     /**
      * Test subsystems.
      * 
@@ -83,7 +65,7 @@ public class SubsystemsTest extends BaseSpringTest
      */
     public void testSubsystems() throws Exception
     {
-        ApplicationContextFactory subsystem = (ApplicationContextFactory) getApplicationContext().getBean(
+        ApplicationContextFactory subsystem = (ApplicationContextFactory) applicationContext.getBean(
                 "testsubsystem");
         ConfigurableApplicationContext childContext = (ConfigurableApplicationContext) subsystem
                 .getApplicationContext();
@@ -117,10 +99,10 @@ public class SubsystemsTest extends BaseSpringTest
 
     public void testAbstractPropertyBackedBean_performEarlyPropertyChecks_PortEarlyPropertyChecker()
     {
-        int testPortNumber = (Integer) getApplicationContext().getBean("testPortNumber");
-        String testHost = (String) getApplicationContext().getBean("testHost");
+        int testPortNumber = (Integer) applicationContext.getBean("testPortNumber");
+        String testHost = (String) applicationContext.getBean("testHost");
 
-        ChildApplicationContextFactory testBean = (ChildApplicationContextFactory) getApplicationContext().getBean("testsubsystem");
+        ChildApplicationContextFactory testBean = (ChildApplicationContextFactory) applicationContext.getBean("testsubsystem");
 
         Map<String, String> testProperties = new HashMap<String, String>();
 

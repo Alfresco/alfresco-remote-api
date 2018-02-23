@@ -145,10 +145,10 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.quartz.JobDetail;
 import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.springframework.context.ApplicationContext;
-import org.springframework.scheduling.quartz.JobDetailBean;
 
 import com.google.common.collect.AbstractIterator;
 
@@ -185,11 +185,11 @@ public class RepoService
     protected TenantService tenantService;
     protected TenantAdminService tenantAdminService;
     protected ActivityPostDAO postDAO;
-    protected JobDetailBean feedGeneratorJobDetail;
-    protected JobDetailBean postLookupJobDetail;
-    protected JobDetailBean feedCleanerJobDetail;
-    protected JobDetailBean postCleanerJobDetail;
-    protected JobDetailBean feedNotifierJobDetail;
+    protected JobDetail feedGeneratorJobDetail;
+    protected JobDetail postLookupJobDetail;
+    protected JobDetail feedCleanerJobDetail;
+    protected JobDetail postCleanerJobDetail;
+    protected JobDetail feedNotifierJobDetail;
     protected ContentStoreCleaner contentStoreCleaner;
     protected FeedCleaner feedCleaner;
     protected PersonService personService;
@@ -265,26 +265,26 @@ public class RepoService
 
         Scheduler scheduler = (Scheduler)applicationContext.getBean("schedulerFactory");
     	
-    	JobDetailBean contentStoreCleanerJobDetail = (JobDetailBean)applicationContext.getBean("contentStoreCleanerJobDetail");
-        scheduler.pauseJob(contentStoreCleanerJobDetail.getName(), contentStoreCleanerJobDetail.getGroup());
+    	JobDetail contentStoreCleanerJobDetail = (JobDetail)applicationContext.getBean("contentStoreCleanerJobDetail");
+        scheduler.pauseJob(contentStoreCleanerJobDetail.getKey());
 
         ChildApplicationContextFactory activitiesFeed = (ChildApplicationContextFactory)applicationContext.getBean("ActivitiesFeed");
         ApplicationContext activitiesFeedCtx = activitiesFeed.getApplicationContext();
         this.postLookup = (PostLookup)activitiesFeedCtx.getBean("postLookup");
         this.feedGenerator = (FeedGenerator)activitiesFeedCtx.getBean("feedGenerator");
-        this.feedGeneratorJobDetail = (JobDetailBean)activitiesFeedCtx.getBean("feedGeneratorJobDetail");
-        this.postLookupJobDetail = (JobDetailBean)activitiesFeedCtx.getBean("postLookupJobDetail");
-        this.feedCleanerJobDetail = (JobDetailBean)activitiesFeedCtx.getBean("feedCleanerJobDetail");
-        this.postCleanerJobDetail = (JobDetailBean)activitiesFeedCtx.getBean("postCleanerJobDetail");
-        this.feedNotifierJobDetail = (JobDetailBean)activitiesFeedCtx.getBean("feedNotifierJobDetail");
+        this.feedGeneratorJobDetail = (JobDetail)activitiesFeedCtx.getBean("feedGeneratorJobDetail");
+        this.postLookupJobDetail = (JobDetail)activitiesFeedCtx.getBean("postLookupJobDetail");
+        this.feedCleanerJobDetail = (JobDetail)activitiesFeedCtx.getBean("feedCleanerJobDetail");
+        this.postCleanerJobDetail = (JobDetail)activitiesFeedCtx.getBean("postCleanerJobDetail");
+        this.feedNotifierJobDetail = (JobDetail)activitiesFeedCtx.getBean("feedNotifierJobDetail");
     	this.feedCleaner = (FeedCleaner)activitiesFeedCtx.getBean("feedCleaner");
 
         // Pause activities jobs so that we aren't competing with their scheduled versions
-        scheduler.pauseJob(feedGeneratorJobDetail.getName(), feedGeneratorJobDetail.getGroup());
-        scheduler.pauseJob(postLookupJobDetail.getName(), postLookupJobDetail.getGroup());
-        scheduler.pauseJob(feedCleanerJobDetail.getName(), feedCleanerJobDetail.getGroup());
-        scheduler.pauseJob(postCleanerJobDetail.getName(), postCleanerJobDetail.getGroup());
-        scheduler.pauseJob(feedNotifierJobDetail.getName(), feedNotifierJobDetail.getGroup());
+        scheduler.pauseJob(feedGeneratorJobDetail.getKey());
+        scheduler.pauseJob(postLookupJobDetail.getKey());
+        scheduler.pauseJob(feedCleanerJobDetail.getKey());
+        scheduler.pauseJob(postCleanerJobDetail.getKey());
+        scheduler.pauseJob(feedNotifierJobDetail.getKey());
 
         this.systemNetwork = new TestNetwork(TenantService.DEFAULT_DOMAIN, true);
 	}
