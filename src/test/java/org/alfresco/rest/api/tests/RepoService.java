@@ -145,6 +145,7 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
@@ -264,9 +265,9 @@ public class RepoService
     	this.transactionHelper = (RetryingTransactionHelper)applicationContext.getBean("retryingTransactionHelper");
 
         Scheduler scheduler = (Scheduler)applicationContext.getBean("schedulerFactory");
-    	
-    	JobDetail contentStoreCleanerJobDetail = (JobDetail)applicationContext.getBean("contentStoreCleanerJobDetail");
-        scheduler.pauseJob(contentStoreCleanerJobDetail.getKey());
+
+        CronTrigger contentStoreCleanerTrigger = (CronTrigger)applicationContext.getBean("contentStoreCleanerTrigger");
+        scheduler.pauseJob(contentStoreCleanerTrigger.getJobKey());
 
         ChildApplicationContextFactory activitiesFeed = (ChildApplicationContextFactory)applicationContext.getBean("ActivitiesFeed");
         ApplicationContext activitiesFeedCtx = activitiesFeed.getApplicationContext();
