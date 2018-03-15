@@ -205,7 +205,7 @@ public interface ResponseWriter
         String stackMessage = I18NUtil.getMessage(DefaultExceptionResolver.STACK_MESSAGE_ID);
 
         final ErrorResponse errorToWrite = new ErrorResponse(errorResponse.getErrorKey(), errorResponse.getStatusCode(),
-                    errorResponse.getBriefSummary(), stackMessage, logId, errorResponse.getAdditionalState(), DefaultExceptionResolver.ERROR_URL);
+                    errorResponse.getBriefSummary(), errorResponse.getStackTrace(), logId, errorResponse.getAdditionalState(), DefaultExceptionResolver.ERROR_URL);
 
         setContentInfoOnResponse(res, DEFAULT_JSON_CONTENT);
 
