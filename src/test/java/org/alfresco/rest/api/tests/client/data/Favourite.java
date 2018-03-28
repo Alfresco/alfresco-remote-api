@@ -183,9 +183,9 @@ public class Favourite implements Serializable, ExpectedComparison, Comparable<F
 
 	public static Favourite parseFavourite(JsonNode jsonObject) throws ParseException
 	{
-		String createdAt = jsonObject.get("createdAt").textValue();
-		String modifiedAt = jsonObject.get("modifiedAt").textValue();
-		JsonNode jsonTarget = jsonObject.get("target");
+		String createdAt = jsonObject.path("createdAt").textValue();
+		String modifiedAt = jsonObject.path("modifiedAt").textValue();
+		JsonNode jsonTarget = jsonObject.path("target");
 		FavouritesTarget target = parseTarget(jsonTarget);
 		Favourite favourite = new Favourite(createdAt, modifiedAt, target);
 		return favourite;

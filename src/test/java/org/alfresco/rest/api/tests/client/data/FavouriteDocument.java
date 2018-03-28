@@ -158,7 +158,7 @@ public class FavouriteDocument extends FavouriteNode implements ExpectedComparis
         String modifiedBy = jsonObject.get("modifiedBy").textValue();
         String mimeType = jsonObject.get("mimeType").textValue();
         Long sizeInBytes = jsonObject.get("sizeInBytes").longValue();
-        String versionLabel = jsonObject.get("versionLabel").textValue();
+        String versionLabel = jsonObject.path("versionLabel").textValue();
 
         FavouriteDocument document = new FavouriteDocument(id, guid);
         document.setName(name);

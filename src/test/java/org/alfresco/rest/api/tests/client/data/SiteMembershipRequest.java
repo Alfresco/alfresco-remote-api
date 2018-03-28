@@ -140,9 +140,9 @@ public class SiteMembershipRequest implements ExpectedComparison, Comparable<Sit
 	public static SiteMembershipRequest parseSiteMembershipRequest(JsonNode jsonObject) throws ParseException, IOException
     {
 		String id = jsonObject.get("id").textValue();
-		String createdAt = jsonObject.get("createdAt").textValue();
-		String message = jsonObject.get("message").textValue();
-		String modifiedAt = jsonObject.get("modifiedAt").textValue();
+		String createdAt = jsonObject.path("createdAt").textValue();
+		String message = jsonObject.path("message").textValue();
+		String modifiedAt = jsonObject.path("modifiedAt").textValue();
 		JsonNode siteJSON = jsonObject.get("site");
 		JsonNode personJSON = jsonObject.get("person");
 		

@@ -230,8 +230,8 @@ public class Comment implements Serializable, ExpectedComparison, Comparable<Com
 	public static Comment parseComment(String nodeId, JsonNode jsonObject) throws IOException
 	{
 		String id = jsonObject.get("id").textValue();
-		String title = jsonObject.get("title").textValue();
-		String content = jsonObject.get("content").textValue();
+		String title = jsonObject.path("title").textValue();
+		String content = jsonObject.path("content").textValue();
 		JsonNode createdByJson = jsonObject.get("createdBy");
 		Person createdBy = null;
 		if(createdByJson != null)
@@ -247,7 +247,7 @@ public class Comment implements Serializable, ExpectedComparison, Comparable<Com
 		}
 		String modifiedAt = jsonObject.get("modifiedAt").textValue();
 		Boolean edited = jsonObject.get("edited").booleanValue();
-		Boolean updated = jsonObject.get("updated").booleanValue();
+		Boolean updated = jsonObject.path("updated").booleanValue();
 		Comment comment = new Comment(nodeId, id, title, content, createdBy, createdAt, modifiedBy, modifiedAt, updated, edited);
 		return comment;
 	}

@@ -130,9 +130,9 @@ public class NetworkImpl implements Network, Serializable, ExpectedComparison
 	{
 		String id = jsonObject.get("id").textValue();
 		Boolean isEnabled = jsonObject.get("isEnabled").booleanValue();
-		Boolean paidNetwork = jsonObject.get("paidNetwork").booleanValue();
-		String createdAt = jsonObject.get("createdAt").textValue();
-		String subscriptionLevel = jsonObject.get("subscriptionLevel").textValue();
+		Boolean paidNetwork = jsonObject.path("paidNetwork").booleanValue();
+		String createdAt = jsonObject.path("createdAt").textValue();
+		String subscriptionLevel = jsonObject.path("subscriptionLevel").textValue();
 		ArrayNode quotasJSON = (ArrayNode) jsonObject.get("quotas");
 		List<org.alfresco.rest.api.tests.client.data.Quota> quotas = new ArrayList<org.alfresco.rest.api.tests.client.data.Quota>(quotasJSON.size());
 		Iterator<JsonNode> it = quotasJSON.iterator();

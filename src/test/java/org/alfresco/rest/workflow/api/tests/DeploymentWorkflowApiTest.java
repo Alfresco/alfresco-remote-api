@@ -137,19 +137,19 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         JsonNode deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
         JsonNode paginationJSON = deploymentsListObject.get("pagination");
-        assertEquals(2l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(0l, paginationJSON.get("skipCount"));
-        assertEquals(true, paginationJSON.get("hasMoreItems"));
+        assertEquals(2L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(0L, paginationJSON.get("skipCount").longValue());
+        assertEquals(true, paginationJSON.get("hasMoreItems").booleanValue());
         
         params = new HashMap<String, String>();
         deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
         paginationJSON = deploymentsListObject.get("pagination");
-        assertEquals(5l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(0l, paginationJSON.get("skipCount"));
-        assertEquals(false, paginationJSON.get("hasMoreItems"));
+        assertEquals(5L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(0L, paginationJSON.get("skipCount").longValue());
+        assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
         
         params = new HashMap<String, String>();
         params.put("skipCount", "2");
@@ -157,10 +157,10 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
         paginationJSON = deploymentsListObject.get("pagination");
-        assertEquals(2l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(2l, paginationJSON.get("skipCount"));
-        assertEquals(true, paginationJSON.get("hasMoreItems"));
+        assertEquals(2L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(2L, paginationJSON.get("skipCount").longValue());
+        assertEquals(true, paginationJSON.get("hasMoreItems").booleanValue());
         
         params = new HashMap<String, String>();
         params.put("skipCount", "2");
@@ -168,10 +168,10 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
         paginationJSON = deploymentsListObject.get("pagination");
-        assertEquals(3l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(2l, paginationJSON.get("skipCount"));
-        assertEquals(false, paginationJSON.get("hasMoreItems"));
+        assertEquals(3L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(2L, paginationJSON.get("skipCount").longValue());
+        assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
         
         params = new HashMap<String, String>();
         params.put("skipCount", "0");
@@ -179,10 +179,10 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
         paginationJSON = deploymentsListObject.get("pagination");
-        assertEquals(5l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(0l, paginationJSON.get("skipCount"));
-        assertEquals(false, paginationJSON.get("hasMoreItems"));
+        assertEquals(5L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(0L, paginationJSON.get("skipCount").longValue());
+        assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
     }
     
     @Test

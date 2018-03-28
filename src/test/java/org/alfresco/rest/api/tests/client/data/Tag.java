@@ -107,8 +107,8 @@ public class Tag implements Serializable, ExpectedComparison, Comparable<Tag>
 
 	public static Tag parseTag(String nodeId, JsonNode jsonObject)
 	{
-		String id = jsonObject.get("id").textValue();
-		String value = jsonObject.get("tag").textValue();
+		String id = jsonObject.path("id").textValue();
+		String value = jsonObject.path("tag").textValue();
 		Tag tag = new Tag(nodeId, id, value);
 		return tag;
 	}

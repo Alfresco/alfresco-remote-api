@@ -49,6 +49,7 @@ import org.alfresco.rest.api.tests.client.PublicApiException;
 import org.alfresco.rest.api.tests.client.RequestContext;
 import org.alfresco.rest.workflow.api.model.ProcessDefinition;
 import org.alfresco.rest.workflow.api.tests.WorkflowApiClient.ProcessDefinitionsClient;
+import org.alfresco.util.json.JsonUtil;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 
@@ -104,19 +105,19 @@ public class ProcessDefinitionWorkflowApiTest extends EnterpriseWorkflowTestApi
         JsonNode definitionListObject = processDefinitionsClient.getProcessDefinitionsWithRawResponse(params);
         assertNotNull(definitionListObject);
         JsonNode paginationJSON =  definitionListObject.get("pagination");
-        assertEquals(2l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(0l, paginationJSON.get("skipCount"));
-        assertEquals(true, paginationJSON.get("hasMoreItems"));
+        assertEquals(2L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(0L, paginationJSON.get("skipCount").longValue());
+        assertEquals(true, paginationJSON.get("hasMoreItems").booleanValue());
         
         params = new HashMap<String, String>();
         definitionListObject = processDefinitionsClient.getProcessDefinitionsWithRawResponse(params);
         assertNotNull(definitionListObject);
         paginationJSON =  definitionListObject.get("pagination");
-        assertEquals(5l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(0l, paginationJSON.get("skipCount"));
-        assertEquals(false, paginationJSON.get("hasMoreItems"));
+        assertEquals(5L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(0L, paginationJSON.get("skipCount").longValue());
+        assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
         
         params = new HashMap<String, String>();
         params.put("skipCount", "2");
@@ -124,10 +125,10 @@ public class ProcessDefinitionWorkflowApiTest extends EnterpriseWorkflowTestApi
         definitionListObject = processDefinitionsClient.getProcessDefinitionsWithRawResponse(params);
         assertNotNull(definitionListObject);
         paginationJSON =  definitionListObject.get("pagination");
-        assertEquals(2l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(2l, paginationJSON.get("skipCount"));
-        assertEquals(true, paginationJSON.get("hasMoreItems"));
+        assertEquals(2L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(2L, paginationJSON.get("skipCount").longValue());
+        assertEquals(true, paginationJSON.get("hasMoreItems").booleanValue());
         
         params = new HashMap<String, String>();
         params.put("skipCount", "2");
@@ -135,10 +136,10 @@ public class ProcessDefinitionWorkflowApiTest extends EnterpriseWorkflowTestApi
         definitionListObject = processDefinitionsClient.getProcessDefinitionsWithRawResponse(params);
         assertNotNull(definitionListObject);
         paginationJSON =  definitionListObject.get("pagination");
-        assertEquals(3l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(2l, paginationJSON.get("skipCount"));
-        assertEquals(false, paginationJSON.get("hasMoreItems"));
+        assertEquals(3L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(2L, paginationJSON.get("skipCount").longValue());
+        assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
         
         params = new HashMap<String, String>();
         params.put("skipCount", "0");
@@ -146,10 +147,10 @@ public class ProcessDefinitionWorkflowApiTest extends EnterpriseWorkflowTestApi
         definitionListObject = processDefinitionsClient.getProcessDefinitionsWithRawResponse(params);
         assertNotNull(definitionListObject);
         paginationJSON =  definitionListObject.get("pagination");
-        assertEquals(5l, paginationJSON.get("count"));
-        assertEquals(5l, paginationJSON.get("totalItems"));
-        assertEquals(0l, paginationJSON.get("skipCount"));
-        assertEquals(false, paginationJSON.get("hasMoreItems"));
+        assertEquals(5L, paginationJSON.get("count").longValue());
+        assertEquals(5L, paginationJSON.get("totalItems").longValue());
+        assertEquals(0L, paginationJSON.get("skipCount").longValue());
+        assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
     }
 
     @Test
@@ -510,68 +511,69 @@ public class ProcessDefinitionWorkflowApiTest extends EnterpriseWorkflowTestApi
         // Validate bpm:description
         JsonNode modelEntry = modelFieldsByName.get("bpm_workflowDescription");
         assertNotNull(modelEntry);
-        assertEquals("Description", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}workflowDescription", modelEntry.get("qualifiedName"));
-        assertEquals("d:text", modelEntry.get("dataType"));
+        assertEquals("Description", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}workflowDescription", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:text", modelEntry.get("dataType").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate bpm:description
         modelEntry = modelFieldsByName.get("bpm_completionDate");
         assertNotNull(modelEntry);
-        assertEquals("Completion Date", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}completionDate", modelEntry.get("qualifiedName"));
-        assertEquals("d:date", modelEntry.get("dataType"));
+        assertEquals("Completion Date", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}completionDate", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:date", modelEntry.get("dataType").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate cm:owner
         modelEntry = modelFieldsByName.get("cm_owner");
         assertNotNull(modelEntry);
-        assertEquals("Owner", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/content/1.0}owner", modelEntry.get("qualifiedName"));
-        assertEquals("d:text", modelEntry.get("dataType"));
+        assertEquals("Owner", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/content/1.0}owner", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:text", modelEntry.get("dataType").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate bpm:sendEmailNotifications
         modelEntry = modelFieldsByName.get("bpm_sendEMailNotifications");
         assertNotNull(modelEntry);
-        assertEquals("Send Email Notifications", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}sendEMailNotifications", modelEntry.get("qualifiedName"));
-        assertEquals("d:boolean", modelEntry.get("dataType"));
+        assertEquals("Send Email Notifications", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}sendEMailNotifications", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:boolean", modelEntry.get("dataType").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate bpm:priority
         modelEntry = modelFieldsByName.get("bpm_workflowPriority");
         assertNotNull(modelEntry);
-        assertEquals("Workflow Priority", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}workflowPriority", modelEntry.get("qualifiedName"));
-        assertEquals("d:int", modelEntry.get("dataType"));
-        assertEquals("2", modelEntry.get("defaultValue"));
+        assertEquals("Workflow Priority", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}workflowPriority", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:int", modelEntry.get("dataType").textValue());
+        assertEquals("2", modelEntry.get("defaultValue").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate bpm:package
         modelEntry = modelFieldsByName.get("bpm_package");
         assertNotNull(modelEntry);
-        assertEquals("Content Package", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}package", modelEntry.get("qualifiedName"));
-        assertEquals("bpm:workflowPackage", modelEntry.get("dataType"));
+        assertEquals("Content Package", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}package", modelEntry.get("qualifiedName").textValue());
+        assertEquals("bpm:workflowPackage", modelEntry.get("dataType").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate bpm:status
         modelEntry = modelFieldsByName.get("bpm_status");
         assertNotNull(modelEntry);
-        assertEquals("Status", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}status", modelEntry.get("qualifiedName"));
-        assertEquals("d:text", modelEntry.get("dataType"));
-        assertEquals("Not Yet Started", modelEntry.get("defaultValue"));
+        assertEquals("Status", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}status", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:text", modelEntry.get("dataType").textValue());
+        assertEquals("Not Yet Started", modelEntry.get("defaultValue").textValue());
         assertTrue(modelEntry.get("required").booleanValue());
         ArrayNode allowedValues = (ArrayNode) modelEntry.get("allowedValues");
         assertNotNull(allowedValues);
         assertEquals(5, allowedValues.size());
-        assertTrue(allowedValues.has("Not Yet Started"));
-        assertTrue(allowedValues.has("In Progress"));
-        assertTrue(allowedValues.has("On Hold"));
-        assertTrue(allowedValues.has("Cancelled"));
-        assertTrue(allowedValues.has("Completed"));
+        List<Object> allowedValuesList = JsonUtil.convertJSONArrayToList(allowedValues);
+        assertTrue(allowedValuesList.contains("Not Yet Started"));
+        assertTrue(allowedValuesList.contains("In Progress"));
+        assertTrue(allowedValuesList.contains("On Hold"));
+        assertTrue(allowedValuesList.contains("Cancelled"));
+        assertTrue(allowedValuesList.contains("Completed"));
         
         // get start form model with admin
         publicApiClient.setRequestContext(adminContext);
@@ -597,17 +599,17 @@ public class ProcessDefinitionWorkflowApiTest extends EnterpriseWorkflowTestApi
         // Validate bpm:description
         modelEntry = modelFieldsByName.get("bpm_workflowDescription");
         assertNotNull(modelEntry);
-        assertEquals("Description", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}workflowDescription", modelEntry.get("qualifiedName"));
-        assertEquals("d:text", modelEntry.get("dataType"));
+        assertEquals("Description", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}workflowDescription", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:text", modelEntry.get("dataType").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate bpm:description
         modelEntry = modelFieldsByName.get("bpm_completionDate");
         assertNotNull(modelEntry);
-        assertEquals("Completion Date", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}completionDate", modelEntry.get("qualifiedName"));
-        assertEquals("d:date", modelEntry.get("dataType"));
+        assertEquals("Completion Date", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}completionDate", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:date", modelEntry.get("dataType").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
     }
     
@@ -766,9 +768,9 @@ public class ProcessDefinitionWorkflowApiTest extends EnterpriseWorkflowTestApi
         // Validate bpm:description
         JsonNode modelEntry = modelFieldsByName.get("bpm_workflowDescription");
         assertNotNull(modelEntry);
-        assertEquals("Description", modelEntry.get("title"));
-        assertEquals("{http://www.alfresco.org/model/bpm/1.0}workflowDescription", modelEntry.get("qualifiedName"));
-        assertEquals("d:text", modelEntry.get("dataType"));
+        assertEquals("Description", modelEntry.get("title").textValue());
+        assertEquals("{http://www.alfresco.org/model/bpm/1.0}workflowDescription", modelEntry.get("qualifiedName").textValue());
+        assertEquals("d:text", modelEntry.get("dataType").textValue());
         assertFalse(modelEntry.get("required").booleanValue());
         
         // Fetching a specific process definitions as admin from another tenant should not be possible

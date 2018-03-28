@@ -320,7 +320,8 @@ public class SiteImpl implements Serializable, Site, Comparable<SiteImpl>, Expec
         String title = jsonObject.get("title").textValue();
         String description = jsonObject.get("description").textValue();
         String visibility = jsonObject.get("visibility").textValue();
-        String roleStr = jsonObject.get("role").textValue();
+        JsonNode roleJson = jsonObject.get("role");
+        String roleStr = roleJson == null ? null : roleJson.textValue();
         SiteRole role = null;
         if(roleStr != null)
         {

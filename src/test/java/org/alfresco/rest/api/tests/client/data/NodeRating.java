@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -41,6 +42,7 @@ import java.util.List;
 import org.alfresco.rest.api.tests.PublicApiDateFormat;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
+import org.alfresco.util.json.JsonUtil;
 import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class NodeRating implements Serializable, Comparable<NodeRating>, ExpectedComparison
@@ -110,12 +112,15 @@ public class NodeRating implements Serializable, Comparable<NodeRating>, Expecte
 	public static NodeRating parseNodeRating(String nodeId, JsonNode jsonObject)
 	{
 		String ratingScheme = jsonObject.get("id").textValue();
-		String ratedAt = jsonObject.get("ratedAt").textValue();
-		Object myRating = jsonObject.get("myRating");
+		String ratedAt = jsonObject.path("ratedAt").textValue();
+		JsonNode myRatingJson = jsonObject.get("myRating");
+		Object myRating = myRatingJson == null ? null : JsonUtil.convertJSONValue((ValueNode) jsonObject.get("myRating"));
 		
 		JsonNode aggregateJSON = jsonObject.get("aggregate");
-		Long numRatings = aggregateJSON.get("numberOfRatings").longValue();
-		Double average = aggregateJSON.get("average").doubleValue();
+		JsonNode numRatingsJson = aggregateJSON.get("numberOfRatings");
+		Long numRatings = numRatingsJson == null ? null : numRatingsJson.longValue();
+		JsonNode averageJson = aggregateJSON.get("average");
+		Double average = averageJson == null ? null : averageJson.doubleValue();
 		Aggregate aggregate = new Aggregate(numRatings != null ? numRatings.intValue() : null, average != null ? average.floatValue(): null);
 		NodeRating nodeRating = new NodeRating(nodeId, ratingScheme, ratedAt, myRating, aggregate);
 		return nodeRating;
