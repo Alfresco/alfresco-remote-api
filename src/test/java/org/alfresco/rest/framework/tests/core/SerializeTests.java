@@ -459,7 +459,7 @@ public class SerializeTests extends AbstractContextTest implements RecognizedPar
         assertEquals(1, jsonRsp.size());
         entry = jsonRsp.get("entry");
         assertEquals(2, entry.size());
-        assertEquals("The name should be 'Dolly'", "Dolly", entry.get("name"));
+        assertEquals("The name should be 'Dolly'", "Dolly", entry.get("name").textValue());
         assertTrue("The age should be 3", entry.get("age").intValue() == 3);
         
         Api v3 = Api.valueOf(api.getName(), api.getScope().toString(), "3");
@@ -472,7 +472,7 @@ public class SerializeTests extends AbstractContextTest implements RecognizedPar
                 .get("list")
                 .get("entries").get(0)
                 .get("entry");
-        assertEquals("The name should be 'bigun'", "bigun", entry.get("name"));
+        assertEquals("The name should be 'bigun'", "bigun", entry.get("name").textValue());
         assertTrue("The quantity should be 56", entry.get("quantity").intValue() == 56);
 
         relFiler = getRelationFilter("herd(name)");
