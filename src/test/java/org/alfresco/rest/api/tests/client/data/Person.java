@@ -30,6 +30,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.Serializable;
@@ -39,6 +40,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.rest.api.tests.QueriesPeopleApiTest;
+import org.alfresco.rest.api.tests.client.PublicApiClient;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
 import org.alfresco.service.cmr.repository.NodeRef;
@@ -131,7 +133,7 @@ public class Person
     /**
      * Note: used for string comparisons in tests.
      *
-     * @see QueriesPeopleApiTest#checkApiCall(java.lang.String, java.lang.String, java.lang.String, org.alfresco.rest.api.tests.client.PublicApiClient.Paging, int, java.lang.String[])
+     * @see QueriesPeopleApiTest#checkApiCall)
      */
     @Override
     public String toString()
@@ -190,30 +192,30 @@ public class Person
     
     public static Person parsePerson(JsonNode jsonObject) throws IOException
     {
-        String userId = jsonObject.get("id").textValue();
-        String firstName = jsonObject.get("firstName").textValue();
-        String lastName = jsonObject.get("lastName").textValue();
+        String userId = jsonObject.path("id").textValue();
+        String firstName = jsonObject.path("firstName").textValue();
+        String lastName = jsonObject.path("lastName").textValue();
 
-        String description = jsonObject.get("description").textValue();
-        String email = jsonObject.get("email").textValue();
-        String skypeId = jsonObject.get("skypeId").textValue();
-        String googleId = jsonObject.get("googleId").textValue();
-        String instantMessageId = jsonObject.get("instantMessageId").textValue();
-        String jobTitle = jsonObject.get("jobTitle").textValue();
-        String location = jsonObject.get("location").textValue();
+        String description = jsonObject.path("description").textValue();
+        String email = jsonObject.path("email").textValue();
+        String skypeId = jsonObject.path("skypeId").textValue();
+        String googleId = jsonObject.path("googleId").textValue();
+        String instantMessageId = jsonObject.path("instantMessageId").textValue();
+        String jobTitle = jsonObject.path("jobTitle").textValue();
+        String location = jsonObject.path("location").textValue();
 
         Company company = null;
         JsonNode companyJSON = jsonObject.get("company");
         if(companyJSON != null)
         {
-            String organization = companyJSON.get("organization").textValue();
-            String address1 = companyJSON.get("address1").textValue();
-            String address2 = companyJSON.get("address2").textValue();
-            String address3 = companyJSON.get("address3").textValue();
-            String postcode = companyJSON.get("postcode").textValue();
-            String companyTelephone = companyJSON.get("telephone").textValue();
-            String fax = companyJSON.get("fax").textValue();
-            String companyEmail = companyJSON.get("email").textValue();
+            String organization = companyJSON.path("organization").textValue();
+            String address1 = companyJSON.path("address1").textValue();
+            String address2 = companyJSON.path("address2").textValue();
+            String address3 = companyJSON.path("address3").textValue();
+            String postcode = companyJSON.path("postcode").textValue();
+            String companyTelephone = companyJSON.path("telephone").textValue();
+            String fax = companyJSON.path("fax").textValue();
+            String companyEmail = companyJSON.path("email").textValue();
             if (organization != null ||
                     address2 != null ||
                     address3 != null ||
@@ -230,17 +232,24 @@ public class Person
             }
         }
 
-        String mobile = jsonObject.get("mobile").textValue();
-        String telephone = jsonObject.get("telephone").textValue();
-        String userStatus = jsonObject.get("userStatus").textValue();
-        Boolean enabled = jsonObject.get("enabled").booleanValue();
-        Boolean emailNotificationsEnabled = jsonObject.get("emailNotificationsEnabled").booleanValue();
-        List<String> aspectNames = JsonUtil
-                .convertJSONArrayToList((ArrayNode) jsonObject.get("aspectNames"))
-                .stream().map(aspectName -> ((String) aspectName)).collect(Collectors.toList());
-        Map<String, Object> properties = JsonUtil.convertJSONObjectToMap((ObjectNode) jsonObject.get("properties"));
-        Map<String, Boolean> capabilities = JsonUtil
-                .convertJSONObjectToMap((ObjectNode) jsonObject.get("capabilities"))
+        String mobile = jsonObject.path("mobile").textValue();
+        String telephone = jsonObject.path("telephone").textValue();
+        String userStatus = jsonObject.path("userStatus").textValue();
+        Boolean enabled = jsonObject.path("enabled").booleanValue();
+        Boolean emailNotificationsEnabled = jsonObject.path("emailNotificationsEnabled").booleanValue();
+        JsonNode aspectNamesJson = jsonObject.path("aspectNames");
+        List<String> aspectNames = (aspectNamesJson instanceof MissingNode) ?
+                null :
+                JsonUtil.convertJSONArrayToList((ArrayNode) aspectNamesJson)
+                        .stream().map(aspectName -> ((String) aspectName)).collect(Collectors.toList());
+        JsonNode propertiesJson = jsonObject.path("properties");
+        Map<String, Object> properties = (propertiesJson instanceof MissingNode) ?
+                null :
+                JsonUtil.convertJSONObjectToMap((ObjectNode) propertiesJson);
+        JsonNode capabilitiesJson = jsonObject.path("capabilities");
+        Map<String, Boolean> capabilities = (capabilitiesJson instanceof MissingNode) ?
+                null :
+                JsonUtil.convertJSONObjectToMap((ObjectNode) capabilitiesJson)
                 .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> (Boolean) e.getValue()));
         
         Person person = new Person(
