@@ -101,16 +101,18 @@ public class Group extends org.alfresco.rest.api.model.Group implements Serializ
     public static Group parseGroup(JsonNode jsonObject) throws IOException
     {
         String id = jsonObject.get("id").textValue();
-        String displayName =  jsonObject.get("displayName").textValue();
-        Boolean isRoot =  jsonObject.get("isRoot").booleanValue();
-        List<String> parentIds = JsonUtil
-                .convertJSONArrayToList((ArrayNode) jsonObject.get("parentIds"))
-                .stream().map(parentId -> ((String) parentId))
-                .collect(Collectors.toList());
-        List<String> zones = JsonUtil
-                .convertJSONArrayToList((ArrayNode) jsonObject.get("zones"))
-                .stream().map(zone -> ((String) zone))
-                .collect(Collectors.toList());
+        String displayName =  jsonObject.path("displayName").textValue();
+        Boolean isRoot =  jsonObject.path("isRoot").booleanValue();
+        JsonNode parentIdsJson = jsonObject.get("parentIds");
+        List<String> parentIds = parentIdsJson == null ? null :
+                JsonUtil.convertJSONArrayToList((ArrayNode) parentIdsJson)
+                        .stream().map(parentId -> ((String) parentId))
+                        .collect(Collectors.toList());
+        JsonNode zonesJson = jsonObject.get("zones");
+        List<String> zones = zonesJson == null ? null :
+                JsonUtil.convertJSONArrayToList((ArrayNode) zonesJson)
+                        .stream().map(zone -> ((String) zone))
+                        .collect(Collectors.toList());
 
         Group group = new Group();
         group.setId(id);

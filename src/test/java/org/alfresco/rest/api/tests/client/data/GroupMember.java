@@ -72,9 +72,9 @@ public class GroupMember extends org.alfresco.rest.api.model.GroupMember impleme
 
     public static GroupMember parseGroupMember(JsonNode jsonObject)
     {
-        String id = jsonObject.get("id").textValue();
-        String displayName = jsonObject.get("displayName").textValue();
-        String memberType = jsonObject.get("memberType").textValue();
+        String id = jsonObject.path("id").textValue();
+        String displayName = jsonObject.path("displayName").textValue();
+        String memberType = jsonObject.path("memberType").textValue();
 
         GroupMember group = new GroupMember();
         group.setId(id);
