@@ -378,7 +378,7 @@ public class ResultMapperTests
         assertTrue(statsMetrics.contains(new SimpleMetric(METRIC_TYPE.missing, 0)));
         assertTrue(statsMetrics.contains(new SimpleMetric(METRIC_TYPE.sum, 0)));
         assertTrue(statsMetrics.contains(new SimpleMetric(METRIC_TYPE.stddev, 0)));
-        ArrayNode dVals = AlfrescoDefaultObjectMapper.createArrayNode().add(12).add(13).add(14).add(15).add(16).add(16).add(17).add(1);
+        ArrayNode dVals = AlfrescoDefaultObjectMapper.createArrayNode().add(12).add(13).add(14).add(15).add(16).add(17).add(1);
         assertTrue(statsMetrics.contains(new ListMetric(METRIC_TYPE.distinctValues, dVals)));
         ArrayNode pers = AlfrescoDefaultObjectMapper.createArrayNode().add("0.99").add(20.0685).add("0.0").add(12.0);
         assertTrue(statsMetrics.contains(new PercentileMetric(METRIC_TYPE.percentiles, pers)));
@@ -870,7 +870,7 @@ public class ResultMapperTests
         catch (Exception e) 
         {
             assertNotNull(e);
-            assertEquals("Solr response is required instead of ArrayNode docs was null", e.getMessage());
+            assertEquals("Solr response is required instead of JSONArray docs was null", e.getMessage());
         }
         try 
         {
