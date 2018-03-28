@@ -25,6 +25,10 @@
  */
 package org.alfresco.repo.web.scripts.discussion;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,12 +56,9 @@ import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.util.Pair;
 import org.alfresco.util.ScriptPagingDetails;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -125,11 +126,11 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
     }
     
     
-    protected String getOrNull(JSONObject json, String key)
+    protected String getOrNull(JsonNode json, String key)
     {
-       if (json.containsKey(key))
+       if (json.has(key))
        {
-          return (String)json.get(key);
+          return json.get(key).textValue();
        }
        return null;
     }
@@ -143,16 +144,16 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
        return new ScriptPagingDetails(req, MAX_QUERY_ENTRY_COUNT);
     }
     
-    protected List<String> getTags(JSONObject json)
+    protected List<String> getTags(JsonNode json)
     {
        List<String> tags = null;
-       if (json.containsKey("tags"))
+       if (json.has("tags"))
        {
           // Is it "tags":"" or "tags":[...] ?
-          if (json.get("tags") instanceof String)
+          if (json.get("tags") instanceof TextNode)
           {
              // This is normally an empty string, skip
-             String tagsS = (String)json.get("tags");
+             String tagsS = json.get("tags").textValue();
              if ("".equals(tagsS))
              {
                 // No tags were given
@@ -168,10 +169,10 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
           else
           {
              tags = new ArrayList<String>();
-             JSONArray jsTags = (JSONArray)json.get("tags");
+              ArrayNode jsTags = (ArrayNode) json.get("tags");
              for (int i=0; i<jsTags.size(); i++)
              {
-                tags.add( (String)jsTags.get(i) );
+                tags.add( jsTags.get(i).textValue() );
              }
           }
        }
@@ -185,7 +186,7 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
      * @param event One of created, updated, deleted
      */
     protected void addActivityEntry(String thing, String event, TopicInfo topic, 
-          PostInfo post, SiteInfo site, WebScriptRequest req, JSONObject json)
+          PostInfo post, SiteInfo site, WebScriptRequest req, JsonNode json)
     {
        // We can only add activities against a site
        if (site == null)
@@ -198,9 +199,9 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
        String page = req.getParameter("page");
        if (page == null && json != null)
        {
-          if (json.containsKey("page"))
+          if (json.has("page"))
           {
-             page = (String)json.get("page");
+             page = json.get("page").textValue();
           }
        }
        if (page == null)
@@ -222,13 +223,13 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
        
        try
        {
-          JSONObject params = new JSONObject();
+          ObjectNode params = AlfrescoDefaultObjectMapper.createObjectNode();
           params.put("topicId", topic.getSystemName());
           
-          JSONObject activity = new JSONObject();
+          ObjectNode activity = AlfrescoDefaultObjectMapper.createObjectNode();
           activity.put("title", title);
           activity.put("page", page + "?topicId=" + topic.getSystemName());
-          activity.put("params", params);
+          activity.set("params", params);
           
           activityService.postActivity(
                 "org.alfresco.discussions." + thing + "-" + event,
@@ -483,7 +484,7 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
        
        
        // Parse the JSON, if supplied
-       JSONObject json = null;
+       JsonNode json = null;
        String contentType = req.getContentType();
        if (contentType != null && contentType.indexOf(';') != -1)
        {
@@ -491,18 +492,13 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
        }
        if (MimetypeMap.MIMETYPE_JSON.equals(contentType))
        {
-          JSONParser parser = new JSONParser();
           try
           {
-             json = (JSONObject)parser.parse(req.getContent().getContent());
+             json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
           }
           catch (IOException io)
           {
              throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + io.getMessage());
-          }
-          catch (ParseException pe)
-          {
-             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + pe.getMessage());
           }
        }
        
@@ -598,6 +594,6 @@ public abstract class AbstractDiscussionWebScript extends DeclarativeWebScript
     
     protected abstract Map<String, Object> executeImpl(SiteInfo site,
           NodeRef nodeRef, TopicInfo topic, PostInfo post,
-          WebScriptRequest req, JSONObject json, Status status, Cache cache);
+          WebScriptRequest req, JsonNode json, Status status, Cache cache);
     
 }

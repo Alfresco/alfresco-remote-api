@@ -25,14 +25,14 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 public class FavouriteSite extends SiteImpl implements Serializable
 {
@@ -54,26 +54,26 @@ public class FavouriteSite extends SiteImpl implements Serializable
 		super(networkId, siteId, siteGuid, title, description, visibility, type, role);
 	}
 	
-	public static FavouriteSite parseFavouriteSite(JSONObject entry)
+	public static FavouriteSite parseFavouriteSite(JsonNode entry)
 	{
 		Site site = SiteImpl.parseSite(entry);
 		FavouriteSite favouriteSite = new FavouriteSite(site);
 		return favouriteSite;
 	}
 	
-	public static ListResponse<FavouriteSite> parseFavouriteSites(JSONObject jsonObject)
+	public static ListResponse<FavouriteSite> parseFavouriteSites(JsonNode jsonObject)
 	{
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		List<FavouriteSite> favouriteSites = new ArrayList<FavouriteSite>(jsonList.size());
 		if(jsonList != null)
 		{
-			JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+			ArrayNode jsonEntries = (ArrayNode)jsonList.get("entries");
 			if(jsonEntries != null)
 			{
 				for(int i = 0; i < jsonEntries.size(); i++)
 				{
-					JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-					JSONObject entry = (JSONObject)jsonEntry.get("entry");
+					JsonNode jsonEntry = jsonEntries.get(i);
+					JsonNode entry = jsonEntry.get("entry");
 					favouriteSites.add(parseFavouriteSite(entry));
 				}
 			}

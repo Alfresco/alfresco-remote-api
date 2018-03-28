@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.person;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.content.MimetypeMap;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
@@ -52,10 +55,9 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.GUID;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.testing.category.LuceneTests;
 import org.apache.commons.lang.RandomStringUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -207,16 +209,16 @@ public class PersonServiceTest extends BaseWebScriptTest
         }
     }
     
-    private JSONObject updatePerson(String userName, String title, String firstName, String lastName, 
-            String organisation, String jobTitle, String email, String bio, String avatarUrl, int expectedStatus)
+    private JsonNode updatePerson(String userName, String title, String firstName, String lastName,
+                                  String organisation, String jobTitle, String email, String bio, String avatarUrl, int expectedStatus)
     throws Exception
     {
         // switch to admin user to create a person
         String currentUser = this.authenticationComponent.getCurrentUserName();
         String adminUser = this.authenticationComponent.getSystemUserName();
         this.authenticationComponent.setCurrentUser(adminUser);
-        
-        JSONObject person = new JSONObject();
+
+        ObjectNode person = AlfrescoDefaultObjectMapper.createObjectNode();
         person.put("userName", userName);
         person.put("title", title);
         person.put("firstName", firstName);
@@ -230,10 +232,10 @@ public class PersonServiceTest extends BaseWebScriptTest
         // switch back to non-admin user
         this.authenticationComponent.setCurrentUser(currentUser);
         
-        return new JSONObject(response.getContentAsString());
+        return AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     }
 
-    private JSONObject createPerson(String userName, String title, String firstName, String lastName, 
+    private JsonNode createPerson(String userName, String title, String firstName, String lastName, 
                                     String organisation, String jobTitle, String email, String bio, String avatarUrl,
                                     long quota, int expectedStatus)
         throws Exception
@@ -242,7 +244,7 @@ public class PersonServiceTest extends BaseWebScriptTest
         String currentUser = this.authenticationComponent.getCurrentUserName();
         AuthenticationUtil.setAdminUserAsFullyAuthenticatedUser();
         
-        JSONObject person = new JSONObject();
+        ObjectNode person = AlfrescoDefaultObjectMapper.createObjectNode();
         person.put("userName", userName);
         person.put("title", title);
         person.put("firstName", firstName);
@@ -265,10 +267,10 @@ public class PersonServiceTest extends BaseWebScriptTest
         // switch back to non-admin user
         this.authenticationComponent.setCurrentUser(currentUser);
         
-        return new JSONObject(response.getContentAsString());
+        return AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     }
     
-    private JSONObject deletePerson(String userName, int expectedStatus)
+    private JsonNode deletePerson(String userName, int expectedStatus)
     throws Exception
     {
         // switch to admin user to delete a person
@@ -282,7 +284,7 @@ public class PersonServiceTest extends BaseWebScriptTest
         // switch back to non-admin user
         this.authenticationComponent.setCurrentUser(currentUser);
 
-        return new JSONObject(response.getContentAsString());
+        return AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     }
     
     @SuppressWarnings("unused")
@@ -310,14 +312,14 @@ public class PersonServiceTest extends BaseWebScriptTest
         // Get a person 
         Response response = sendRequest(new GetRequest(URL_PEOPLE + "?filter=" + URLEncoder.encode("jobtitle:" + jobSearchString)), 200);
         assertSearchQuery("jobtitle:\"" + jobSearchString + "\"", false);
-        JSONObject res = new JSONObject(response.getContentAsString());
-        assertEquals(1, res.getJSONArray("people").length());
+        JsonNode res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(1, res.get("people").size());
         
         dummySearchServiceQueryNodeRefs.clear();
         response = sendRequest(new GetRequest(URL_PEOPLE + "?filter=" + URLEncoder.encode("jobtitle:" + userJob)), 200);
         assertSearchQuery("jobtitle:\""+userJob.replace(" ", "\" \"")+"\" ", false);
-        res = new JSONObject(response.getContentAsString());
-        assertEquals(0, res.getJSONArray("people").length());
+        res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(0, res.get("people").size());
     }
     
     @SuppressWarnings("unused")
@@ -328,7 +330,7 @@ public class PersonServiceTest extends BaseWebScriptTest
         
         // Create a person and get him/her
         String userName  = RandomStringUtils.randomNumeric(6);
-        JSONObject result = createPerson(userName, "myTitle", "myFirstName", "myLastName", "myOrganisation",
+        JsonNode result = createPerson(userName, "myTitle", "myFirstName", "myLastName", "myOrganisation",
                                 "myJobTitle", "myEmailAddress", "myBio", "images/avatar.jpg", 0, 200);
         response = sendRequest(new GetRequest(URL_PEOPLE + "/" + userName), 200);
     }
@@ -343,15 +345,15 @@ public class PersonServiceTest extends BaseWebScriptTest
         String filter = "*%20[hint:useCQ]";
 
         Response response = sendRequest(new GetRequest(URL_PEOPLE + "?filter=" + filter), 200);
-        JSONObject res = new JSONObject(response.getContentAsString());
+        JsonNode res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-        int peopleFound = res.getJSONArray("people").length();
+        int peopleFound = res.get("people").size();
         assertTrue("No people found", peopleFound > 0);
 
         response = sendRequest(new GetRequest(URL_PEOPLE + "?filter=" + filter + "&skipCount=" + skipCount), 200);
 
-        res = new JSONObject(response.getContentAsString());
-        assertTrue("skipCount ignored", res.getJSONArray("people").length() < peopleFound);
+        res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertTrue("skipCount ignored", res.get("people").size() < peopleFound);
     }
 
     /**
@@ -387,9 +389,9 @@ public class PersonServiceTest extends BaseWebScriptTest
                         "&pageSize=" + 6
                 ), Status.STATUS_OK);
         assertSearchQuery(filter, true);
-        JSONObject res = new JSONObject(response.getContentAsString());
-        JSONArray peopleAsc = res.getJSONArray("people");
-        assertEquals("The number of returned results is not correct.", 6, peopleAsc.length());
+        JsonNode res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        ArrayNode peopleAsc = (ArrayNode) res.get("people");
+        assertEquals("The number of returned results is not correct.", 6, peopleAsc.size());
         checkPaging(6, 0, 6, res);
         // fetch a page of first 2
         response = sendRequest(
@@ -399,15 +401,15 @@ public class PersonServiceTest extends BaseWebScriptTest
                         "&pageSize=" + 2
                 ), Status.STATUS_OK);
         assertSearchQuery(filter, true);
-        res = new JSONObject(response.getContentAsString());
-        peopleAsc = res.getJSONArray("people");
-        assertEquals("The number of returned results is not correct.", 2, peopleAsc.length());
+        res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        peopleAsc = (ArrayNode) res.get("people");
+        assertEquals("The number of returned results is not correct.", 2, peopleAsc.size());
         checkPaging(6, 0, 2, res);
-        for (int i = 0; i < peopleAsc.length(); i++)
+        for (int i = 0; i < peopleAsc.size(); i++)
         {
-            JSONObject person = peopleAsc.getJSONObject(i);
+            JsonNode person = peopleAsc.get(i);
             assertEquals("The name of a person does not match. Paging is not correct",
-                    filter + i, person.getString("userName"));
+                    filter + i, person.get("userName").textValue());
         }
         // fetch the middle 2
         response = sendRequest(
@@ -417,15 +419,15 @@ public class PersonServiceTest extends BaseWebScriptTest
                         "&pageSize=" + 2
                 ), Status.STATUS_OK);
         assertSearchQuery(filter, true);
-        res = new JSONObject(response.getContentAsString());
-        peopleAsc = res.getJSONArray("people");
-        assertEquals("The number of returned results is not correct.", 2, peopleAsc.length());
+        res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        peopleAsc = (ArrayNode) res.get("people");
+        assertEquals("The number of returned results is not correct.", 2, peopleAsc.size());
         checkPaging(6, 2, 2, res);
-        for (int i = 0; i < peopleAsc.length(); i++)
+        for (int i = 0; i < peopleAsc.size(); i++)
         {
-            JSONObject person = peopleAsc.getJSONObject(i);
+            JsonNode person = peopleAsc.get(i);
             assertEquals("The name of a person does not match. Paging is not correct",
-                    filter + (2 + i), person.getString("userName"));
+                    filter + (2 + i), person.get("userName").textValue());
         }
         // fetch the last 2
         response = sendRequest(
@@ -435,15 +437,15 @@ public class PersonServiceTest extends BaseWebScriptTest
                         "&pageSize=" + 2
                 ), Status.STATUS_OK);
         assertSearchQuery(filter, true);
-        res = new JSONObject(response.getContentAsString());
-        peopleAsc = res.getJSONArray("people");
-        assertEquals("The number of returned results is not correct.", 2, peopleAsc.length());
+        res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        peopleAsc = (ArrayNode) res.get("people");
+        assertEquals("The number of returned results is not correct.", 2, peopleAsc.size());
         checkPaging(6, 4, 2, res);
-        for (int i = 0; i < peopleAsc.length(); i++)
+        for (int i = 0; i < peopleAsc.size(); i++)
         {
-            JSONObject person = peopleAsc.getJSONObject(i);
+            JsonNode person = peopleAsc.get(i);
             assertEquals("The name of a person does not match. Paging is not correct",
-                    filter + (4 + i), person.getString("userName"));
+                    filter + (4 + i), person.get("userName").textValue());
         }
         // fetch the last 3 as a page of five
         response = sendRequest(
@@ -453,24 +455,24 @@ public class PersonServiceTest extends BaseWebScriptTest
                         "&pageSize=" + 5
                 ), Status.STATUS_OK);
         assertSearchQuery(filter, true);
-        res = new JSONObject(response.getContentAsString());
-        peopleAsc = res.getJSONArray("people");
-        assertEquals("The number of returned results is not correct.", 3, peopleAsc.length());
+        res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        peopleAsc = (ArrayNode) res.get("people");
+        assertEquals("The number of returned results is not correct.", 3, peopleAsc.size());
         checkPaging(6, 3, 5, res);
-        for (int i = 0; i < peopleAsc.length(); i++)
+        for (int i = 0; i < peopleAsc.size(); i++)
         {
-            JSONObject person = peopleAsc.getJSONObject(i);
+            JsonNode person = peopleAsc.get(i);
             assertEquals("The name of a person does not match. Paging is not correct",
-                    filter + (i + 3), person.getString("userName"));
+                    filter + (i + 3), person.get("userName").textValue());
         }
     }
 
-    private void checkPaging(int totalItems, int skipCount, int maxItems, JSONObject response) throws Exception
+    private void checkPaging(int totalItems, int skipCount, int maxItems, JsonNode response) throws Exception
     {
-        JSONObject paging = response.getJSONObject("paging");
-        assertEquals("totalItems was not correct in the response", totalItems, paging.getInt("totalItems"));
-        assertEquals("skipCount was not correct in the response", skipCount, paging.getInt("skipCount"));
-        assertEquals("maxItems was not correct in the response", maxItems, paging.getInt("maxItems"));
+        JsonNode paging = response.get("paging");
+        assertEquals("totalItems was not correct in the response", totalItems, paging.get("totalItems").intValue());
+        assertEquals("skipCount was not correct in the response", skipCount, paging.get("skipCount").intValue());
+        assertEquals("maxItems was not correct in the response", maxItems, paging.get("maxItems").intValue());
     }
 
     public void testGetPeopleSorting() throws Exception
@@ -520,9 +522,9 @@ public class PersonServiceTest extends BaseWebScriptTest
                         "&dir=" + ASC_DIR
                 ), Status.STATUS_OK);
         assertSearchQuery(filter, true);
-        JSONObject res = new JSONObject(response.getContentAsString());
-        JSONArray peopleAsc = res.getJSONArray("people");
-        assertEquals(usernames.length, peopleAsc.length());
+        JsonNode res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        ArrayNode peopleAsc = (ArrayNode) res.get("people");
+        assertEquals(usernames.length, peopleAsc.size());
 
         response = sendRequest(
                 new GetRequest(URL_PEOPLE +
@@ -531,77 +533,77 @@ public class PersonServiceTest extends BaseWebScriptTest
                         "&dir=" + DESC_DIR
                 ), Status.STATUS_OK);
         assertSearchQuery(filter, true);
-        res = new JSONObject(response.getContentAsString());
-        JSONArray peopleDesc = res.getJSONArray("people");
-        assertEquals(usernames.length, peopleDesc.length());
+        res = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        ArrayNode peopleDesc = (ArrayNode) res.get("people");
+        assertEquals(usernames.length, peopleDesc.size());
 
         // Check that Desc is reversed Asc
-        for (int i = 0; i < peopleAsc.length(); i++)
+        for (int i = 0; i < peopleAsc.size(); i++)
         {
-            assertEquals(peopleAsc.getJSONObject(i).getString("userName"),
-                    peopleDesc.getJSONObject(peopleAsc.length() - i - 1).getString("userName"));
+            assertEquals(peopleAsc.get(i).get("userName").textValue(),
+                    peopleDesc.get(peopleAsc.size() - i - 1).get("userName").textValue());
         }
 
         // Check Asc sorting for each field
-        for (int i = 0; i < peopleAsc.length() - 1; i++)
+        for (int i = 0; i < peopleAsc.size() - 1; i++)
         {
             if (SORT_BY_USERNAME.equals(sortBy))
             {
-                JSONObject person = peopleAsc.getJSONObject(i);
-                String userName1 = person.getString("userName");
-                person = peopleAsc.getJSONObject(i + 1);
-                String userName2 = person.getString("userName");
+                JsonNode person = peopleAsc.get(i);
+                String userName1 = person.get("userName").textValue();
+                person = peopleAsc.get(i + 1);
+                String userName2 = person.get("userName").textValue();
                 assertTrue("Users are not ordered correctly ascending by username", userName1.compareToIgnoreCase(userName2) <= 0);
             }
             else if (SORT_BY_FULLNAME.equals(sortBy))
             {
-                JSONObject person = peopleAsc.getJSONObject(i);
-                String firstName1 = person.getString("firstName");
-                String lastName1 = person.getString("lastName");
+                JsonNode person = peopleAsc.get(i);
+                String firstName1 = person.get("firstName").textValue();
+                String lastName1 = person.get("lastName").textValue();
                 String fullName1 = (firstName1 == null ? "" : firstName1) + (lastName1 == null ? "" : lastName1);
 
-                person = peopleAsc.getJSONObject(i + 1);
-                String firstName2 = person.getString("firstName");
-                String lastName2 = person.getString("lastName");
+                person = peopleAsc.get(i + 1);
+                String firstName2 = person.get("firstName").textValue();
+                String lastName2 = person.get("lastName").textValue();
                 String fullName2 = (firstName2 == null ? "" : firstName2) + (lastName2 == null ? "" : lastName2);
 
                 assertTrue("Users are not ordered correctly ascending by fullname", fullName1.compareToIgnoreCase(fullName2) <= 0);
             }
             else if (SORT_BY_JOBTITLE.equals(sortBy))
             {
-                JSONObject person = peopleAsc.getJSONObject(i);
-                String jobUser1 = person.getString("jobtitle");
-                person = peopleAsc.getJSONObject(i + 1);
-                String jobUser2 = person.getString("jobtitle");
+                JsonNode person = peopleAsc.get(i);
+                String jobUser1 = person.get("jobtitle").textValue();
+                person = peopleAsc.get(i + 1);
+                String jobUser2 = person.get("jobtitle").textValue();
 
                 assertTrue("Users are not ordered correctly ascending by jobtitle",
                         (jobUser1 == null ? "" : jobUser1).compareToIgnoreCase(jobUser2 == null ? "" : jobUser2) <= 0);
             }
             else if (SORT_BY_EMAIL.equals(sortBy))
             {
-                JSONObject person = peopleAsc.getJSONObject(i);
-                String emailUser1 = person.getString("email");
-                person = peopleAsc.getJSONObject(i + 1);
-                String emailUser2 = person.getString("email");
+                JsonNode person = peopleAsc.get(i);
+                String emailUser1 = person.get("email").textValue();
+                person = peopleAsc.get(i + 1);
+                String emailUser2 = person.get("email").textValue();
 
                 assertTrue("Users are not ordered correctly ascending by email",
                         (emailUser1 == null ? "" : emailUser1).compareToIgnoreCase(emailUser2 == null ? "" : emailUser2) <= 0);
             }
             else if (SORT_BY_QUOTA.equals(sortBy))
             {
-                JSONObject person = peopleAsc.getJSONObject(i);
-                long quotaUser1 = person.getLong("quota");
-                person = peopleAsc.getJSONObject(i + 1);
-                long quotaUser2 = person.getLong("quota");
+                JsonNode person = peopleAsc.get(i);
+                long quotaUser1 = person.get("quota").longValue();
+                person = peopleAsc.get(i + 1);
+                long quotaUser2 = person.get("quota").longValue();
 
                 assertTrue("Users are not ordered correctly ascending by quota", quotaUser1 <= quotaUser2);
             }
             else if (SORT_BY_USAGE.equals(sortBy))
             {
-                JSONObject person = peopleAsc.getJSONObject(i);
-                long usageUser1 = person.getLong("sizeCurrent");
-                person = peopleAsc.getJSONObject(i + 1);
-                long usageUser2 = person.getLong("sizeCurrent");
+                JsonNode person = peopleAsc.get(i);
+                long usageUser1 = person.get("sizeCurrent").longValue();
+                person = peopleAsc.get(i + 1);
+                long usageUser2 = person.get("sizeCurrent").longValue();
 
                 assertTrue("Users are not ordered correctly ascending by usage", usageUser1 <= usageUser2);
             }
@@ -692,7 +694,7 @@ public class PersonServiceTest extends BaseWebScriptTest
                                 Status.STATUS_OK);
         
         // Update the person's details
-        JSONObject result = updatePerson(userName, "updatedTitle", "updatedFirstName", "updatedLastName",
+        JsonNode result = updatePerson(userName, "updatedTitle", "updatedFirstName", "updatedLastName",
                 "updatedOrganisation", "updatedJobTitle", "updatedFN.updatedLN@email.com", "updatedBio",
                 "images/updatedAvatar.jpg", Status.STATUS_OK);
 
@@ -724,7 +726,7 @@ public class PersonServiceTest extends BaseWebScriptTest
         String userName  = RandomStringUtils.randomNumeric(6);
                 
         // Create a new person
-        JSONObject result = createPerson(userName, "myTitle", "myFirstName", "myLastName", "myOrganisation",
+        JsonNode result = createPerson(userName, "myTitle", "myFirstName", "myLastName", "myOrganisation",
                                 "myJobTitle", "firstName.lastName@email.com", "myBio", "images/avatar.jpg", 0,
                                 Status.STATUS_OK);        
         assertEquals(userName, result.get("userName"));

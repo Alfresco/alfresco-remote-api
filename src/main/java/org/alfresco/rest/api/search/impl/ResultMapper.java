@@ -31,6 +31,8 @@ import static org.alfresco.rest.api.search.impl.StoreMapper.HISTORY;
 import static org.alfresco.rest.api.search.impl.StoreMapper.LIVE_NODES;
 import static org.alfresco.rest.api.search.impl.StoreMapper.VERSIONS;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,9 +94,6 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * Maps from a ResultSet to a json public api representation.
@@ -647,7 +646,7 @@ public class ResultMapper
 
         return null;
     }
-    public CollectionWithPagingInfo<TupleList> toCollectionWithPagingInfo(JSONArray docs, SearchSQLQuery searchQuery) throws JSONException
+    public CollectionWithPagingInfo<TupleList> toCollectionWithPagingInfo(ArrayNode docs, SearchSQLQuery searchQuery)
     {
         if(docs == null )
         {
@@ -658,20 +657,13 @@ public class ResultMapper
             throw new RuntimeException("SearchSQLQuery is required" );
         }
         List<TupleList> entries = new ArrayList<TupleList>();
-        for(int i = 0; i < docs.length() -1; i++)
+        for(int i = 0; i < docs.size() -1; i++)
         {
             List<TupleEntry> row = new ArrayList<TupleEntry>();
-            JSONObject docObj = (JSONObject) docs.get(i);
-            docObj.keys().forEachRemaining(action -> {
-                try
-                {
-                    String value = docObj.get(action.toString()).toString();
-                    row.add(new TupleEntry(action.toString(), value));
-                } 
-                catch (JSONException e)
-                {
-                    throw new RuntimeException("Unable to parse SQL response. " + e);
-                }
+            ObjectNode docObj = (ObjectNode) docs.get(i);
+            docObj.fields().forEachRemaining(action -> {
+                String value = docObj.get(action.getKey()).textValue();
+                row.add(new TupleEntry(action.getKey(), value));
             });
             entries.add(new TupleList(row));
         }

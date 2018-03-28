@@ -25,6 +25,10 @@
  */
 package org.alfresco.repo.web.scripts.workflow;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -32,6 +36,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -67,10 +72,8 @@ import org.alfresco.service.cmr.workflow.WorkflowTransition;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.GUID;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.testing.category.LuceneTests;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.experimental.categories.Category;
 import org.springframework.context.ApplicationContext;
 import org.alfresco.util.ISO8601DateFormat;
@@ -135,10 +138,10 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         Response response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER2)), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray results = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertTrue(results.length() == 0);
+        assertTrue(results.size() == 0);
 
         // Start workflow as USER1 and assign task to USER2.
         personManager.setUser(USER1);
@@ -170,36 +173,36 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         personManager.setUser(USER2);
         response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER2)), 200);
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertTrue(results.length() == tasks.size());
-        JSONObject result = results.getJSONObject(0);
+        assertTrue(results.size() == tasks.size());
+        JsonNode result = results.get(0);
 
-        int totalItems = results.length();
+        int totalItems = results.size();
 
         String expUrl = "api/task-instances/" + task.getId();
-        assertEquals(expUrl, result.getString("url"));
-        assertEquals(task.getName(), result.getString("name"));
-        assertEquals(task.getTitle(), result.getString("title"));
-        assertEquals(task.getDescription(), result.getString("description"));
-        assertEquals(task.getState().name(), result.getString("state"));
-        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.getString("path"));
-        assertFalse(result.getBoolean("isPooled"));
-        assertTrue(result.getBoolean("isEditable"));
-        assertTrue(result.getBoolean("isReassignable"));
-        assertFalse(result.getBoolean("isClaimable"));
-        assertFalse(result.getBoolean("isReleasable"));
+        assertEquals(expUrl, result.get("url").textValue());
+        assertEquals(task.getName(), result.get("name").textValue());
+        assertEquals(task.getTitle(), result.get("title").textValue());
+        assertEquals(task.getDescription(), result.get("description").textValue());
+        assertEquals(task.getState().name(), result.get("state").textValue());
+        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path").textValue());
+        assertFalse(result.get("isPooled").booleanValue());
+        assertTrue(result.get("isEditable").booleanValue());
+        assertTrue(result.get("isReassignable").booleanValue());
+        assertFalse(result.get("isClaimable").booleanValue());
+        assertFalse(result.get("isReleasable").booleanValue());
 
-        JSONObject owner = result.getJSONObject("owner");
-        assertEquals(USER2, owner.getString("userName"));
-        assertEquals(personManager.getFirstName(USER2), owner.getString("firstName"));
-        assertEquals(personManager.getLastName(USER2), owner.getString("lastName"));
+        JsonNode owner = result.get("owner");
+        assertEquals(USER2, owner.get("userName"));
+        assertEquals(personManager.getFirstName(USER2), owner.get("firstName").textValue());
+        assertEquals(personManager.getLastName(USER2), owner.get("lastName").textValue());
 
-        JSONObject properties = result.getJSONObject("properties");
+        JsonNode properties = result.get("properties");
         assertNotNull(properties);
 
-        JSONObject instance = result.getJSONObject("workflowInstance");
+        JsonNode instance = result.get("workflowInstance");
         assertNotNull(instance);
 
         // Check state filtering
@@ -264,16 +267,16 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         response = sendRequest(new GetRequest(URL_TASKS + "?exclude=" + exclude), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
 
         boolean adhocTasksPresent = false;
-        for (int i = 0; i < results.length(); i++)
+        for (int i = 0; i < results.size(); i++)
         {
-            JSONObject taskJSON = results.getJSONObject(i);
+            JsonNode taskJSON = results.get(i);
 
-            String type = taskJSON.getString("name");
+            String type = taskJSON.get("name").textValue();
             if (exclude.equals(type))
             {
                 adhocTasksPresent = true;
@@ -305,8 +308,8 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         // Due after tomorrow, started task shouldn't be in it
        String url = MessageFormat.format(URL_TASKS_DUE_AFTER_AND_SKIP,  ISO8601DateFormat.format(dueDateCal.getTime()), 1);
        json = getDataFromRequest(url);
-       JSONArray resultArray = json.getJSONArray("data");
-       assertEquals(0, resultArray.length());
+       ArrayNode resultArray = (ArrayNode) json.get("data");
+       assertEquals(0, resultArray.size());
     }
 
     public void testTaskInstancesGetWithFiltering() throws Exception
@@ -351,21 +354,21 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         //Check USER2's tasks With filtering where property bpm:description should match "descTest1"
         response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER2) + "&property=bpm:description/descTest1"), 200);
-        JSONArray results = getJsonArray(response, 1);
-        JSONObject result = results.getJSONObject(0);
+        ArrayNode results = getJsonArray(response, 1);
+        JsonNode result = results.get(0);
         assertNotNull(result);
-        JSONObject properties = result.getJSONObject("properties");
+        JsonNode properties = result.get("properties");
         assertNotNull(properties);
-        assertEquals("descTest1", properties.getString("bpm_description"));
+        assertEquals("descTest1", properties.get("bpm_description").textValue());
 
         //Check USER2's tasks With filtering where property bpm:description should match "descTest2"
         response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER2) + "&property=bpm:description/descTest2/withSlash"), 200);
         results = getJsonArray(response, 1);
-        result = results.getJSONObject(0);
+        result = results.get(0);
         assertNotNull(result);
-        properties = result.getJSONObject("properties");
+        properties = result.get("properties");
         assertNotNull(properties);
-        assertEquals("descTest2/withSlash", properties.getString("bpm_description"));
+        assertEquals("descTest2/withSlash", properties.get("bpm_description").textValue());
 
         /*
          * -ve tests
@@ -426,10 +429,10 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         Response response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER1)), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray results = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertTrue("User2 should not see any tasks if he is not initiator or assignee", results.length() == 0);
+        assertTrue("User2 should not see any tasks if he is not initiator or assignee", results.size() == 0);
     }
     
     public void testTaskInstancesForWorkflowGet() throws Exception
@@ -523,32 +526,32 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         // Get the start-task
         Response response = sendRequest(new GetRequest(URL_TASKS + "/" + startTask.getId()), Status.STATUS_OK);
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONObject result = json.getJSONObject("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        JsonNode result = json.get("data");
         assertNotNull(result);
 
-        assertEquals(startTask.getId(), result.getString("id"));
-        assertEquals(URL_TASKS + "/" + startTask.getId(), result.getString("url"));
-        assertEquals(startTask.getName(), result.getString("name"));
-        assertEquals(startTask.getTitle(), result.getString("title"));
-        assertEquals(startTask.getDescription(), result.getString("description"));
+        assertEquals(startTask.getId(), result.get("id").textValue());
+        assertEquals(URL_TASKS + "/" + startTask.getId(), result.get("url").textValue());
+        assertEquals(startTask.getName(), result.get("name").textValue());
+        assertEquals(startTask.getTitle(), result.get("title").textValue());
+        assertEquals(startTask.getDescription(), result.get("description").textValue());
 
-        assertEquals(startTask.getState().name(), result.getString("state"));
-        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.getString("path"));
+        assertEquals(startTask.getState().name(), result.get("state").textValue());
+        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path").textValue());
         
         checkWorkflowTaskEditable(result);
         checkWorkflowTaskOwner(result, USER1);
         checkWorkflowTaskPropertiesPresent(result);
 
-        JSONObject properties = result.getJSONObject("properties");
-        assertEquals(1, properties.getInt("bpm_priority"));
+        JsonNode properties = result.get("properties");
+        assertEquals(1, properties.get("bpm_priority").intValue());
         String dueDateStr = ISO8601DateFormat.format(dueDate);
-        assertEquals(dueDateStr, properties.getString("bpm_dueDate"));
-        assertEquals(assignee.toString(), properties.getString("bpm_assignee"));
-        assertEquals(packageRef.toString(), properties.getString("bpm_package"));
+        assertEquals(dueDateStr, properties.get("bpm_dueDate").textValue());
+        assertEquals(assignee.toString(), properties.get("bpm_assignee").textValue());
+        assertEquals(packageRef.toString(), properties.get("bpm_package").textValue());
         
-        checkWorkflowInstance(startTask.getPath().getInstance(), result.getJSONObject("workflowInstance"));
-        checkWorkflowTaskDefinition(startTask.getDefinition(), result.getJSONObject("definition"));
+        checkWorkflowInstance(startTask.getPath().getInstance(), result.get("workflowInstance"));
+        checkWorkflowTaskDefinition(startTask.getDefinition(), result.get("definition"));
         
         // Finish the start-task, and fetch it again
         personManager.setUser(USER2);
@@ -557,52 +560,52 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         response = sendRequest(new GetRequest(URL_TASKS + "/" + startTask.getId()), Status.STATUS_OK);
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        result = json.getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        result = json.get("data");
         assertNotNull(result);
         
-        assertEquals(startTask.getId(), result.getString("id"));
-        assertEquals(URL_TASKS + "/" + startTask.getId(), result.getString("url"));
-        assertEquals(startTask.getName(), result.getString("name"));
-        assertEquals(startTask.getTitle(), result.getString("title"));
-        assertEquals(startTask.getDescription(), result.getString("description"));
+        assertEquals(startTask.getId(), result.get("id").textValue());
+        assertEquals(URL_TASKS + "/" + startTask.getId(), result.get("url").textValue());
+        assertEquals(startTask.getName(), result.get("name").textValue());
+        assertEquals(startTask.getTitle(), result.get("title").textValue());
+        assertEquals(startTask.getDescription(), result.get("description").textValue());
         
-        assertEquals(startTask.getState().name(), result.getString("state"));
-        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.getString("path"));
+        assertEquals(startTask.getState().name(), result.get("state").textValue());
+        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path").textValue());
 
         checkWorkflowTaskReadOnly(result);
         checkWorkflowTaskOwner(result, USER1);
         checkWorkflowTaskPropertiesPresent(result);
 
-        checkWorkflowInstance(startTask.getPath().getInstance(), result.getJSONObject("workflowInstance"));
-        checkWorkflowTaskDefinition(startTask.getDefinition(), result.getJSONObject("definition"));
+        checkWorkflowInstance(startTask.getPath().getInstance(), result.get("workflowInstance"));
+        checkWorkflowTaskDefinition(startTask.getDefinition(), result.get("definition"));
         
         // Get the next active task
         WorkflowTask firstTask = workflowService.getTasksForWorkflowPath(adhocPath.getId()).get(0);
         
         response = sendRequest(new GetRequest(URL_TASKS + "/" + firstTask.getId()), 200);
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        result = json.getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        result = json.get("data");
         assertNotNull(result);
         
-        assertEquals(firstTask.getId(), result.getString("id"));
-        assertEquals(URL_TASKS + "/" + firstTask.getId(), result.getString("url"));
-        assertEquals(firstTask.getName(), result.getString("name"));
-        assertEquals(firstTask.getTitle(), result.getString("title"));
-        assertEquals(firstTask.getDescription(), result.getString("description"));
+        assertEquals(firstTask.getId(), result.get("id"));
+        assertEquals(URL_TASKS + "/" + firstTask.getId(), result.get("url"));
+        assertEquals(firstTask.getName(), result.get("name"));
+        assertEquals(firstTask.getTitle(), result.get("title"));
+        assertEquals(firstTask.getDescription(), result.get("description"));
        
         // Task should be in progress
-        assertEquals(firstTask.getState().name(), result.getString("state"));
-        assertEquals(WorkflowTaskState.IN_PROGRESS.toString(), result.getString("state"));
-        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.getString("path"));
+        assertEquals(firstTask.getState().name(), result.get("state"));
+        assertEquals(WorkflowTaskState.IN_PROGRESS.toString(), result.get("state"));
+        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path"));
         
         checkWorkflowTaskEditable(result);
         checkWorkflowTaskOwner(result, USER2);
         checkWorkflowTaskPropertiesPresent(result);
         
-        checkWorkflowInstance(firstTask.getPath().getInstance(), result.getJSONObject("workflowInstance"));
-        checkWorkflowTaskDefinition(firstTask.getDefinition(), result.getJSONObject("definition"));
+        checkWorkflowInstance(firstTask.getPath().getInstance(), result.get("workflowInstance"));
+        checkWorkflowTaskDefinition(firstTask.getDefinition(), result.get("definition"));
         
         // Finish the task, and fetch it again
         workflowService.endTask(firstTask.getId(), null);
@@ -610,139 +613,139 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         
         response = sendRequest(new GetRequest(URL_TASKS + "/" + firstTask.getId()), 200);
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        result = json.getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        result = json.get("data");
         assertNotNull(result);
         
-        assertEquals(firstTask.getId(), result.getString("id"));
-        assertEquals(URL_TASKS + "/" + firstTask.getId(), result.getString("url"));
-        assertEquals(firstTask.getName(), result.getString("name"));
-        assertEquals(firstTask.getTitle(), result.getString("title"));
-        assertEquals(firstTask.getDescription(), result.getString("description"));
+        assertEquals(firstTask.getId(), result.get("id"));
+        assertEquals(URL_TASKS + "/" + firstTask.getId(), result.get("url"));
+        assertEquals(firstTask.getName(), result.get("name"));
+        assertEquals(firstTask.getTitle(), result.get("title"));
+        assertEquals(firstTask.getDescription(), result.get("description"));
         
         // The task should be completed
-        assertEquals(firstTask.getState().name(), result.getString("state"));
-        assertEquals(WorkflowTaskState.COMPLETED.toString(), result.getString("state"));
-        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.getString("path"));
+        assertEquals(firstTask.getState().name(), result.get("state"));
+        assertEquals(WorkflowTaskState.COMPLETED.toString(), result.get("state"));
+        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path"));
 
         checkWorkflowTaskReadOnly(result);
         checkWorkflowTaskOwner(result, USER2);
         checkWorkflowTaskPropertiesPresent(result);
         
-        checkWorkflowInstance(firstTask.getPath().getInstance(), result.getJSONObject("workflowInstance"));
-        checkWorkflowTaskDefinition(firstTask.getDefinition(), result.getJSONObject("definition"));
+        checkWorkflowInstance(firstTask.getPath().getInstance(), result.get("workflowInstance"));
+        checkWorkflowTaskDefinition(firstTask.getDefinition(), result.get("definition"));
     }
 
-    private void checkWorkflowTaskPropertiesPresent(JSONObject taskJson) throws Exception
+    private void checkWorkflowTaskPropertiesPresent(JsonNode taskJson) throws Exception
     {
-        JSONObject properties = taskJson.getJSONObject("properties");
+        JsonNode properties = taskJson.get("properties");
         assertNotNull(properties);
         assertTrue(properties.has("bpm_priority"));
         assertTrue(properties.has("bpm_description"));
         assertTrue(properties.has("bpm_reassignable"));
-        JSONObject labels =taskJson.getJSONObject("propertyLabels");
+        JsonNode labels =taskJson.get("propertyLabels");
         assertNotNull(labels);
         assertTrue(labels.has("bpm_status"));
         
     }
 
-    private void checkWorkflowTaskReadOnly(JSONObject taskJson) throws Exception
+    private void checkWorkflowTaskReadOnly(JsonNode taskJson) throws Exception
     {
         // Task shouldn't be editable and reassignable, since it's completed
-        assertFalse(taskJson.getBoolean("isPooled"));
-        assertFalse(taskJson.getBoolean("isEditable"));
-        assertFalse(taskJson.getBoolean("isReassignable"));
-        assertFalse(taskJson.getBoolean("isClaimable"));
-        assertFalse(taskJson.getBoolean("isReleasable"));
+        assertFalse(taskJson.get("isPooled").booleanValue());
+        assertFalse(taskJson.get("isEditable").booleanValue());
+        assertFalse(taskJson.get("isReassignable").booleanValue());
+        assertFalse(taskJson.get("isClaimable").booleanValue());
+        assertFalse(taskJson.get("isReleasable").booleanValue());
     }
 
-    private void checkWorkflowTaskOwner(JSONObject taskJson, String user) throws Exception
+    private void checkWorkflowTaskOwner(JsonNode taskJson, String user) throws Exception
     {
-        JSONObject owner = taskJson.getJSONObject("owner");
-        assertEquals(user, owner.getString("userName"));
-        assertEquals(personManager.getFirstName(user), owner.getString("firstName"));
-        assertEquals(personManager.getLastName(user), owner.getString("lastName"));
+        JsonNode owner = taskJson.get("owner");
+        assertEquals(user, owner.get("userName"));
+        assertEquals(personManager.getFirstName(user), owner.get("firstName"));
+        assertEquals(personManager.getLastName(user), owner.get("lastName"));
     }
 
-    private void checkWorkflowTaskEditable(JSONObject taskJson) throws Exception
+    private void checkWorkflowTaskEditable(JsonNode taskJson) throws Exception
     {
-        assertFalse(taskJson.getBoolean("isPooled"));
-        assertTrue(taskJson.getBoolean("isEditable"));
-        assertTrue(taskJson.getBoolean("isReassignable"));
-        assertFalse(taskJson.getBoolean("isClaimable"));
-        assertFalse(taskJson.getBoolean("isReleasable"));
+        assertFalse(taskJson.get("isPooled").booleanValue());
+        assertTrue(taskJson.get("isEditable").booleanValue());
+        assertTrue(taskJson.get("isReassignable").booleanValue());
+        assertFalse(taskJson.get("isClaimable").booleanValue());
+        assertFalse(taskJson.get("isReleasable").booleanValue());
     }
 
-    private void checkWorkflowInstance(WorkflowInstance wfInstance, JSONObject instance) throws Exception
+    private void checkWorkflowInstance(WorkflowInstance wfInstance, JsonNode instance) throws Exception
     {
         assertNotNull(instance);
-        assertEquals(wfInstance.getId(), instance.getString("id"));
+        assertEquals(wfInstance.getId(), instance.get("id"));
         assertTrue(instance.has("url"));
-        assertEquals(wfInstance.getDefinition().getName(), instance.getString("name"));
-        assertEquals(wfInstance.getDefinition().getTitle(), instance.getString("title"));
-        assertEquals(wfInstance.getDefinition().getDescription(), instance.getString("description"));
-        assertEquals(wfInstance.isActive(), instance.getBoolean("isActive"));
+        assertEquals(wfInstance.getDefinition().getName(), instance.get("name"));
+        assertEquals(wfInstance.getDefinition().getTitle(), instance.get("title"));
+        assertEquals(wfInstance.getDefinition().getDescription(), instance.get("description"));
+        assertEquals(wfInstance.isActive(), instance.get("isActive").booleanValue());
         assertTrue(instance.has("startDate"));
 
-        JSONObject initiator = instance.getJSONObject("initiator");
+        JsonNode initiator = instance.get("initiator");
 
-        assertEquals(USER1, initiator.getString("userName"));
-        assertEquals(personManager.getFirstName(USER1), initiator.getString("firstName"));
-        assertEquals(personManager.getLastName(USER1), initiator.getString("lastName"));
+        assertEquals(USER1, initiator.get("userName").textValue());
+        assertEquals(personManager.getFirstName(USER1), initiator.get("firstName").textValue());
+        assertEquals(personManager.getLastName(USER1), initiator.get("lastName").textValue());
     }
 
-    private void checkWorkflowTaskDefinition(WorkflowTaskDefinition wfDefinition, JSONObject definition) throws Exception
+    private void checkWorkflowTaskDefinition(WorkflowTaskDefinition wfDefinition, JsonNode definition) throws Exception
     {
         assertNotNull(definition);
 
-        assertEquals(wfDefinition.getId(), definition.getString("id"));
+        assertEquals(wfDefinition.getId(), definition.get("id"));
         assertTrue(definition.has("url"));
 
-        JSONObject type = definition.getJSONObject("type");
+        JsonNode type = definition.get("type");
         TypeDefinition startType = (wfDefinition).getMetadata();
 
         assertNotNull(type);
 
-        assertEquals(startType.getName().toPrefixString(), type.getString("name"));
-        assertEquals(startType.getTitle(this.dictionaryService), type.getString("title"));
-        assertEquals(startType.getDescription(this.dictionaryService), type.getString("description"));
+        assertEquals(startType.getName().toPrefixString(), type.get("name"));
+        assertEquals(startType.getTitle(this.dictionaryService), type.get("title"));
+        assertEquals(startType.getDescription(this.dictionaryService), type.get("description"));
         assertTrue(type.has("url"));
 
-        JSONObject node = definition.getJSONObject("node");
+        JsonNode node = definition.get("node");
         WorkflowNode startNode = wfDefinition.getNode();
 
         assertNotNull(node);
 
-        assertEquals(startNode.getName(), node.getString("name"));
-        assertEquals(startNode.getTitle(), node.getString("title"));
-        assertEquals(startNode.getDescription(), node.getString("description"));
-        assertEquals(startNode.isTaskNode(), node.getBoolean("isTaskNode"));
+        assertEquals(startNode.getName(), node.get("name"));
+        assertEquals(startNode.getTitle(), node.get("title"));
+        assertEquals(startNode.getDescription(), node.get("description"));
+        assertEquals(startNode.isTaskNode(), node.get("isTaskNode"));
 
-        JSONArray transitions = node.getJSONArray("transitions");
+        ArrayNode transitions = (ArrayNode) node.get("transitions");
         WorkflowTransition[] startTransitions = startNode.getTransitions();
 
         assertNotNull(transitions);
 
-        assertEquals(startTransitions.length, transitions.length());
+        assertEquals(startTransitions.length, transitions.size());
 
-        for (int i = 0; i < transitions.length(); i++)
+        for (int i = 0; i < transitions.size(); i++)
         {
-            JSONObject transition = transitions.getJSONObject(i);
+            JsonNode transition = transitions.get(i);
             WorkflowTransition startTransition = startTransitions[i];
 
             assertNotNull(transition);
 
             if (startTransition.getId() == null)
             {
-                assertEquals("", transition.getString("id"));
+                assertEquals("", transition.get("id"));
             }
             else
             {
-                assertEquals(startTransition.getId(), transition.getString("id"));
+                assertEquals(startTransition.getId(), transition.get("id"));
             }
-            assertEquals(startTransition.getTitle(), transition.getString("title"));
-            assertEquals(startTransition.getDescription(), transition.getString("description"));
-            assertEquals(startTransition.isDefault(), transition.getBoolean("isDefault"));
+            assertEquals(startTransition.getTitle(), transition.get("title"));
+            assertEquals(startTransition.getDescription(), transition.get("description"));
+            assertEquals(startTransition.isDefault(), transition.get("isDefault"));
             assertTrue(transition.has("isHidden"));
         }
 
@@ -776,7 +779,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         Response response = sendRequest(new GetRequest(URL_TASKS + "/" + firstTask.getId()), 200);
 
-        JSONObject jsonProperties = new JSONObject(response.getContentAsString()).getJSONObject("data").getJSONObject("properties");
+        ObjectNode jsonProperties = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString()).get("data").get("properties");
 
         // make some changes in existing properties
         jsonProperties.remove(qnameToString(WorkflowModel.ASSOC_PACKAGE));
@@ -806,11 +809,11 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         assertEquals(Status.STATUS_OK, putResponse.getStatus());
         String jsonStr = putResponse.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONObject result = json.getJSONObject("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        JsonNode result = json.get("data");
         assertNotNull(result);
 
-        JSONObject editedJsonProperties = result.getJSONObject("properties");
+        ObjectNode editedJsonProperties = (ObjectNode) result.get("properties");
         editedJsonProperties.remove(qnameToString(ContentModel.PROP_CREATOR));
         compareProperties(jsonProperties, editedJsonProperties);
         
@@ -820,16 +823,16 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         assertEquals(Status.STATUS_OK, putResponse.getStatus());
         jsonStr = putResponse.getContentAsString();
-        json = new JSONObject(jsonStr);
-        result = json.getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        result = json.get("data");
         assertNotNull(result);
 
-        editedJsonProperties = result.getJSONObject("properties");
+        editedJsonProperties = (ObjectNode) result.get("properties");
         editedJsonProperties.remove(qnameToString(ContentModel.PROP_CREATOR));
         compareProperties(jsonProperties, editedJsonProperties);
 
         // Reassign the task to USER3 using taskInstance PUT
-        jsonProperties = new JSONObject();
+        jsonProperties = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonProperties.put(qnameToString(ContentModel.PROP_OWNER), USER3);
         putResponse = sendRequest(new PutRequest(URL_TASKS + "/" + firstTask.getId(), jsonProperties.toString(), "application/json"), 200);
         assertEquals(Status.STATUS_OK, putResponse.getStatus());
@@ -843,11 +846,11 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, putResponse.getStatus());
         
         jsonStr = putResponse.getContentAsString();
-        json = new JSONObject(jsonStr);
-        result = json.getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        result = json.get("data");
         assertNotNull(result);
         
-        editedJsonProperties = result.getJSONObject("properties");
+        editedJsonProperties = (ObjectNode) result.get("properties");
         editedJsonProperties.remove(qnameToString(ContentModel.PROP_CREATOR));
         compareProperties(jsonProperties, editedJsonProperties);
     }
@@ -876,7 +879,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         
         Response getResponse = sendRequest(new GetRequest(URL_TASKS + "/" + firstTask.getId()), 200);
 
-        JSONObject jsonProperties = new JSONObject(getResponse.getContentAsString()).getJSONObject("data").getJSONObject("properties");
+        ObjectNode jsonProperties = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(getResponse.getContentAsString()).get("data").get("properties");
 
         // Make a change
         jsonProperties.put(qnameToString(WorkflowModel.PROP_DESCRIPTION), "Edited description");
@@ -891,38 +894,38 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
          
         Response response = sendRequest(new GetRequest(URL_WORKFLOW_DEFINITIONS), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
-        JSONObject json = new JSONObject(response.getContentAsString());
-        JSONArray results = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertTrue(results.length() > 0);
+        assertTrue(results.size() > 0);
 
         boolean adhocWorkflowPresent = false;
         
         String adhocDefName = getAdhocWorkflowDefinitionName();
-        for (int i = 0; i < results.length(); i++)
+        for (int i = 0; i < results.size(); i++)
         {
-            JSONObject workflowDefinitionJSON = results.getJSONObject(i);
+            JsonNode workflowDefinitionJSON = results.get(i);
 
             assertTrue(workflowDefinitionJSON.has("id"));
-            assertTrue(workflowDefinitionJSON.getString("id").length() > 0);
+            assertTrue(workflowDefinitionJSON.get("id").size() > 0);
 
             assertTrue(workflowDefinitionJSON.has("url"));
-            String url = workflowDefinitionJSON.getString("url");
+            String url = workflowDefinitionJSON.get("url").textValue();
             assertTrue(url.length() > 0);
             assertTrue(url.startsWith("api/workflow-definitions/"));
 
             assertTrue(workflowDefinitionJSON.has("name"));
-            assertTrue(workflowDefinitionJSON.getString("name").length() > 0);
+            assertTrue(workflowDefinitionJSON.get("name").size() > 0);
 
             assertTrue(workflowDefinitionJSON.has("title"));
-            String title = workflowDefinitionJSON.getString("title");
+            String title = workflowDefinitionJSON.get("title").textValue();
             assertTrue(title.length() > 0);
 
             assertTrue(workflowDefinitionJSON.has("description"));
-            String description = workflowDefinitionJSON.getString("description");
+            String description = workflowDefinitionJSON.get("description").textValue();
             assertTrue(description.length() > 0);
 
-            if(adhocDefName.equals(workflowDefinitionJSON.getString("name"))) 
+            if(adhocDefName.equals(workflowDefinitionJSON.get("name"))) 
             {
                 assertEquals(getAdhocWorkflowDefinitionTitle(), title);
                 assertEquals(getAdhocWorkflowDefinitionDescription(), description);
@@ -936,16 +939,16 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         String exclude = adhocDefName;
         response = sendRequest(new GetRequest(URL_WORKFLOW_DEFINITIONS + "?exclude=" + exclude), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
-        json = new JSONObject(response.getContentAsString());
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
         
         adhocWorkflowPresent = false;
-        for (int i = 0; i < results.length(); i++)
+        for (int i = 0; i < results.size(); i++)
         {
-            JSONObject workflowDefinitionJSON = results.getJSONObject(i);
+            JsonNode workflowDefinitionJSON = results.get(i);
             
-            String name = workflowDefinitionJSON.getString("name");
+            String name = workflowDefinitionJSON.get("name").textValue();
             if (exclude.equals(name))
             {
                 adhocWorkflowPresent = true;
@@ -959,16 +962,16 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         exclude = adhocDefName;
         response = sendRequest(new GetRequest(URL_WORKFLOW_DEFINITIONS + "?exclude=" + exclude), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
-        json = new JSONObject(response.getContentAsString());
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
         
         adhocWorkflowPresent = false;
-        for (int i = 0; i < results.length(); i++)
+        for (int i = 0; i < results.size(); i++)
         {
-            JSONObject workflowDefinitionJSON = results.getJSONObject(i);
+            JsonNode workflowDefinitionJSON = results.get(i);
             
-            String name = workflowDefinitionJSON.getString("name");
+            String name = workflowDefinitionJSON.get("name").textValue();
             if (name.equals(adhocDefName))
             {
                 adhocWorkflowPresent = true;
@@ -988,62 +991,62 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         String responseUrl = MessageFormat.format(URL_WORKFLOW_DEFINITION, wDef.getId());
 
         Response response = sendRequest(new GetRequest(responseUrl), Status.STATUS_OK);
-        JSONObject json = new JSONObject(response.getContentAsString());
-        JSONObject workflowDefinitionJSON = json.getJSONObject("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        JsonNode workflowDefinitionJSON = json.get("data");
         assertNotNull(workflowDefinitionJSON);
         
         // Check fields
         assertTrue(workflowDefinitionJSON.has("id"));
-        assertTrue(workflowDefinitionJSON.getString("id").length() > 0);
+        assertTrue(workflowDefinitionJSON.get("id").size() > 0);
 
         assertTrue(workflowDefinitionJSON.has("url"));
-        String url = workflowDefinitionJSON.getString("url");
+        String url = workflowDefinitionJSON.get("url").textValue();
         assertTrue(url.length() > 0);
         assertTrue(url.startsWith("api/workflow-definitions/"));
 
         assertTrue(workflowDefinitionJSON.has("name"));
-        assertTrue(workflowDefinitionJSON.getString("name").length() > 0);
-        assertEquals(getAdhocWorkflowDefinitionName(), workflowDefinitionJSON.getString("name"));
+        assertTrue(workflowDefinitionJSON.get("name").size() > 0);
+        assertEquals(getAdhocWorkflowDefinitionName(), workflowDefinitionJSON.get("name"));
 
         assertTrue(workflowDefinitionJSON.has("title"));
-        assertTrue(workflowDefinitionJSON.getString("title").length() > 0);
+        assertTrue(workflowDefinitionJSON.get("title").size() > 0);
 
         assertTrue(workflowDefinitionJSON.has("description"));
-        assertTrue(workflowDefinitionJSON.getString("description").length() > 0);
+        assertTrue(workflowDefinitionJSON.get("description").size() > 0);
         
         assertTrue(workflowDefinitionJSON.has("startTaskDefinitionUrl"));
-        String startTaskDefUrl = workflowDefinitionJSON.getString("startTaskDefinitionUrl");
+        String startTaskDefUrl = workflowDefinitionJSON.get("startTaskDefinitionUrl").textValue();
         assertEquals(startTaskDefUrl, "api/classes/" + getSafeDefinitionName(ADHOC_START_TASK_TYPE));
         
         assertTrue(workflowDefinitionJSON.has("startTaskDefinitionType"));
-        assertEquals(ADHOC_START_TASK_TYPE, workflowDefinitionJSON.getString("startTaskDefinitionType"));
+        assertEquals(ADHOC_START_TASK_TYPE, workflowDefinitionJSON.get("startTaskDefinitionType"));
         
         // Check task-definitions
-        JSONArray taskDefinitions = workflowDefinitionJSON.getJSONArray("taskDefinitions");
+        ArrayNode taskDefinitions = (ArrayNode) workflowDefinitionJSON.get("taskDefinitions");
         assertNotNull(taskDefinitions);
         
         // Two task definitions should be returned. Start-task is not included
-        assertEquals(2, taskDefinitions.length());
+        assertEquals(2, taskDefinitions.size());
         
         // Should be adhoc-task
-        JSONObject firstTaskDefinition  = (JSONObject) taskDefinitions.get(0);
+        JsonNode firstTaskDefinition  = (JsonNode) taskDefinitions.get(0);
         checkTaskDefinitionTypeAndUrl(ADHOC_TASK_TYPE, firstTaskDefinition);
                 
         // Should be adhoc completed task
-        JSONObject secondTaskDefinition  = (JSONObject) taskDefinitions.get(1);
+        JsonNode secondTaskDefinition  = (JsonNode) taskDefinitions.get(1);
         checkTaskDefinitionTypeAndUrl(ADHOC_TASK_COMPLETED_TYPE, secondTaskDefinition);
     }
     
-    private void checkTaskDefinitionTypeAndUrl(String expectedTaskType, JSONObject taskDefinition) throws Exception
+    private void checkTaskDefinitionTypeAndUrl(String expectedTaskType, JsonNode taskDefinition) throws Exception
     {
         // Check type
         assertTrue(taskDefinition.has("type"));
-        assertEquals(expectedTaskType, taskDefinition.getString("type"));
+        assertEquals(expectedTaskType, taskDefinition.get("type"));
         
         // Check URL
         assertTrue(taskDefinition.has("url"));
         assertEquals("api/classes/" + 
-                    getSafeDefinitionName(expectedTaskType), taskDefinition.getString("url"));
+                    getSafeDefinitionName(expectedTaskType), taskDefinition.get("url"));
     }
 
     private String getSafeDefinitionName(String definitionName) 
@@ -1077,45 +1080,45 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         Response response = sendRequest(new GetRequest(URL_WORKFLOW_INSTANCES + "/" + adhocInstance.getId() + "?includeTasks=true"), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONObject result = json.getJSONObject("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        JsonNode result = json.get("data");
         assertNotNull(result);
 
-        assertEquals(adhocInstance.getId(), result.getString("id"));
-        assertTrue(result.opt("message").equals(JSONObject.NULL));
-        assertEquals(adhocInstance.getDefinition().getName(), result.getString("name"));
-        assertEquals(adhocInstance.getDefinition().getTitle(), result.getString("title"));
-        assertEquals(adhocInstance.getDefinition().getDescription(), result.getString("description"));
-        assertEquals(adhocInstance.isActive(), result.getBoolean("isActive"));
-        assertEquals(org.springframework.extensions.surf.util.ISO8601DateFormat.format(adhocInstance.getStartDate()), result.getString("startDate"));
+        assertEquals(adhocInstance.getId(), result.get("id"));
+        assertTrue(result.get("message").equals(NullNode.getInstance()));
+        assertEquals(adhocInstance.getDefinition().getName(), result.get("name"));
+        assertEquals(adhocInstance.getDefinition().getTitle(), result.get("title"));
+        assertEquals(adhocInstance.getDefinition().getDescription(), result.get("description"));
+        assertEquals(adhocInstance.isActive(), result.get("isActive"));
+        assertEquals(org.springframework.extensions.surf.util.ISO8601DateFormat.format(adhocInstance.getStartDate()), result.get("startDate"));
         assertNotNull(result.get("dueDate"));
         assertNotNull(result.get("endDate"));
-        assertEquals(1, result.getInt("priority"));
-        JSONObject initiator = result.getJSONObject("initiator");
+        assertEquals(1, result.get("priority"));
+        JsonNode initiator = result.get("initiator");
 
-        assertEquals(USER1, initiator.getString("userName"));
-        assertEquals(personManager.getFirstName(USER1), initiator.getString("firstName"));
-        assertEquals(personManager.getLastName(USER1), initiator.getString("lastName"));
+        assertEquals(USER1, initiator.get("userName"));
+        assertEquals(personManager.getFirstName(USER1), initiator.get("firstName"));
+        assertEquals(personManager.getLastName(USER1), initiator.get("lastName"));
 
-        assertEquals(adhocInstance.getContext().toString(), result.getString("context"));
-        assertEquals(adhocInstance.getWorkflowPackage().toString(), result.getString("package"));
-        assertNotNull(result.getString("startTaskInstanceId"));
+        assertEquals(adhocInstance.getContext().toString(), result.get("context"));
+        assertEquals(adhocInstance.getWorkflowPackage().toString(), result.get("package"));
+        assertNotNull(result.get("startTaskInstanceId"));
 
-        JSONObject jsonDefinition = result.getJSONObject("definition");
+        JsonNode jsonDefinition = result.get("definition");
         WorkflowDefinition adhocDefinition = adhocInstance.getDefinition();
 
         assertNotNull(jsonDefinition);
 
-        assertEquals(adhocDefinition.getId(), jsonDefinition.getString("id"));
-        assertEquals(adhocDefinition.getName(), jsonDefinition.getString("name"));
-        assertEquals(adhocDefinition.getTitle(), jsonDefinition.getString("title"));
-        assertEquals(adhocDefinition.getDescription(), jsonDefinition.getString("description"));
-        assertEquals(adhocDefinition.getVersion(), jsonDefinition.getString("version"));
-        assertEquals(adhocDefinition.getStartTaskDefinition().getMetadata().getName().toPrefixString(namespaceService), jsonDefinition.getString("startTaskDefinitionType"));
+        assertEquals(adhocDefinition.getId(), jsonDefinition.get("id"));
+        assertEquals(adhocDefinition.getName(), jsonDefinition.get("name"));
+        assertEquals(adhocDefinition.getTitle(), jsonDefinition.get("title"));
+        assertEquals(adhocDefinition.getDescription(), jsonDefinition.get("description"));
+        assertEquals(adhocDefinition.getVersion(), jsonDefinition.get("version"));
+        assertEquals(adhocDefinition.getStartTaskDefinition().getMetadata().getName().toPrefixString(namespaceService), jsonDefinition.get("startTaskDefinitionType"));
         assertTrue(jsonDefinition.has("taskDefinitions"));
 
-        JSONArray tasks = result.getJSONArray("tasks");
-        assertTrue(tasks.length() > 1);
+        ArrayNode tasks = (ArrayNode) result.get("tasks");
+        assertTrue(tasks.size() > 1);
     }
 
     public void testWorkflowInstancesGet() throws Exception
@@ -1146,26 +1149,26 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         Response response = sendRequest(new GetRequest(URL_WORKFLOW_INSTANCES), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray result = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode result = (ArrayNode) json.get("data");
         assertNotNull(result);
 
-        int totalItems = result.length();
-        for (int i = 0; i < result.length(); i++)
+        int totalItems = result.size();
+        for (int i = 0; i < result.size(); i++)
         {
-            checkSimpleWorkflowInstanceResponse(result.getJSONObject(i));
+            checkSimpleWorkflowInstanceResponse(result.get(i));
         }
 
         Response forDefinitionResponse = sendRequest(new GetRequest(MessageFormat.format(URL_WORKFLOW_INSTANCES_FOR_DEFINITION, adhocDef.getId())), 200);
         assertEquals(Status.STATUS_OK, forDefinitionResponse.getStatus());
         String forDefinitionJsonStr = forDefinitionResponse.getContentAsString();
-        JSONObject forDefinitionJson = new JSONObject(forDefinitionJsonStr);
-        JSONArray forDefinitionResult = forDefinitionJson.getJSONArray("data");
+        JsonNode forDefinitionJson = AlfrescoDefaultObjectMapper.getReader().readTree(forDefinitionJsonStr);
+        ArrayNode forDefinitionResult = (ArrayNode) forDefinitionJson.get("data");
         assertNotNull(forDefinitionResult);
 
-        for (int i = 0; i < forDefinitionResult.length(); i++)
+        for (int i = 0; i < forDefinitionResult.size(); i++)
         {
-            checkSimpleWorkflowInstanceResponse(forDefinitionResult.getJSONObject(i));
+            checkSimpleWorkflowInstanceResponse(forDefinitionResult.get(i));
         }
         
         // create a date an hour ago to test filtering
@@ -1224,16 +1227,16 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         response = sendRequest(new GetRequest(URL_WORKFLOW_INSTANCES + "?exclude=" + exclude), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        JSONArray results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
         
         boolean adhocWorkflowPresent = false;
-        for (int i = 0; i < results.length(); i++)
+        for (int i = 0; i < results.size(); i++)
         {
-            JSONObject workflowInstanceJSON = results.getJSONObject(i);
+            JsonNode workflowInstanceJSON = results.get(i);
             
-            String type = workflowInstanceJSON.getString("name");
+            String type = workflowInstanceJSON.get("name").textValue();
             if (exclude.equals(type))
             {
                 adhocWorkflowPresent = true;
@@ -1267,11 +1270,11 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         assertEquals(Status.STATUS_OK, response.getStatus());
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray result = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode result = (ArrayNode) json.get("data");
         assertNotNull(result);
 
-        assertTrue(result.length() > 0);
+        assertTrue(result.size() > 0);
 
         workflowService.cancelWorkflow(adhocPath.getInstance().getId());
 
@@ -1279,11 +1282,11 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         assertEquals(Status.STATUS_OK, afterCancelResponse.getStatus());
         String afterCancelJsonStr = afterCancelResponse.getContentAsString();
-        JSONObject afterCancelJson = new JSONObject(afterCancelJsonStr);
-        JSONArray afterCancelResult = afterCancelJson.getJSONArray("data");
+        JsonNode afterCancelJson = AlfrescoDefaultObjectMapper.getReader().readTree(afterCancelJsonStr);
+        ArrayNode afterCancelResult = (ArrayNode) afterCancelJson.get("data");
         assertNotNull(afterCancelResult);
 
-        assertTrue(afterCancelResult.length() == 0);
+        assertTrue(afterCancelResult.size() == 0);
     }
     
     public void testWorkflowInstanceDeleteAsAdministrator() throws Exception
@@ -1455,12 +1458,12 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         Response response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER2)), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray results = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
 
-        String taskId = results.getJSONObject(0).getString("id");
+        String taskId = results.get(0).get("id").textValue();
 
         // Delegate approval/rejection to implementing engine-test
         if (approve)
@@ -1477,13 +1480,13 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER1)), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
 
         // Correct task type check
-        String taskType = results.getJSONObject(0).getString("name");
+        String taskType = results.get(0).get("name").textValue();
         if (approve)
         {
             assertEquals("wf:approvedTask", taskType);
@@ -1525,10 +1528,10 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         Response response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER3)), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray results = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(0, results.length());
+        assertEquals(0, results.size());
 
         // Check if task is available in list of reviewer, member of GROUP:
         // USER2
@@ -1536,19 +1539,19 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER2)), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
 
         // Check if task is claimable and pooled
-        JSONObject taskJson = results.getJSONObject(0);
-        String taskId = taskJson.getString("id");
-        assertTrue(taskJson.getBoolean("isClaimable"));
-        assertTrue(taskJson.getBoolean("isPooled"));
+        JsonNode taskJson = results.get(0);
+        String taskId = taskJson.get("id").textValue();
+        assertTrue(taskJson.get("isClaimable").booleanValue());
+        assertTrue(taskJson.get("isPooled").booleanValue());
 
         // Claim task, using PUT, updating the owner
-        JSONObject properties = new JSONObject();
+        ObjectNode properties = AlfrescoDefaultObjectMapper.createObjectNode();
         properties.put(qnameToString(ContentModel.PROP_OWNER), USER2);
         sendRequest(new PutRequest(URL_TASKS + "/" + taskId, properties.toString(), "application/json"), 200);
 
@@ -1556,14 +1559,14 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER2)), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
 
-        taskJson = results.getJSONObject(0);
-        assertFalse(taskJson.getBoolean("isClaimable"));
-        assertTrue(taskJson.getBoolean("isPooled"));
+        taskJson = results.get(0);
+        assertFalse(taskJson.get("isClaimable").booleanValue());
+        assertTrue(taskJson.get("isPooled").booleanValue());
 
         // Delegate approval/rejection to implementing engine-test
         if (approve)
@@ -1580,13 +1583,13 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         response = sendRequest(new GetRequest(MessageFormat.format(URL_USER_TASKS, USER1)), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
 
         // Correct task type check
-        String taskType = results.getJSONObject(0).getString("name");
+        String taskType = results.get(0).get("name").textValue();
         if (approve)
         {
             assertEquals("wf:approvedTask", taskType);
@@ -1686,17 +1689,19 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         return qName.toPrefixString(namespaceService).replaceFirst(separator, "_");
     }
 
-    private void compareProperties(JSONObject before, JSONObject after) throws JSONException
+    private void compareProperties(JsonNode before, JsonNode after)
     {
-        for (String name : JSONObject.getNames(after))
+        Iterator<String> iterator = after.fieldNames();
+        while(iterator.hasNext())
         {
+            String name = iterator.next();
             if (before.has(name))
             {
-                if (before.get(name) instanceof JSONArray)
+                if (before.get(name) instanceof ArrayNode)
                 {
-                    for (int i = 0; i < before.getJSONArray(name).length(); i++)
+                    for (int i = 0; i < before.get(name).size(); i++)
                     {
-                        assertEquals(before.getJSONArray(name).get(i), after.getJSONArray(name).get(i));
+                        assertEquals(before.get(name).get(i), after.get(name).get(i));
                     }
                 }
                 else
@@ -1707,69 +1712,69 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         }
     }
 
-    private void checkSimpleWorkflowInstanceResponse(JSONObject json) throws JSONException
+    private void checkSimpleWorkflowInstanceResponse(JsonNode json)
     {
         assertTrue(json.has("id"));
-        assertTrue(json.getString("id").length() > 0);
+        assertTrue(json.get("id").textValue().length() > 0);
 
         assertTrue(json.has("url"));
-        assertTrue(json.getString("url").startsWith(URL_WORKFLOW_INSTANCES));
+        assertTrue(json.get("url").textValue().startsWith(URL_WORKFLOW_INSTANCES));
 
         assertTrue(json.has("name"));
-        assertTrue(json.getString("name").length() > 0);
+        assertTrue(json.get("name").size() > 0);
 
         assertTrue(json.has("title"));
-        assertTrue(json.getString("title").length() > 0);
+        assertTrue(json.get("title").size() > 0);
 
         assertTrue(json.has("description"));
-        assertTrue(json.getString("description").length() > 0);
+        assertTrue(json.get("description").size() > 0);
 
         assertTrue(json.has("isActive"));
 
         assertTrue(json.has("startDate"));
-        assertTrue(json.getString("startDate").length() > 0);
+        assertTrue(json.get("startDate").size() > 0);
 
         assertTrue(json.has("endDate"));
 
         assertTrue(json.has("initiator"));
         Object initiator = json.get("initiator");
-        if (!initiator.equals(JSONObject.NULL))
+        if (!initiator.equals(NullNode.getInstance()))
         {
-            assertTrue(((JSONObject) initiator).has("userName"));
-            assertTrue(((JSONObject) initiator).has("firstName"));
-            assertTrue(((JSONObject) initiator).has("lastName"));
+            assertTrue(((JsonNode) initiator).has("userName"));
+            assertTrue(((JsonNode) initiator).has("firstName"));
+            assertTrue(((JsonNode) initiator).has("lastName"));
         }
 
         assertTrue(json.has("definitionUrl"));
-        assertTrue(json.getString("definitionUrl").startsWith(URL_WORKFLOW_DEFINITIONS));
+        assertTrue(json.get("definitionUrl").textValue().startsWith(URL_WORKFLOW_DEFINITIONS));
     }
 
     private void checkPriorityFiltering(String url) throws Exception 
     {
-        JSONObject json = getDataFromRequest(url);
-        JSONArray result = json.getJSONArray("data");
+        JsonNode json = getDataFromRequest(url);
+        ArrayNode result = (ArrayNode) json.get("data");
         assertNotNull(result);
-        assertTrue(result.length() > 0);
+        assertTrue(result.size() > 0);
 
-        for (int i=0; i<result.length(); i++)
+        for (int i=0; i<result.size(); i++)
         {
-            JSONObject taskObject = result.getJSONObject(i);
-            assertEquals(2, taskObject.getJSONObject("properties").get("bpm_priority"));
+            JsonNode taskObject = result.get(i);
+            assertEquals(2, taskObject.get("properties").get("bpm_priority"));
         }
     }
     
     private void checkTasksPresent(String url, boolean mustBePresent, String... ids) throws Exception 
     {
         List<String> taskIds = Arrays.asList(ids);
-        JSONObject json = getDataFromRequest(url);
-        JSONArray result = json.getJSONArray("data");
+        JsonNode json = getDataFromRequest(url);
+        ArrayNode result = (ArrayNode) json.get("data");
         assertNotNull(result);
 
-        ArrayList<String> resultIds = new ArrayList<String>(result.length());
-        for (int i=0; i<result.length(); i++)
+        ArrayList<String> resultIds = new ArrayList<String>(result.size());
+        for (int i=0; i<result.size(); i++)
         {
-            JSONObject taskObject = result.getJSONObject(i);
-            String taskId = taskObject.getString("id");
+            JsonNode taskObject = result.get(i);
+            String taskId = taskObject.get("id").textValue();
             resultIds.add(taskId);
             if (mustBePresent == false && taskIds.contains(taskId))
             {
@@ -1785,15 +1790,15 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
     private void checkTasksMatch(String url, String... ids) throws Exception 
     {
         List<String> taskIds = Arrays.asList(ids);
-        JSONObject json = getDataFromRequest(url);
-        JSONArray result = json.getJSONArray("data");
+        JsonNode json = getDataFromRequest(url);
+        ArrayNode result = (ArrayNode) json.get("data");
         assertNotNull(result);
         
-        ArrayList<String> resultIds = new ArrayList<String>(result.length());
-        for (int i=0; i<result.length(); i++)
+        ArrayList<String> resultIds = new ArrayList<String>(result.size());
+        for (int i=0; i<result.size(); i++)
         {
-            JSONObject taskObject = result.getJSONObject(i);
-            String taskId = taskObject.getString("id");
+            JsonNode taskObject = result.get(i);
+            String taskId = taskObject.get("id").textValue();
             resultIds.add(taskId);
         }
         assertTrue("Expected: "+taskIds +"\nActual: "+resultIds, resultIds.containsAll(taskIds));
@@ -1802,33 +1807,33 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
     
     private void checkTasksState(String url, WorkflowTaskState expectedState) throws Exception 
     {
-        JSONObject json = getDataFromRequest(url);
-        JSONArray result = json.getJSONArray("data");
+        JsonNode json = getDataFromRequest(url);
+        ArrayNode result = (ArrayNode) json.get("data");
         assertNotNull(result);
 
-        for (int i=0; i<result.length(); i++)
+        for (int i=0; i<result.size(); i++)
         {
-            JSONObject taskObject = result.getJSONObject(i);
-            String state = taskObject.getString("state");
+            JsonNode taskObject = result.get(i);
+            String state = taskObject.get("state").textValue();
             assertEquals(expectedState.toString(), state);
         }
     }
 
-    private JSONObject getDataFromRequest(String url) throws Exception
+    private JsonNode getDataFromRequest(String url) throws Exception
     {
         Response response = sendRequest(new GetRequest(url), Status.STATUS_OK);
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
         return json;
     }
     
     private void checkTaskPropertyFiltering(String propertiesParamValue, List<String> expectedProperties) throws Exception
     {
-        JSONObject data = getDataFromRequest(MessageFormat.format(URL_USER_TASKS_PROPERTIES, USER2, propertiesParamValue));
-        JSONArray taskArray = data.getJSONArray("data");
-        assertEquals(1, taskArray.length());
+        JsonNode data = getDataFromRequest(MessageFormat.format(URL_USER_TASKS_PROPERTIES, USER2, propertiesParamValue));
+        ArrayNode taskArray = (ArrayNode) data.get("data");
+        assertEquals(1, taskArray.size());
 
-        JSONObject taskProperties = taskArray.getJSONObject(0).getJSONObject("properties");
+        JsonNode taskProperties = taskArray.get(0).get("properties");
         assertNotNull(taskProperties);
 
         int expectedNumberOfProperties = 0;
@@ -1837,7 +1842,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
             expectedNumberOfProperties = expectedProperties.size();
         }
         // Check right number of properties
-        assertEquals(expectedNumberOfProperties, taskProperties.length());
+        assertEquals(expectedNumberOfProperties, taskProperties.size());
 
         // Check if all properties are present
         if (expectedProperties != null)
@@ -1851,11 +1856,11 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
     
     private void checkFiltering(String url) throws Exception
     {
-        JSONObject json = getDataFromRequest(url);
-        JSONArray result = json.getJSONArray("data");
+        JsonNode json = getDataFromRequest(url);
+        ArrayNode result = (ArrayNode) json.get("data");
         assertNotNull(result);
 
-        assertTrue(result.length() > 0);
+        assertTrue(result.size() > 0);
     }
     
     private void checkPaging(String url, int totalItems, int maxItems, int skipCount) throws Exception
@@ -1864,29 +1869,29 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         assertEquals(Status.STATUS_OK, response.getStatus());
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
         
-        JSONArray data = json.getJSONArray("data");
-        JSONObject paging = json.getJSONObject("paging");
+        ArrayNode data = (ArrayNode) json.get("data");
+        JsonNode paging = json.get("paging");
         
         assertNotNull(data);
         assertNotNull(paging);
 
-        assertTrue(data.length() >= 0);
-        assertTrue(data.length() <= maxItems);
+        assertTrue(data.size() >= 0);
+        assertTrue(data.size() <= maxItems);
         
-        assertEquals(totalItems, paging.getInt("totalItems"));
-        assertEquals(maxItems, paging.getInt("maxItems"));
-        assertEquals(skipCount, paging.getInt("skipCount"));
+        assertEquals(totalItems, paging.get("totalItems"));
+        assertEquals(maxItems, paging.get("maxItems"));
+        assertEquals(skipCount, paging.get("skipCount"));
     }
 
-    private JSONArray getJsonArray(Response response, int expectedLength) throws Exception
+    private ArrayNode getJsonArray(Response response, int expectedLength) throws Exception
     {
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray results = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(expectedLength, results.length());
+        assertEquals(expectedLength, results.size());
         return results;
     }
 

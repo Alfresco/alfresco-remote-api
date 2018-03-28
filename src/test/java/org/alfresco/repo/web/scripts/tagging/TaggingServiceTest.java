@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.tagging;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.model.Repository;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
@@ -39,12 +40,12 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.tagging.TaggingService;
 import org.alfresco.util.GUID;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.testing.category.LuceneTests;
 import org.alfresco.util.testing.category.RedundantTests;
 import org.junit.experimental.categories.Category;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
-import org.json.JSONArray;
 
 /**
  * Unit test to test tagging Web Script API
@@ -150,49 +151,49 @@ public class TaggingServiceTest extends BaseWebScriptTest
         throws Exception
     {
         Response response = sendRequest(new GetRequest("/api/tags/" + StoreRef.PROTOCOL_WORKSPACE + "/SpacesStore"), 200);
-        JSONArray jsonArray = new JSONArray(response.getContentAsString());
+        ArrayNode jsonArray = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // make sure there are results
         assertNotNull(jsonArray);
-        assertTrue(jsonArray.length() > 0);
+        assertTrue(jsonArray.size() > 0);
         
         response = sendRequest(new GetRequest("/api/tags/" + StoreRef.PROTOCOL_WORKSPACE + "/SpacesStore?tf=one"), 200);
-        jsonArray = new JSONArray(response.getContentAsString());
+        jsonArray = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // make sure there are results
         assertNotNull(jsonArray);
-        assertTrue(jsonArray.length() > 0);
+        assertTrue(jsonArray.size() > 0);
         
         response = sendRequest(new GetRequest("/api/tags/" + StoreRef.PROTOCOL_WORKSPACE + "/SpacesStore?tf=none"), 200);
-        jsonArray = new JSONArray(response.getContentAsString());
+        jsonArray = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // make sure there are no results
         assertNotNull(jsonArray);
-        assertEquals(0, jsonArray.length());
+        assertEquals(0, jsonArray.size());
     }
     
     public void testGetNodes()
         throws Exception
     {
         Response response = sendRequest(new GetRequest("/api/tags/" + StoreRef.PROTOCOL_WORKSPACE + "/SpacesStore/" + TAG_1 + "/nodes"), 200);
-        JSONArray jsonArray = new JSONArray(response.getContentAsString());
+        ArrayNode jsonArray = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         assertNotNull(jsonArray);
-        assertEquals(1, jsonArray.length());
+        assertEquals(1, jsonArray.size());
         
         System.out.println(response.getContentAsString());
         
         response = sendRequest(new GetRequest("/api/tags/" + StoreRef.PROTOCOL_WORKSPACE + "/SpacesStore/" + TAG_2 + "/nodes"), 200);
-        jsonArray = new JSONArray(response.getContentAsString());
+        jsonArray = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         assertNotNull(jsonArray);
-        assertEquals(2, jsonArray.length());
+        assertEquals(2, jsonArray.size());
         
         response = sendRequest(new GetRequest("/api/tags/" + StoreRef.PROTOCOL_WORKSPACE + "/SpacesStore/jumk/nodes"), 200);
-        jsonArray = new JSONArray(response.getContentAsString());
+        jsonArray = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         assertNotNull(jsonArray);
-        assertEquals(0, jsonArray.length());
+        assertEquals(0, jsonArray.size());
         
     }
     

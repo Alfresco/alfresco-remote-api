@@ -25,10 +25,10 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import org.json.simple.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public interface FavouritesTarget extends ExpectedComparison
 {
-	JSONObject toJSON();
+	ObjectNode toJSON();
 	String getTargetGuid();
 }

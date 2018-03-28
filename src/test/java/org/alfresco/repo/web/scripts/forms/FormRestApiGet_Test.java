@@ -25,23 +25,24 @@
  */
 package org.alfresco.repo.web.scripts.forms;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.alfresco.service.cmr.repository.NodeRef;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
 import org.springframework.extensions.webscripts.json.JSONUtils;
 
 public class FormRestApiGet_Test extends AbstractTestFormRestApi 
 {
-    protected JSONObject createItemJSON(NodeRef nodeRef) throws Exception
+    protected ObjectNode createItemJSON(NodeRef nodeRef) throws Exception
     {
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         
         jsonPostData.put("itemKind", "node");
         
@@ -55,7 +56,7 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
     
     public void testResponseContentType() throws Exception
     {
-        JSONObject jsonPostData = createItemJSON(this.referencingDocNodeRef);
+        JsonNode jsonPostData = createItemJSON(this.referencingDocNodeRef);
         String jsonPostString = jsonPostData.toString();
         Response rsp = sendRequest(new PostRequest(FORM_DEF_URL, 
                     jsonPostString, APPLICATION_JSON), 200);
@@ -70,7 +71,7 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
         NodeRef missingNodeRef = new NodeRef(this.referencingDocNodeRef.getStoreRef(), 
                     missingId);
         
-        JSONObject jsonPostData = createItemJSON(missingNodeRef);
+        JsonNode jsonPostData = createItemJSON(missingNodeRef);
         String jsonPostString = jsonPostData.toString();
         Response rsp = sendRequest(new PostRequest(FORM_DEF_URL, 
                     jsonPostString, APPLICATION_JSON), 404);
@@ -79,7 +80,7 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
 
     public void testJsonContentParsesCorrectly() throws Exception
     {
-        JSONObject jsonPostData = createItemJSON(this.referencingDocNodeRef);
+        JsonNode jsonPostData = createItemJSON(this.referencingDocNodeRef);
         String jsonPostString = jsonPostData.toString();
         Response rsp = sendRequest(new PostRequest(FORM_DEF_URL, 
                     jsonPostString, APPLICATION_JSON), 200);
@@ -91,25 +92,25 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
 
     public void testJsonUpperStructure() throws Exception
     {
-        JSONObject jsonPostData = createItemJSON(this.referencingDocNodeRef);
+        JsonNode jsonPostData = createItemJSON(this.referencingDocNodeRef);
         String jsonPostString = jsonPostData.toString();
         Response rsp = sendRequest(new PostRequest(FORM_DEF_URL, 
                     jsonPostString, APPLICATION_JSON), 200);
         String jsonResponseString = rsp.getContentAsString();
         
-        JSONObject jsonParsedObject = new JSONObject(new JSONTokener(jsonResponseString));
+        JsonNode jsonParsedObject = AlfrescoDefaultObjectMapper.getReader().readTree(jsonResponseString);
         assertNotNull(jsonParsedObject);
         
         Object dataObj = jsonParsedObject.get("data");
-        assertEquals(JSONObject.class, dataObj.getClass());
-        JSONObject rootDataObject = (JSONObject)dataObj;
+        assertEquals(JsonNode.class, dataObj.getClass());
+        JsonNode rootDataObject = (JsonNode) dataObj;
 
-        assertEquals(5, rootDataObject.length());
-        String item = (String)rootDataObject.get("item");
-        String submissionUrl = (String)rootDataObject.get("submissionUrl");
-        String type = (String)rootDataObject.get("type");
-        JSONObject definitionObject = (JSONObject)rootDataObject.get("definition");
-        JSONObject formDataObject = (JSONObject)rootDataObject.get("formData");
+        assertEquals(5, rootDataObject.size());
+        String item = rootDataObject.get("item").textValue();
+        String submissionUrl = rootDataObject.get("submissionUrl").textValue();
+        String type = rootDataObject.get("type").textValue();
+        JsonNode definitionObject = rootDataObject.get("definition");
+        JsonNode formDataObject = rootDataObject.get("formData");
         
         assertNotNull(item);
         assertNotNull(submissionUrl);
@@ -121,20 +122,20 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
     @SuppressWarnings("unchecked")
     public void testJsonFormData() throws Exception
     {
-        JSONObject jsonPostData = createItemJSON(this.referencingDocNodeRef);
+        JsonNode jsonPostData = createItemJSON(this.referencingDocNodeRef);
         String jsonPostString = jsonPostData.toString();
         Response rsp = sendRequest(new PostRequest(FORM_DEF_URL, 
                     jsonPostString, APPLICATION_JSON), 200);
         String jsonResponseString = rsp.getContentAsString();
 
-        JSONObject jsonParsedObject = new JSONObject(new JSONTokener(jsonResponseString));
+        JsonNode jsonParsedObject = AlfrescoDefaultObjectMapper.getReader().readTree(jsonResponseString);
         assertNotNull(jsonParsedObject);
         
-        JSONObject rootDataObject = (JSONObject)jsonParsedObject.get("data");
+        JsonNode rootDataObject = jsonParsedObject.get("data");
         
-        JSONObject formDataObject = (JSONObject)rootDataObject.get("formData");
+        JsonNode formDataObject = rootDataObject.get("formData");
         List<String> keys = new ArrayList<String>();
-        for (Iterator iter = formDataObject.keys(); iter.hasNext(); )
+        for (Iterator iter = formDataObject.fieldNames(); iter.hasNext(); )
         {
             String nextFieldName = (String)iter.next();
             assertEquals("Did not expect to find a colon char in " + nextFieldName,
@@ -152,28 +153,26 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
     @SuppressWarnings("unchecked")
     public void testJsonDefinitionFields() throws Exception
     {
-        JSONObject jsonPostData = createItemJSON(this.referencingDocNodeRef);
+        JsonNode jsonPostData = createItemJSON(this.referencingDocNodeRef);
         String jsonPostString = jsonPostData.toString();
         Response rsp = sendRequest(new PostRequest(FORM_DEF_URL, 
                     jsonPostString, APPLICATION_JSON), 200);
         String jsonResponseString = rsp.getContentAsString();
         
-        JSONObject jsonParsedObject = new JSONObject(new JSONTokener(jsonResponseString));
+        JsonNode jsonParsedObject = AlfrescoDefaultObjectMapper.getReader().readTree(jsonResponseString);
         assertNotNull(jsonParsedObject);
         
-        JSONObject rootDataObject = (JSONObject)jsonParsedObject.get("data");
+        JsonNode rootDataObject = jsonParsedObject.get("data");
         
-        JSONObject definitionObject = (JSONObject)rootDataObject.get("definition");
+        JsonNode definitionObject = rootDataObject.get("definition");
         
-        JSONArray fieldsArray = (JSONArray)definitionObject.get("fields");
+        ArrayNode fieldsArray = (ArrayNode) definitionObject.get("fields");
         
-        for (int i = 0; i < fieldsArray.length(); i++)
+        for (int i = 0; i < fieldsArray.size(); i++)
         {
-            Object nextObj = fieldsArray.get(i);
-            
-            JSONObject nextJsonObject = (JSONObject)nextObj;
+            JsonNode nextJsonObject = fieldsArray.get(i);
             List<String> fieldKeys = new ArrayList<String>();
-            for (Iterator iter2 = nextJsonObject.keys(); iter2.hasNext(); )
+            for (Iterator iter2 = nextJsonObject.fieldNames(); iter2.hasNext(); )
             {
                 fieldKeys.add((String)iter2.next());
             }
@@ -189,12 +188,12 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
     
     public void testJsonSelectedFields() throws Exception
     {
-        JSONObject jsonPostData = createItemJSON(this.referencingDocNodeRef);
-        JSONArray jsonFields = new JSONArray();
-        jsonFields.put("cm:name");
-        jsonFields.put("cm:title");
-        jsonFields.put("cm:publisher");
-        jsonPostData.put("fields", jsonFields);
+        ObjectNode jsonPostData = createItemJSON(this.referencingDocNodeRef);
+        ArrayNode jsonFields = AlfrescoDefaultObjectMapper.createArrayNode();
+        jsonFields.add("cm:name");
+        jsonFields.add("cm:title");
+        jsonFields.add("cm:publisher");
+        jsonPostData.set("fields", jsonFields);
         
         // Submit the JSON request.
         String jsonPostString = jsonPostData.toString();        
@@ -202,22 +201,22 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
                 APPLICATION_JSON), 200);
         
         String jsonResponseString = rsp.getContentAsString();
-        JSONObject jsonParsedObject = new JSONObject(new JSONTokener(jsonResponseString));
+        JsonNode jsonParsedObject = AlfrescoDefaultObjectMapper.getReader().readTree(jsonResponseString);
         assertNotNull(jsonParsedObject);
         
-        JSONObject rootDataObject = (JSONObject)jsonParsedObject.get("data");
-        JSONObject definitionObject = (JSONObject)rootDataObject.get("definition");
-        JSONArray fieldsArray = (JSONArray)definitionObject.get("fields");
-        assertEquals("Expected 2 fields", 2, fieldsArray.length());
+        JsonNode rootDataObject = jsonParsedObject.get("data");
+        JsonNode definitionObject = rootDataObject.get("definition");
+        ArrayNode fieldsArray = (ArrayNode)definitionObject.get("fields");
+        assertEquals("Expected 2 fields", 2, fieldsArray.size());
         
         // get the name and title definitions
-        JSONObject nameField = (JSONObject)fieldsArray.get(0);
-        JSONObject titleField = (JSONObject)fieldsArray.get(1);
-        String nameFieldDataKey = nameField.getString("dataKeyName");
-        String titleFieldDataKey = titleField.getString("dataKeyName");
+        JsonNode nameField = fieldsArray.get(0);
+        JsonNode titleField = fieldsArray.get(1);
+        String nameFieldDataKey = nameField.get("dataKeyName").textValue();
+        String titleFieldDataKey = titleField.get("dataKeyName").textValue();
         
         // get the data and check it
-        JSONObject formDataObject = (JSONObject)rootDataObject.get("formData");
+        JsonNode formDataObject = rootDataObject.get("formData");
         assertNotNull("Expected to find cm:name data", formDataObject.get(nameFieldDataKey));
         assertNotNull("Expected to find cm:title data", formDataObject.get(titleFieldDataKey));
         assertEquals(TEST_FORM_TITLE, formDataObject.get("prop_cm_title"));
@@ -225,19 +224,19 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
     
     public void testJsonForcedFields() throws Exception
     {
-        JSONObject jsonPostData = createItemJSON(this.referencingDocNodeRef);
+        ObjectNode jsonPostData = createItemJSON(this.referencingDocNodeRef);
         
-        JSONArray jsonFields = new JSONArray();
-        jsonFields.put("cm:name");
-        jsonFields.put("cm:title");
-        jsonFields.put("cm:publisher");
-        jsonFields.put("cm:wrong");
-        jsonPostData.put("fields", jsonFields);
+        ArrayNode jsonFields = AlfrescoDefaultObjectMapper.createArrayNode();
+        jsonFields.add("cm:name");
+        jsonFields.add("cm:title");
+        jsonFields.add("cm:publisher");
+        jsonFields.add("cm:wrong");
+        jsonPostData.set("fields", jsonFields);
         
-        JSONArray jsonForcedFields = new JSONArray();
-        jsonForcedFields.put("cm:publisher");
-        jsonForcedFields.put("cm:wrong");
-        jsonPostData.put("force", jsonForcedFields);
+        ArrayNode jsonForcedFields = AlfrescoDefaultObjectMapper.createArrayNode();
+        jsonForcedFields.add("cm:publisher");
+        jsonForcedFields.add("cm:wrong");
+        jsonPostData.set("force", jsonForcedFields);
         
         // Submit the JSON request.
         String jsonPostString = jsonPostData.toString();
@@ -245,22 +244,22 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
                 APPLICATION_JSON), 200);
         
         String jsonResponseString = rsp.getContentAsString();
-        JSONObject jsonParsedObject = new JSONObject(new JSONTokener(jsonResponseString));
+        JsonNode jsonParsedObject = AlfrescoDefaultObjectMapper.getReader().readTree(jsonResponseString);
         assertNotNull(jsonParsedObject);
         
-        JSONObject rootDataObject = (JSONObject)jsonParsedObject.get("data");
-        JSONObject definitionObject = (JSONObject)rootDataObject.get("definition");
-        JSONArray fieldsArray = (JSONArray)definitionObject.get("fields");
-        assertEquals("Expected 3 fields", 3, fieldsArray.length());
+        JsonNode rootDataObject = jsonParsedObject.get("data");
+        JsonNode definitionObject = rootDataObject.get("definition");
+        ArrayNode fieldsArray = (ArrayNode)definitionObject.get("fields");
+        assertEquals("Expected 3 fields", 3, fieldsArray.size());
         
         // get the name and title definitions
-        JSONObject nameField = (JSONObject)fieldsArray.get(0);
-        JSONObject titleField = (JSONObject)fieldsArray.get(1);
-        String nameFieldDataKey = nameField.getString("dataKeyName");
-        String titleFieldDataKey = titleField.getString("dataKeyName");
+        JsonNode nameField = fieldsArray.get(0);
+        JsonNode titleField = fieldsArray.get(1);
+        String nameFieldDataKey = nameField.get("dataKeyName").textValue();
+        String titleFieldDataKey = titleField.get("dataKeyName").textValue();
         
         // get the data and check it
-        JSONObject formDataObject = (JSONObject)rootDataObject.get("formData");
+        JsonNode formDataObject = rootDataObject.get("formData");
         assertNotNull("Expected to find cm:name data", formDataObject.get(nameFieldDataKey));
         assertNotNull("Expected to find cm:title data", formDataObject.get(titleFieldDataKey));
         assertEquals(TEST_FORM_TITLE, formDataObject.get("prop_cm_title"));

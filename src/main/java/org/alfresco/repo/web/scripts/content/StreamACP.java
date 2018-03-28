@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.content;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -42,16 +44,13 @@ import org.alfresco.service.cmr.view.ExporterService;
 import org.alfresco.service.cmr.view.Location;
 import org.alfresco.util.GUID;
 import org.alfresco.util.TempFileProvider;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 import org.springframework.extensions.webscripts.WebScriptResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 /**
  * Base class for Java backed webscripts that wish to generate an ACP and 
@@ -103,7 +102,7 @@ public class StreamACP extends StreamContent
             else
             {
                 // presume the request is a JSON request so get nodeRefs from JSON body
-                nodeRefs = getNodeRefs(new JSONObject(new JSONTokener(req.getContent().getContent())));
+                nodeRefs = getNodeRefs(AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent()));
             }
             
             // setup the ACP parameters
@@ -122,11 +121,6 @@ public class StreamACP extends StreamContent
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST,
                     "Could not read content from req.", ioe);
-        }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST,
-                        "Could not parse JSON from req.", je);
         }
         finally
         {
@@ -175,10 +169,9 @@ public class StreamACP extends StreamContent
      * NodeRefs from the given JSON object. If the nodeRefs
      * property is not present a WebScriptException is thrown.
      * 
-     * @param json JSONObject
      * @return Array of NodeRef objects
      */
-    protected NodeRef[] getNodeRefs(JSONObject json) throws JSONException
+    protected NodeRef[] getNodeRefs(JsonNode json)
     {
         // check the list of NodeRefs is present
         if (!json.has(PARAM_NODE_REFS))
@@ -188,14 +181,14 @@ public class StreamACP extends StreamContent
         }
 
         NodeRef[] nodeRefs = new NodeRef[0];
-        JSONArray jsonArray = json.getJSONArray(PARAM_NODE_REFS);
-        if (jsonArray.length() != 0)
+        ArrayNode jsonArray = (ArrayNode) json.get(PARAM_NODE_REFS);
+        if (jsonArray.size() != 0)
         {
             // build the list of NodeRefs
-            nodeRefs = new NodeRef[jsonArray.length()];
-            for (int i = 0; i < jsonArray.length(); i++)
+            nodeRefs = new NodeRef[jsonArray.size()];
+            for (int i = 0; i < jsonArray.size(); i++)
             {
-                NodeRef nodeRef = new NodeRef(jsonArray.getString(i));
+                NodeRef nodeRef = new NodeRef(jsonArray.get(i).textValue());
                 nodeRefs[i] = nodeRef;
             }
         }

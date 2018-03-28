@@ -28,14 +28,16 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 /**
  * Represents a group member.
@@ -58,9 +60,9 @@ public class GroupMember extends org.alfresco.rest.api.model.GroupMember impleme
         AssertUtil.assertEquals("memberType", getMemberType(), other.getMemberType());
     }
 
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject jsonObject = new JSONObject();
+        ObjectNode jsonObject = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonObject.put("id", getId());
         jsonObject.put("displayName", getDisplayName());
         jsonObject.put("memberType", getMemberType());
@@ -68,11 +70,11 @@ public class GroupMember extends org.alfresco.rest.api.model.GroupMember impleme
         return jsonObject;
     }
 
-    public static GroupMember parseGroupMember(JSONObject jsonObject)
+    public static GroupMember parseGroupMember(JsonNode jsonObject)
     {
-        String id = (String) jsonObject.get("id");
-        String displayName = (String) jsonObject.get("displayName");
-        String memberType = (String) jsonObject.get("memberType");
+        String id = jsonObject.get("id").textValue();
+        String displayName = jsonObject.get("displayName").textValue();
+        String memberType = jsonObject.get("memberType").textValue();
 
         GroupMember group = new GroupMember();
         group.setId(id);
@@ -82,20 +84,20 @@ public class GroupMember extends org.alfresco.rest.api.model.GroupMember impleme
         return group;
     }
 
-    public static ListResponse<GroupMember> parseGroupMembers(JSONObject jsonObject)
+    public static ListResponse<GroupMember> parseGroupMembers(JsonNode jsonObject)
     {
         List<GroupMember> groupMembers = new ArrayList<>();
 
-        JSONObject jsonList = (JSONObject) jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
 
-        JSONArray jsonEntries = (JSONArray) jsonList.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
         assertNotNull(jsonEntries);
 
         for (int i = 0; i < jsonEntries.size(); i++)
         {
-            JSONObject jsonEntry = (JSONObject) jsonEntries.get(i);
-            JSONObject entry = (JSONObject) jsonEntry.get("entry");
+            JsonNode jsonEntry = jsonEntries.get(i);
+            JsonNode entry = jsonEntry.get("entry");
             groupMembers.add(parseGroupMember(entry));
         }
 

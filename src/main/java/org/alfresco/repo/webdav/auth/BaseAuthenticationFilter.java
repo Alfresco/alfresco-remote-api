@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.webdav.auth;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.Reader;
 
@@ -48,9 +49,8 @@ import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.AuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.transaction.TransactionService;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * A base class for authentication filters. Handles management of the session user.
@@ -453,9 +453,9 @@ public abstract class BaseAuthenticationFilter
 
         try
         {
-            JSONObject json = new JSONObject(out.toString());
-            String username = json.getString("username");
-            String password = json.getString("password");
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(out.toString());
+            String username = json.get("username").textValue();
+            String password = json.get("password").textValue();
 
             if (username == null || username.length() == 0)
             {
@@ -485,7 +485,7 @@ public abstract class BaseAuthenticationFilter
                 getLogger().debug("Login failed", e);
             res.sendError(HttpServletResponse.SC_FORBIDDEN, "Login failed");
         }
-        catch (JSONException jErr)
+        catch (IOException jErr)
         {
             if (getLogger().isDebugEnabled())
                 getLogger().debug("Unable to parse JSON POST body", jErr);

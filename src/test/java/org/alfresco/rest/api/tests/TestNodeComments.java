@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1047,7 +1048,7 @@ public class TestNodeComments extends EnterpriseTestApi
             commentsProxy.getNodeComments(nodeRef1.getId(), createParams(paging, null));
 
         }
-        catch (IllegalStateException e)
+        catch (IllegalStateException | IOException e)
         {
             fail();
         }

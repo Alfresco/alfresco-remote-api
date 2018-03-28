@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.calendar;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -49,7 +50,6 @@ import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.namespace.QName;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.surf.util.I18NUtil;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
@@ -67,8 +67,12 @@ public class CalendarEntryGet extends AbstractCalendarWebScript
    private PermissionService permissionService;
    
    @Override
-   protected Map<String, Object> executeImpl(SiteInfo site, String eventName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+   protected Map<String, Object> executeImpl(SiteInfo site,
+                                             String eventName,
+                                             WebScriptRequest req,
+                                             JsonNode json,
+                                             Status status,
+                                             Cache cache)
    {
       final ResourceBundle rb = getResources();
 

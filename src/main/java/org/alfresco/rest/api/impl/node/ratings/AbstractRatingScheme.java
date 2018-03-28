@@ -25,6 +25,7 @@
  */
 package org.alfresco.rest.api.impl.node.ratings;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Date;
@@ -44,10 +45,10 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.registry.NamedObjectRegistry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONObject;
 import org.springframework.beans.factory.InitializingBean;
 
 /**
@@ -191,20 +192,20 @@ public abstract class AbstractRatingScheme implements RatingScheme, Initializing
     }
 
     @SuppressWarnings("unchecked")
-	private JSONObject getActivityData(final NodeRef nodeRef, String siteId)
+	private ObjectNode getActivityData(final NodeRef nodeRef, String siteId)
     {
-    	JSONObject activityData = null;
+        ObjectNode activityData = null;
 
     	if(siteId != null)
     	{
             // may not be able to read these nodes, but we need to for the activity processing so run as system
-    		activityData = AuthenticationUtil.runAsSystem(new RunAsWork<JSONObject>()
+    		activityData = AuthenticationUtil.runAsSystem(new RunAsWork<ObjectNode>()
     		{
     			@Override
-    			public JSONObject doWork() throws Exception
+    			public ObjectNode doWork() throws Exception
     			{
-    				JSONObject activityData = new JSONObject();
-    				activityData.put("title", nodeService.getProperty(nodeRef, ContentModel.PROP_NAME));
+                    ObjectNode activityData = AlfrescoDefaultObjectMapper.createObjectNode();
+    				activityData.put("title", nodeService.getProperty(nodeRef, ContentModel.PROP_NAME).toString());
     				try
     				{
     					StringBuilder sb = new StringBuilder("document-details?nodeRef=");
@@ -227,7 +228,7 @@ public abstract class AbstractRatingScheme implements RatingScheme, Initializing
 	protected void postActivity(final NodeRef nodeRef, final String activityType)
     {
     	String siteId = getSiteId(nodeRef);
-    	JSONObject activityData = getActivityData(nodeRef, siteId);
+    	ObjectNode activityData = getActivityData(nodeRef, siteId);
 		if(activityData != null)
 		{
 			activityService.postActivity(activityType, siteId, "nodeRatings", activityData.toString(), Client.asType(Client.ClientType.restapi));

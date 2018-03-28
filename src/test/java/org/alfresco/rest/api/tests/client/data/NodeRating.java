@@ -28,6 +28,9 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -38,8 +41,7 @@ import java.util.List;
 import org.alfresco.rest.api.tests.PublicApiDateFormat;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class NodeRating implements Serializable, Comparable<NodeRating>, ExpectedComparison
 {
@@ -105,34 +107,34 @@ public class NodeRating implements Serializable, Comparable<NodeRating>, Expecte
 				+ ratedAt + "]";
 	}
 	
-	public static NodeRating parseNodeRating(String nodeId, JSONObject jsonObject)
+	public static NodeRating parseNodeRating(String nodeId, JsonNode jsonObject)
 	{
-		String ratingScheme = (String)jsonObject.get("id");
-		String ratedAt = (String)jsonObject.get("ratedAt");
+		String ratingScheme = jsonObject.get("id").textValue();
+		String ratedAt = jsonObject.get("ratedAt").textValue();
 		Object myRating = jsonObject.get("myRating");
 		
-		JSONObject aggregateJSON = (JSONObject)jsonObject.get("aggregate");
-		Long numRatings = (Long)aggregateJSON.get("numberOfRatings");
-		Double average = (Double)aggregateJSON.get("average");
+		JsonNode aggregateJSON = jsonObject.get("aggregate");
+		Long numRatings = aggregateJSON.get("numberOfRatings").longValue();
+		Double average = aggregateJSON.get("average").doubleValue();
 		Aggregate aggregate = new Aggregate(numRatings != null ? numRatings.intValue() : null, average != null ? average.floatValue(): null);
 		NodeRating nodeRating = new NodeRating(nodeId, ratingScheme, ratedAt, myRating, aggregate);
 		return nodeRating;
 	}
 
-	public static ListResponse<NodeRating> parseNodeRatings(String nodeId, JSONObject jsonObject)
+	public static ListResponse<NodeRating> parseNodeRatings(String nodeId, JsonNode jsonObject)
 	{
 		List<NodeRating> nodeRatings = new ArrayList<NodeRating>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode)jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+            JsonNode jsonEntry = jsonEntries.get(i);
+            JsonNode entry = jsonEntry.get("entry");
 			nodeRatings.add(NodeRating.parseNodeRating(nodeId, entry));
 		}
 
@@ -143,11 +145,11 @@ public class NodeRating implements Serializable, Comparable<NodeRating>, Expecte
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject nodeRatingJSON = new JSONObject();
+        ObjectNode nodeRatingJSON = AlfrescoDefaultObjectMapper.createObjectNode();
 
-		nodeRatingJSON.put("myRating", getMyRating());
+		nodeRatingJSON.set("myRating", AlfrescoDefaultObjectMapper.convertValue(getMyRating(), JsonNode.class));
 		nodeRatingJSON.put("id", getId());
 
 		return nodeRatingJSON;

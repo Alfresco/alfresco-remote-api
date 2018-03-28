@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.calendar;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -51,6 +53,7 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.util.GUID;
 import org.alfresco.util.ISO8601DateFormat;
 import org.alfresco.util.ScriptPagingDetails;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
@@ -58,9 +61,6 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import org.json.JSONException;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -188,15 +188,15 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
      * Extracts the Start and End details, along with the All Day flag
      *  from the JSON, and returns if the event is all day or not
      */
-    protected boolean extractDates(CalendarEntry entry, JSONObject json) throws JSONException
+    protected boolean extractDates(CalendarEntry entry, JsonNode json)
     {
        boolean isAllDay = false;
-       if (json.containsKey("allday"))
+       if (json.has("allday"))
        {
           isAllDay = true;
        }
        
-       if (json.containsKey(PARAM_START_AT) && json.containsKey(PARAM_END_AT))
+       if (json.has(PARAM_START_AT) && json.has(PARAM_END_AT))
        {
           // New style ISO8601 based dates and times
           Object startAtO = json.get(PARAM_START_AT);
@@ -206,20 +206,20 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
           String startAt;
           String endAt;
           String timezoneName = null;
-          if(startAtO instanceof JSONObject)
+          if(startAtO instanceof ObjectNode)
           {
              // "startAt": { "iso8601":"2011-...." }
-             JSONObject startAtJSON = (JSONObject)startAtO; 
-             JSONObject endAtJSON = (JSONObject)endAtO; 
-             startAt = (String)startAtJSON.get(PARAM_ISO8601); 
-             endAt = (String)endAtJSON.get(PARAM_ISO8601);
+             ObjectNode startAtJSON = (ObjectNode) startAtO;
+             ObjectNode endAtJSON = (ObjectNode) endAtO;
+             startAt = startAtJSON.get(PARAM_ISO8601).textValue();
+             endAt = endAtJSON.get(PARAM_ISO8601).textValue();
              
-             if(startAtJSON.containsKey(PARAM_TIMEZONE))
+             if(startAtJSON.has(PARAM_TIMEZONE))
              {
-                timezoneName = (String)startAtJSON.get(PARAM_TIMEZONE);
-                if(endAtJSON.containsKey(PARAM_TIMEZONE))
+                timezoneName = startAtJSON.get(PARAM_TIMEZONE).textValue();
+                if(endAtJSON.has(PARAM_TIMEZONE))
                 {
-                   String endTZ = (String)endAtJSON.get(PARAM_TIMEZONE);
+                   String endTZ = endAtJSON.get(PARAM_TIMEZONE).textValue();
                    if(! endTZ.equals(timezoneName))
                    {
                       throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Timezones must match");
@@ -230,17 +230,17 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
           else
           {
              // "startAt": "2011-...."
-             startAt = (String)json.get(PARAM_START_AT);
-             endAt = (String)json.get(PARAM_END_AT);
+             startAt = json.get(PARAM_START_AT).textValue();
+             endAt = json.get(PARAM_END_AT).textValue();
           }
-          if(json.containsKey(PARAM_TIMEZONE))
+          if(json.has(PARAM_TIMEZONE))
           {
-             timezoneName = (String)json.get(PARAM_TIMEZONE);
+             timezoneName = json.get(PARAM_TIMEZONE).textValue();
           }
           
           
           // Is this an all day event?
-          if (json.containsKey("allday"))
+          if (json.has("allday"))
           {
              // Store it as UTC midnight to midnight
              // Reset the time part to ensure that
@@ -272,7 +272,7 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
              }
           }
        }
-       else if (json.containsKey("allday"))
+       else if (json.has("allday"))
        {
           // Old style all-day event
           Date start = parseDate(getOrNull(json, "from"));
@@ -292,18 +292,18 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
        else
        {
           // Old style regular event
-          entry.setStart(parseDate((String)json.get("from") + " " + (String)json.get("start")));
-          entry.setEnd(parseDate((String)json.get("to") + " " + (String)json.get("end")));
+          entry.setStart(parseDate(json.get("from").textValue() + " " + json.get("start").textValue()));
+          entry.setEnd(parseDate(json.get("to").textValue() + " " + json.get("end").textValue()));
        }
        
        return isAllDay;
     }
     
-    protected String getOrNull(JSONObject json, String key) throws JSONException
+    protected String getOrNull(JsonNode json, String key)
     {
-       if (json.containsKey(key))
+       if (json.has(key))
        {
-          return (String)json.get(key);
+          return json.get(key).textValue();
        }
        return null;
     }
@@ -346,7 +346,7 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
      * Generates an activity entry for the entry
      */
     protected String addActivityEntry(String event, CalendarEntry entry, SiteInfo site, 
-          WebScriptRequest req, JSONObject json)
+          WebScriptRequest req, JsonNode json)
     {
        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
        String dateOpt = "?date=" + fmt.format(entry.getStart());
@@ -355,9 +355,9 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
        String page = req.getParameter("page");
        if (page == null && json != null)
        {
-          if (json.containsKey("page"))
+          if (json.has("page"))
           {
-             page = (String)json.get("page");
+             page = json.get("page").textValue();
           }
        }
        if (page == null)
@@ -432,7 +432,7 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
        
        
        // Parse the JSON, if supplied
-       JSONObject json = null;
+       JsonNode json = null;
        String contentType = req.getContentType();
        if (contentType != null && contentType.indexOf(';') != -1)
        {
@@ -440,18 +440,13 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
        }
        if (MimetypeMap.MIMETYPE_JSON.equals(contentType))
        {
-          JSONParser parser = new JSONParser();
           try
           {
-             json = (JSONObject)parser.parse(req.getContent().getContent());
+             json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
           }
           catch (IOException io)
           {
              return buildError("Invalid JSON: " + io.getMessage());
-          }
-          catch (org.json.simple.parser.ParseException je)
-          {
-             return buildError("Invalid JSON: " + je.getMessage());
           }
        }
        
@@ -468,13 +463,13 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
        }
        if (siteName == null && json != null)
        {
-          if (json.containsKey("siteid"))
+          if (json.has("siteid"))
           {
-             siteName = (String)json.get("siteid");
+             siteName = json.get("siteid").textValue();
           }
-          else if (json.containsKey("site"))
+          else if (json.has("site"))
           {
-             siteName = (String)json.get("site");
+             siteName = json.get("site").textValue();
           }
        }
        if (siteName == null)
@@ -558,6 +553,6 @@ public abstract class AbstractCalendarWebScript extends DeclarativeWebScript
     }
 
     protected abstract Map<String, Object> executeImpl(SiteInfo site, 
-          String eventName, WebScriptRequest req, JSONObject json, 
+          String eventName, WebScriptRequest req, JsonNode json,
           Status status, Cache cache);
 }

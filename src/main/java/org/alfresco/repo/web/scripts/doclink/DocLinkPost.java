@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.doclink;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,10 +41,7 @@ import org.alfresco.repo.security.permissions.AccessDeniedException;
 import org.alfresco.repo.web.scripts.WebScriptUtil;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.util.ParameterCheck;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -71,7 +70,7 @@ public class DocLinkPost extends AbstractDocLink
         sourceNodeRef = parseNodeRefFromTemplateArgs(templateVars);
 
         /* Parse the JSON content */
-        JSONObject json = null;
+        JsonNode json = null;
         String contentType = req.getContentType();
         if (contentType != null && contentType.indexOf(';') != -1)
         {
@@ -81,15 +80,11 @@ public class DocLinkPost extends AbstractDocLink
         {
             try
             {
-                json = (JSONObject) JSONValue.parseWithException(req.getContent().getContent());
+                json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
             }
             catch (IOException io)
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + io.getMessage());
-            }
-            catch (ParseException pe)
-            {
-                throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + pe.getMessage());
             }
         }
         else
@@ -98,17 +93,17 @@ public class DocLinkPost extends AbstractDocLink
         }
 
         /* Parse the destination NodeRef parameter */
-        String destinationNodeParam = (String) json.get(PARAM_DESTINATION_NODE);
+        String destinationNodeParam = json.get(PARAM_DESTINATION_NODE).textValue();
         ParameterCheck.mandatoryString("destinationNodeParam", destinationNodeParam);
         destinationNodeRef = WebScriptUtil.resolveNodeReference(destinationNodeParam, serviceRegistry.getNodeLocatorService());
 
         List<NodeRef> nodeRefs = new ArrayList<NodeRef>();
-        if (json.containsKey(PARAM_MULTIPLE_FILES))
+        if (json.has(PARAM_MULTIPLE_FILES))
         {
-            JSONArray multipleFiles = (JSONArray) json.get(PARAM_MULTIPLE_FILES);
+            ArrayNode multipleFiles = (ArrayNode) json.get(PARAM_MULTIPLE_FILES);
             for (int i = 0; i < multipleFiles.size(); i++)
             {
-                String nodeRefString = (String) multipleFiles.get(i);
+                String nodeRefString = multipleFiles.get(i).textValue();
                 if (nodeRefString != null)
                 {
                     try

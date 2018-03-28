@@ -30,33 +30,26 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.alfresco.rest.framework.Api;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.alfresco.rest.framework.core.exceptions.DefaultExceptionResolver;
 import org.alfresco.rest.framework.core.exceptions.ErrorResponse;
-import org.alfresco.rest.framework.core.exceptions.UnsupportedResourceOperationException;
-import org.alfresco.rest.framework.jacksonextensions.BeanPropertiesFilter;
-import org.alfresco.rest.framework.jacksonextensions.ExecutionResult;
 import org.alfresco.rest.framework.jacksonextensions.JacksonHelper;
-import org.alfresco.rest.framework.resource.SerializablePagedCollection;
-import org.alfresco.rest.framework.resource.content.BinaryResource;
 import org.alfresco.rest.framework.resource.content.ContentInfo;
 import org.alfresco.rest.framework.resource.content.ContentInfoImpl;
-import org.alfresco.rest.framework.resource.parameters.CollectionWithPagingInfo;
-import org.alfresco.rest.framework.resource.parameters.Params;
 import org.alfresco.rest.framework.webscripts.WithResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONObject;
-import org.springframework.beans.BeanUtils;
 import org.springframework.extensions.surf.util.I18NUtil;
-import org.springframework.extensions.webscripts.*;
+import org.springframework.extensions.webscripts.Cache;
+import org.springframework.extensions.webscripts.Description;
+import org.springframework.extensions.webscripts.Format;
+import org.springframework.extensions.webscripts.Status;
+import org.springframework.extensions.webscripts.WebScriptResponse;
+import org.springframework.extensions.webscripts.WrappingWebScriptResponse;
 import org.springframework.extensions.webscripts.servlet.WebScriptServletResponse;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 /*
  * Writes to the response
@@ -220,7 +213,7 @@ public interface ResponseWriter
             public void writeContents(JsonGenerator generator, ObjectMapper objectMapper)
                         throws JsonGenerationException, JsonMappingException, IOException
             {
-                JSONObject obj = new JSONObject();
+                Map<String, ErrorResponse> obj = new HashMap<>(1);
                 obj.put("error", errorToWrite);
                 objectMapper.writeValue(generator, obj);
             }

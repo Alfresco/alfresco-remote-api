@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.preference;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
@@ -32,8 +34,7 @@ import org.alfresco.repo.web.scripts.BaseWebScriptTest;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
@@ -109,14 +110,14 @@ public class PreferenceServiceTest extends BaseWebScriptTest
         // Get the preferences before they have been set
 
         Response resp = sendRequest(new GetRequest(URL), 200);
-        JSONObject jsonResult = new JSONObject(resp.getContentAsString());
+        JsonNode jsonResult = AlfrescoDefaultObjectMapper.getReader().readTree(resp.getContentAsString());
 
         assertNotNull(jsonResult);
-        assertFalse(jsonResult.keys().hasNext());
+        assertFalse(jsonResult.fields().hasNext());
 
         // Set some preferences
 
-        JSONObject jsonObject = getPreferenceObj();
+        ObjectNode jsonObject = getPreferenceObj();
         jsonObject.put("comp1", getPreferenceObj());
 
         resp = sendRequest(new PostRequest(URL, jsonObject.toString(), "application/json"), 200);
@@ -125,12 +126,12 @@ public class PreferenceServiceTest extends BaseWebScriptTest
         // Get the preferences
 
         resp = sendRequest(new GetRequest(URL), 200);
-        jsonResult = new JSONObject(resp.getContentAsString());
+        jsonResult = AlfrescoDefaultObjectMapper.getReader().readTree(resp.getContentAsString());
         assertNotNull(jsonResult);
-        assertTrue(jsonResult.keys().hasNext());
+        assertTrue(jsonResult.fields().hasNext());
 
-        checkJSONObject(jsonResult);
-        checkJSONObject(jsonResult.getJSONObject("comp1"));
+        checkJsonNode(jsonResult);
+        checkJsonNode(jsonResult.get("comp1"));
 
         // Update some of the preferences
 
@@ -143,24 +144,24 @@ public class PreferenceServiceTest extends BaseWebScriptTest
         // Get the preferences
 
         resp = sendRequest(new GetRequest(URL), 200);
-        jsonResult = new JSONObject(resp.getContentAsString());
+        jsonResult = AlfrescoDefaultObjectMapper.getReader().readTree(resp.getContentAsString());
         assertNotNull(jsonResult);
-        assertTrue(jsonResult.keys().hasNext());
+        assertTrue(jsonResult.fields().hasNext());
 
         jsonObject.put("stringValue", "updated");
         jsonObject.put("numberValue", 10);
         jsonObject.put("numberValue2", 3.142);
-        checkJSONObject(jsonResult.getJSONObject("comp1"));
-        checkJSONObject(jsonResult.getJSONObject("comp2"));
+        checkJsonNode(jsonResult.get("comp1"));
+        checkJsonNode(jsonResult.get("comp2"));
 
         // Filter the preferences retrieved
 
         resp = sendRequest(new GetRequest(URL + "?pf=comp2"), 200);
-        jsonResult = new JSONObject(resp.getContentAsString());
+        jsonResult = AlfrescoDefaultObjectMapper.getReader().readTree(resp.getContentAsString());
         assertNotNull(jsonResult);
-        assertTrue(jsonResult.keys().hasNext());
+        assertTrue(jsonResult.fields().hasNext());
 
-        checkJSONObject(jsonResult.getJSONObject("comp2"));
+        checkJsonNode(jsonResult.get("comp2"));
         assertFalse(jsonResult.has("comp1"));
         assertFalse(jsonResult.has("stringValue"));
 
@@ -168,20 +169,20 @@ public class PreferenceServiceTest extends BaseWebScriptTest
         sendRequest(new DeleteRequest(URL + "?pf=comp1"), 200);
 
         resp = sendRequest(new GetRequest(URL), 200);
-        jsonResult = new JSONObject(resp.getContentAsString());
+        jsonResult = AlfrescoDefaultObjectMapper.getReader().readTree(resp.getContentAsString());
         assertNotNull(jsonResult);
-        assertTrue(jsonResult.keys().hasNext());
+        assertTrue(jsonResult.fields().hasNext());
 
-        checkJSONObject(jsonResult.getJSONObject("comp2"));
+        checkJsonNode(jsonResult.get("comp2"));
         assertFalse(jsonResult.has("comp1"));
 
         // Clear all the preferences
         sendRequest(new DeleteRequest(URL), 200);
 
         resp = sendRequest(new GetRequest(URL), 200);
-        jsonResult = new JSONObject(resp.getContentAsString());
+        jsonResult = AlfrescoDefaultObjectMapper.getReader().readTree(resp.getContentAsString());
         assertNotNull(jsonResult);
-        assertFalse(jsonResult.keys().hasNext());
+        assertFalse(jsonResult.fields().hasNext());
 
         // Test trying to update another user's permissions
         sendRequest(new PostRequest("/api/people/" + USER_BAD + "/preferences", jsonObject.toString(),
@@ -191,16 +192,16 @@ public class PreferenceServiceTest extends BaseWebScriptTest
         sendRequest(new GetRequest("/api/people/noExistUser/preferences"), 404);
     }
 
-    private JSONObject getPreferenceObj() throws JSONException
+    private ObjectNode getPreferenceObj()
     {
-        JSONObject jsonObject = new JSONObject();
+        ObjectNode jsonObject = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonObject.put("stringValue", "value");
         jsonObject.put("numberValue", 10);
         jsonObject.put("numberValue2", 3.142);
         return jsonObject;
     }
 
-    private void checkJSONObject(JSONObject jsonObject) throws JSONException
+    private void checkJsonNode(JsonNode jsonObject)
     {
         assertEquals("value", jsonObject.get("stringValue"));
         assertEquals(10, jsonObject.get("numberValue"));

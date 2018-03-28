@@ -27,6 +27,9 @@ package org.alfresco.rest.api.tests.client.data;
 
 import static org.junit.Assert.assertNotNull;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +37,6 @@ import java.util.List;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
 import org.alfresco.rest.api.tests.client.PublicApiClient.Paging;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 public class Activities implements Serializable
 {
@@ -86,20 +87,20 @@ public class Activities implements Serializable
 				+ activitiesParams + "]";
 	}
 	
-	public static ListResponse<Activity> parseActivities(JSONObject jsonObject)
-	{
+	public static ListResponse<Activity> parseActivities(JsonNode jsonObject) throws IOException
+    {
 		List<Activity> activities = new ArrayList<Activity>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode)jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+			JsonNode jsonEntry = jsonEntries.get(i);
+			JsonNode entry = jsonEntry.get("entry");
 			activities.add(Activity.parseActivity(entry));
 		}
 

@@ -25,9 +25,13 @@
  */
 package org.alfresco.rest.api.tests.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpState;
@@ -38,7 +42,6 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.json.simple.JSONObject;
 
 public class AuthenticatedHttp extends AbstractHttp
 {
@@ -338,13 +341,13 @@ public class AuthenticatedHttp extends AbstractHttp
      * @param method EntityEnclosingMethod
      * @param object JSONObject
      */
-    private void populateRequestBody(EntityEnclosingMethod method, JSONObject object)
+    private void populateRequestBody(EntityEnclosingMethod method, JsonNode object)
     {
         try
         {
-            method.setRequestEntity(new StringRequestEntity(object.toJSONString(), MIME_TYPE_JSON, "UTF-8"));
+            method.setRequestEntity(new StringRequestEntity(AlfrescoDefaultObjectMapper.writeValueAsString(object), MIME_TYPE_JSON, "UTF-8"));
         }
-        catch (UnsupportedEncodingException error)
+        catch (UnsupportedEncodingException | JsonProcessingException error)
         {
             // This will never happen!
             throw new RuntimeException("All hell broke loose, a JVM that doesn't have UTF-8 encoding...");
@@ -369,7 +372,7 @@ public class AuthenticatedHttp extends AbstractHttp
             loginMethod.setRequestHeader(HEADER_ACCEPT, MIME_TYPE_JSON);
 
             // Populate resuest body
-            JSONObject requestBody = new JSONObject();
+            ObjectNode requestBody = AlfrescoDefaultObjectMapper.createObjectNode();
             requestBody.put(LOGIN_JSON_USERNAME, userName);
             requestBody.put(LOGIN_JSON_PASSWORD, password);
             
@@ -384,7 +387,7 @@ public class AuthenticatedHttp extends AbstractHttp
             if(loginMethod.getStatusCode() == HttpStatus.SC_OK)
             {
                 // Extract the ticket
-                JSONObject data = getDataFromResponse(loginMethod);
+                JsonNode data = getDataFromResponse(loginMethod);
                 if(data == null)
                 {
                     throw new RuntimeException("Failed to login to Alfresco with user " + userName +

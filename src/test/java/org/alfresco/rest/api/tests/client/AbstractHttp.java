@@ -25,16 +25,17 @@
  */
 package org.alfresco.rest.api.tests.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.HttpMethod;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 public class AbstractHttp
 {
@@ -46,16 +47,16 @@ public class AbstractHttp
      * @return the "data" object. Returns null if response is not JSON or no data-object
      *         is present.
      */
-    public JSONObject getDataFromResponse(HttpMethod method)
+    public JsonNode getDataFromResponse(HttpMethod method)
     {
-        JSONObject result = null;
-        Object object = getObjectFromResponse(method);
+        JsonNode result = null;
+        JsonNode object = getObjectFromResponse(method);
         
         // Extract object for "data" property
-        object = ((JSONObject) object).get(JSON_DATA);
-        if(object instanceof JSONObject)
+        object = object.get(JSON_DATA);
+        if(object instanceof ObjectNode)
         {
-            result = (JSONObject) object;
+            result = object;
         }
         return result;
     }
@@ -66,17 +67,17 @@ public class AbstractHttp
      * @return the "data" object. Returns null if response is not JSON or no data-object
      *         is present.
      */
-    public JSONArray getDataArrayFromResponse(HttpMethod method)
+    public ArrayNode getDataArrayFromResponse(HttpMethod method)
     {
-        JSONArray result = null;
-        Object object = getObjectFromResponse(method);
+        ArrayNode result = null;
+        JsonNode object = getObjectFromResponse(method);
         if(object != null)
         {
             // Extract object for "data" property
-            object = ((JSONObject) object).get(JSON_DATA);
-            if(object instanceof JSONArray)
+            object = object.get(JSON_DATA);
+            if(object instanceof ArrayNode)
             {
-                result = (JSONArray) object;
+                result = (ArrayNode) object;
             }
         }
         return result;
@@ -88,27 +89,23 @@ public class AbstractHttp
      * @return the json object. Returns null if response is not JSON or no data-object
      *         is present.
      */
-    public JSONObject getObjectFromResponse(HttpMethod method)
+    public JsonNode getObjectFromResponse(HttpMethod method)
     {
-        JSONObject result = null;
+        JsonNode result = null;
 
         try
         {
             InputStream response = method.getResponseBodyAsStream();
             if(response != null)
             {
-                Object object = new JSONParser().parse(new InputStreamReader(response, Charset.forName("UTF-8")));
-                if(object instanceof JSONObject)
+                JsonNode object = AlfrescoDefaultObjectMapper.getReader().readTree(response);
+                if (object instanceof ObjectNode)
                 {
-                   return (JSONObject) object;
+                    return object;
                 }
             }
         }
         catch (IOException error)
-        {
-            // Ignore errors, returning null
-        }
-        catch (ParseException error)
         {
             // Ignore errors, returning null
         }
@@ -122,16 +119,16 @@ public class AbstractHttp
      * @param key key pointing to the value
      * @param defaultValue if value is not set or if value is not of type "String", this value is returned
      */
-    public String getString(JSONObject json, String key, String defaultValue)
+    public String getString(JsonNode json, String key, String defaultValue)
     {
         String result = defaultValue;
         
         if(json != null)
         {
-            Object value = json.get(key);
-            if(value instanceof String)
+            JsonNode value = json.get(key);
+            if(value instanceof TextNode)
             {
-                result = (String) value;
+                result = value.textValue();
             }
         }
         return result;
@@ -140,14 +137,14 @@ public class AbstractHttp
     /**
      * @param json JSON to extract array from
      * @param key key under which array is present on JSON
-     * @return the {@link JSONArray}. Returns null, if the value is null or not an array.
+     * @return the {@link ArrayNode}. Returns null, if the value is null or not an array.
      */
-    public JSONArray getArray(JSONObject json, String key)
+    public ArrayNode getArray(JsonNode json, String key)
     {
         Object object = json.get(key);
-        if(object instanceof JSONArray)
+        if(object instanceof ArrayNode)
         {
-            return (JSONArray) object;
+            return (ArrayNode) object;
         }
         return null;
     }
@@ -155,14 +152,14 @@ public class AbstractHttp
     /**
      * @param json JSON to extract object from
      * @param key key under which object is present on JSON
-     * @return the {@link JSONObject}. Returns null, if the value is null or not an object.
+     * @return the {@link ObjectNode}. Returns null, if the value is null or not an object.
      */
-    public JSONObject getObject(JSONObject json, String key)
+    public ObjectNode getObject(JsonNode json, String key)
     {
         Object object = json.get(key);
-        if(object instanceof JSONArray)
+        if(object instanceof ObjectNode)
         {
-            return (JSONObject) object;
+            return (ObjectNode) object;
         }
         return null;
     }

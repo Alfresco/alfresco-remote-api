@@ -35,6 +35,7 @@ import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsonschema.JsonSchema;
 import org.alfresco.repo.content.MimetypeMap;
@@ -67,10 +68,8 @@ import org.alfresco.rest.framework.webscripts.AbstractResourceWebScript;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.util.GUID;
 import org.alfresco.util.TempFileProvider;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.lang.StringUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.junit.Test;
 import org.springframework.extensions.webscripts.Format;
 import org.springframework.extensions.webscripts.WebScriptResponse;
@@ -433,7 +432,7 @@ public class SerializeTests extends AbstractContextTest implements RecognizedPar
 
     // note: exposed as "properties" query param
     @Test
-    public void testFilter() throws IOException, JSONException
+    public void testFilter() throws IOException
     {
         assertNotNull(helper);
         BeanPropertiesFilter theFilter  = getFilter("age");
@@ -444,37 +443,37 @@ public class SerializeTests extends AbstractContextTest implements RecognizedPar
         theFilter = getFilter("age,name");
         res = new ExecutionResult(new Sheep("bob"),theFilter);  
         out = writeResponse(res);
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(out));
-        assertEquals(1, jsonRsp.length());
-        JSONObject entry = jsonRsp.getJSONObject("entry");
-        assertEquals(2, entry.length());
-        assertEquals("The name should be 'Dolly'", "Dolly", entry.getString("name"));
-        assertTrue("The age should be 3", entry.getInt("age") == 3);
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(out);
+        assertEquals(1, jsonRsp.size());
+        JsonNode entry = jsonRsp.get("entry");
+        assertEquals(2, entry.size());
+        assertEquals("The name should be 'Dolly'", "Dolly", entry.get("name").textValue());
+        assertTrue("The age should be 3", entry.get("age").intValue() == 3);
 
         // unit test filter with "include" taking precendence over "fields" filter
         List<String> theInclude = getIncludeClause("name");
         theFilter  = getFilter("age", theInclude);
         res = new ExecutionResult(new Sheep("bob"),theFilter);
         out = writeResponse(res);
-        jsonRsp = new JSONObject(new JSONTokener(out));
-        assertEquals(1, jsonRsp.length());
-        entry = jsonRsp.getJSONObject("entry");
-        assertEquals(2, entry.length());
-        assertEquals("The name should be 'Dolly'", "Dolly", entry.getString("name"));
-        assertTrue("The age should be 3", entry.getInt("age") == 3);
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(out);
+        assertEquals(1, jsonRsp.size());
+        entry = jsonRsp.get("entry");
+        assertEquals(2, entry.size());
+        assertEquals("The name should be 'Dolly'", "Dolly", entry.get("name"));
+        assertTrue("The age should be 3", entry.get("age").intValue() == 3);
         
         Api v3 = Api.valueOf(api.getName(), api.getScope().toString(), "3");
         Map<String, BeanPropertiesFilter> relFiler = getRelationFilter("herd");
         res = helper.processAdditionsToTheResponse(mock(WebScriptResponse.class), v3,"goat",ParamsExtender.valueOf(relFiler, "notUsed"),new SlimGoat());
         out = writeResponse(res);
-        jsonRsp = new JSONObject(new JSONTokener(out));
-        entry = jsonRsp.getJSONObject("relations")
-                .getJSONObject("herd")
-                .getJSONObject("list")
-                .getJSONArray("entries").getJSONObject(0)
-                .getJSONObject("entry");
-        assertEquals("The name should be 'bigun'", "bigun", entry.getString("name"));
-        assertTrue("The quantity should be 56", entry.getInt("quantity") == 56);
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(out);
+        entry = jsonRsp.get("relations")
+                .get("herd")
+                .get("list")
+                .get("entries").get(0)
+                .get("entry");
+        assertEquals("The name should be 'bigun'", "bigun", entry.get("name"));
+        assertTrue("The quantity should be 56", entry.get("quantity").intValue() == 56);
 
         relFiler = getRelationFilter("herd(name)");
         res = helper.processAdditionsToTheResponse(mock(WebScriptResponse.class), v3,"goat",ParamsExtender.valueOf(relFiler, "notUsed"),new SlimGoat());

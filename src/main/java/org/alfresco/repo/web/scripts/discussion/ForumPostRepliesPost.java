@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.discussion;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
 
 import org.alfresco.model.ContentModel;
@@ -32,7 +33,6 @@ import org.alfresco.service.cmr.discussion.PostInfo;
 import org.alfresco.service.cmr.discussion.TopicInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -48,7 +48,7 @@ public class ForumPostRepliesPost extends AbstractDiscussionWebScript
 {
    @Override
    protected Map<String, Object> executeImpl(SiteInfo site, NodeRef nodeRef,
-         TopicInfo topic, PostInfo post, WebScriptRequest req, JSONObject json,
+         TopicInfo topic, PostInfo post, WebScriptRequest req, JsonNode json,
          Status status, Cache cache) 
    {
       // If they're trying to create a reply to a topic, they actually
@@ -85,19 +85,19 @@ public class ForumPostRepliesPost extends AbstractDiscussionWebScript
    }
    
    private PostInfo doCreatePost(PostInfo post, TopicInfo topic, WebScriptRequest req, 
-         JSONObject json)
+         JsonNode json)
    {
       // Fetch the details from the JSON
       String title = null;
-      if (json.containsKey("title"))
+      if (json.has("title"))
       {
-         title = (String)json.get("title");
+         title = json.get("title").textValue();
       }
       
       String contents = null;
-      if (json.containsKey("content"))
+      if (json.has("content"))
       {
-         contents = (String)json.get("content");
+         contents = json.get("content").textValue();
       }
          
       

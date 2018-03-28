@@ -37,6 +37,8 @@ import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -98,10 +100,7 @@ import org.alfresco.service.cmr.version.VersionHistory;
 import org.alfresco.service.cmr.version.VersionService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.GUID;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -379,9 +378,9 @@ public class ResultMapperTests
         assertTrue(statsMetrics.contains(new SimpleMetric(METRIC_TYPE.missing, 0)));
         assertTrue(statsMetrics.contains(new SimpleMetric(METRIC_TYPE.sum, 0)));
         assertTrue(statsMetrics.contains(new SimpleMetric(METRIC_TYPE.stddev, 0)));
-        JSONArray dVals = new JSONArray(Arrays.asList(12, 13, 14, 15, 16, 17, 1));
+        ArrayNode dVals = AlfrescoDefaultObjectMapper.createArrayNode().add(12).add(13).add(14).add(15).add(16).add(16).add(17).add(1);
         assertTrue(statsMetrics.contains(new ListMetric(METRIC_TYPE.distinctValues, dVals)));
-        JSONArray pers = new JSONArray(Arrays.asList("0.99",20.0685, "0.0", 12.0));
+        ArrayNode pers = AlfrescoDefaultObjectMapper.createArrayNode().add("0.99").add(20.0685).add("0.0").add(12.0);
         assertTrue(statsMetrics.contains(new PercentileMetric(METRIC_TYPE.percentiles, pers)));
 
         assertEquals("min must be excluded because its null",0,statsMetrics.stream().filter(metric -> METRIC_TYPE.min.equals(metric.getType())).count());
@@ -661,7 +660,7 @@ public class ResultMapperTests
     private ResultSet mockResultset(String json) throws Exception
     {
         NodeService nodeService = mock(NodeService.class);
-        JSONObject jsonObj = new JSONObject(new JSONTokener(json));
+        JsonNode jsonObj = AlfrescoDefaultObjectMapper.getReader().readTree(json);
         SearchParameters sp = new SearchParameters();
         sp.setBulkFetchEnabled(false);
         ResultSet results = new SolrJSONResultSet(jsonObj,
@@ -673,7 +672,7 @@ public class ResultMapperTests
         return results;
     }
 
-    private ResultSet mockResultset(List<Long> archivedNodes, List<Long> versionNodes) throws JSONException
+    private ResultSet mockResultset(List<Long> archivedNodes, List<Long> versionNodes) throws IOException
     {
 
         NodeService nodeService = mock(NodeService.class);
@@ -690,7 +689,7 @@ public class ResultMapperTests
 
         SearchParameters sp = new SearchParameters();
         sp.setBulkFetchEnabled(false);
-        JSONObject json = new JSONObject(new JSONTokener(JSON_REPONSE));
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(JSON_REPONSE);
         ResultSet results = new SolrJSONResultSet(json,sp,nodeService, null, LimitBy.FINAL_SIZE, 10);
         return results;
     }
@@ -849,17 +848,17 @@ public class ResultMapperTests
         
     }
     @Test
-    public void testSqlResponse() throws IOException, JSONException
+    public void testSqlResponse() throws IOException
     {
-        JSONObject response = new JSONObject("{\"docs\":[{\"SITE\":\"_REPOSITORY_\"},{\"SITE\":\"surf-config\"},{\"SITE\":\"swsdp\"},{\"EOF\":true,\"RESPONSE_TIME\":96}]}");
-        JSONArray docs = response.getJSONArray("docs");
+        JsonNode response = AlfrescoDefaultObjectMapper.getReader().readTree("{\"docs\":[{\"SITE\":\"_REPOSITORY_\"},{\"SITE\":\"surf-config\"},{\"SITE\":\"swsdp\"},{\"EOF\":true,\"RESPONSE_TIME\":96}]}");
+        ArrayNode docs = (ArrayNode) response.get("docs");
         SearchSQLQuery query = new SearchSQLQuery("select SITE from alfresco group by SITE", null, null, 100);
         CollectionWithPagingInfo<TupleList> info = mapper.toCollectionWithPagingInfo(docs, query);
         assertEquals(100, info.getPaging().getMaxItems());
         assertEquals(0, info.getPaging().getSkipCount());
         assertEquals(false, info.getCollection().isEmpty());
         assertEquals(3, info.getCollection().size());
-        info = mapper.toCollectionWithPagingInfo(new JSONArray(), query);
+        info = mapper.toCollectionWithPagingInfo(AlfrescoDefaultObjectMapper.createArrayNode(), query);
         assertEquals(100, info.getPaging().getMaxItems());
         assertEquals(0, info.getPaging().getSkipCount());
         assertEquals(true, info.getCollection().isEmpty());
@@ -871,7 +870,7 @@ public class ResultMapperTests
         catch (Exception e) 
         {
             assertNotNull(e);
-            assertEquals("Solr response is required instead of JSONArray docs was null", e.getMessage());
+            assertEquals("Solr response is required instead of ArrayNode docs was null", e.getMessage());
         }
         try 
         {

@@ -29,6 +29,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Iterator;
@@ -65,8 +70,7 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
 import org.alfresco.util.ISO8601DateFormat;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.junit.Before;
 
 public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
@@ -168,8 +172,8 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
         return null;
     }
     
-    protected Date parseDate(JSONObject entry, String fieldName) {
-       String dateText = (String) entry.get(fieldName);
+    protected Date parseDate(JsonNode entry, String fieldName) {
+       String dateText = entry.get(fieldName).textValue();
        if (dateText!=null) {
         try
         {
@@ -206,10 +210,10 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
    
    protected void assertErrorSummary(String expectedBriefSummary, HttpResponse response) 
    {
-       JSONObject error = (JSONObject) response.getJsonResponse().get("error");
+       JsonNode error = response.getJsonResponse().get("error");
        assertNotNull(error);
        
-       String actualBriefSummary = (String) error.get("briefSummary");
+       String actualBriefSummary = error.get("briefSummary").textValue();
        assertNotNull(actualBriefSummary);
        
        // Error starts with exception-number, check if actual message part matches
@@ -242,7 +246,8 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
    /**
     * Start an adhoc-process without business key through the public REST-API.
     */
-   protected ProcessInfo startAdhocProcess(final RequestContext requestContext, NodeRef[] documentRefs) throws PublicApiException {
+   protected ProcessInfo startAdhocProcess(final RequestContext requestContext, NodeRef[] documentRefs) throws PublicApiException, IOException
+   {
        return startAdhocProcess(requestContext, documentRefs, null);
    }
    
@@ -250,7 +255,8 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
     * Start an adhoc-process with possible business key through the public REST-API.
     */
    @SuppressWarnings("unchecked")
-   protected ProcessInfo startAdhocProcess(final RequestContext requestContext, NodeRef[] documentRefs, String businessKey) throws PublicApiException {
+   protected ProcessInfo startAdhocProcess(final RequestContext requestContext, NodeRef[] documentRefs, String businessKey) throws PublicApiException, IOException
+   {
        org.activiti.engine.repository.ProcessDefinition processDefinition = activitiProcessEngine
                .getRepositoryService()
                .createProcessDefinitionQuery()
@@ -259,13 +265,13 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
 
        ProcessesClient processesClient = publicApiClient.processesClient();
        
-       final JSONObject createProcessObject = new JSONObject();
+       final ObjectNode createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
        createProcessObject.put("processDefinitionId", processDefinition.getId());
        if (businessKey != null)
        {
            createProcessObject.put("businessKey", businessKey);
        }
-       final JSONObject variablesObject = new JSONObject();
+       final ObjectNode variablesObject = AlfrescoDefaultObjectMapper.createObjectNode();
        variablesObject.put("bpm_priority", 1);
        variablesObject.put("wf_notifyMe", Boolean.FALSE);
        
@@ -281,7 +287,7 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
        
        if (documentRefs != null && documentRefs.length > 0)
        {
-           final JSONArray itemsObject = new JSONArray();
+           final ArrayNode itemsObject = AlfrescoDefaultObjectMapper.createArrayNode();
            for (NodeRef nodeRef : documentRefs)
            {
                itemsObject.add(nodeRef.getId());
@@ -291,14 +297,15 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
        
        createProcessObject.put("variables", variablesObject);
        
-       return processesClient.createProcess(createProcessObject.toJSONString());
+       return processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
    }
    
    /**
     * Start a review pooled process through the public REST-API.
     */
    @SuppressWarnings("unchecked")
-   protected ProcessInfo startReviewPooledProcess(final RequestContext requestContext) throws PublicApiException {
+   protected ProcessInfo startReviewPooledProcess(final RequestContext requestContext) throws PublicApiException, IOException
+   {
        org.activiti.engine.repository.ProcessDefinition processDefinition = activitiProcessEngine
                .getRepositoryService()
                .createProcessDefinitionQuery()
@@ -307,10 +314,10 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
 
        ProcessesClient processesClient = publicApiClient.processesClient();
        
-       final JSONObject createProcessObject = new JSONObject();
+       final ObjectNode createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
        createProcessObject.put("processDefinitionId", processDefinition.getId());
        
-       final JSONObject variablesObject = new JSONObject();
+       final ObjectNode variablesObject = AlfrescoDefaultObjectMapper.createObjectNode();
        variablesObject.put("bpm_priority", 1);
        variablesObject.put("bpm_workflowDueDate", ISO8601DateFormat.format(new Date()));
        variablesObject.put("wf_notifyMe", Boolean.FALSE);
@@ -331,14 +338,15 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
        
        createProcessObject.put("variables", variablesObject);
        
-       return processesClient.createProcess(createProcessObject.toJSONString());
+       return processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
    }
    
    /**
     * Start a review pooled process through the public REST-API.
     */
    @SuppressWarnings("unchecked")
-   protected ProcessInfo startParallelReviewProcess(final RequestContext requestContext) throws PublicApiException {
+   protected ProcessInfo startParallelReviewProcess(final RequestContext requestContext) throws PublicApiException, IOException
+   {
        org.activiti.engine.repository.ProcessDefinition processDefinition = activitiProcessEngine
                .getRepositoryService()
                .createProcessDefinitionQuery()
@@ -347,10 +355,10 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
 
        ProcessesClient processesClient = publicApiClient.processesClient();
        
-       final JSONObject createProcessObject = new JSONObject();
+       final ObjectNode createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
        createProcessObject.put("processDefinitionId", processDefinition.getId());
        
-       final JSONObject variablesObject = new JSONObject();
+       final ObjectNode variablesObject = AlfrescoDefaultObjectMapper.createObjectNode();
        variablesObject.put("bpm_priority", 1);
        variablesObject.put("wf_notifyMe", Boolean.FALSE);
        
@@ -359,7 +367,7 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
            @Override
            public Void doWork() throws Exception
            {
-               JSONArray assigneeArray = new JSONArray();
+               ArrayNode assigneeArray = AlfrescoDefaultObjectMapper.createArrayNode();
                assigneeArray.add(requestContext.getRunAsUser());
                TestPerson otherPerson = getOtherPersonInNetwork(requestContext.getRunAsUser(), requestContext.getNetworkId());
                assigneeArray.add(otherPerson.getId());
@@ -370,6 +378,6 @@ public class EnterpriseWorkflowTestApi extends EnterpriseTestApi
        
        createProcessObject.put("variables", variablesObject);
        
-       return processesClient.createProcess(createProcessObject.toJSONString());
+       return processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
    }
 }

@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.comments;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -41,13 +43,9 @@ import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONStringer;
-import org.json.JSONWriter;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -116,8 +114,6 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
 
     /**
      * returns the nodeRef from  web script request
-     * @param req
-     * @return
      */
     protected NodeRef parseRequestForNodeRef(WebScriptRequest req)
     {
@@ -133,27 +129,22 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
 
     /**
      * get the value from JSON for given key if exists
-     * @param json
-     * @param key
-     * @return
      */
-    protected String getOrNull(JSONObject json, String key)
+    protected String getOrNull(JsonNode json, String key)
     {
-        if (json != null && json.containsKey(key))
+        if (json != null && json.has(key))
         {
-            return (String) json.get(key);
+            return json.get(key).textValue();
         }
         return null;
     }
 
     /**
      * parse JSON from request
-     * @param req
-     * @return
      */
-    protected JSONObject parseJSON(WebScriptRequest req)
+    protected JsonNode parseJSON(WebScriptRequest req)
     {
-        JSONObject json = null;
+        JsonNode json = null;
         String contentType = req.getContentType();
         if (contentType != null && contentType.indexOf(';') != -1)
         {
@@ -161,18 +152,13 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
         }
         if (MimetypeMap.MIMETYPE_JSON.equals(contentType))
         {
-            JSONParser parser = new JSONParser();
             try
             {
-                json = (JSONObject) parser.parse(req.getContent().getContent());
+                json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
             }
             catch (IOException io)
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + io.getMessage());
-            }
-            catch (ParseException pe)
-            {
-                throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + pe.getMessage());
             }
         }
         return json;
@@ -180,27 +166,22 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
 
     /**
      * parse JSON for a given input string
-     * @param input
-     * @return
      */
-    protected JSONObject parseJSONFromString(String input)
+    protected JsonNode parseJSONFromString(String input)
     {
-        JSONObject json = null;
-
-        JSONParser parser = new JSONParser();
         try
         {
             if (input != null)
             {
-                json = (JSONObject) parser.parse(input);
+                JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(input);
                 return json;
             }
         }
-        catch (ParseException pe)
+        catch (IOException e)
         {
             if (logger.isDebugEnabled())
             {
-                logger.debug("Invalid JSON: " + pe.getMessage());
+                logger.debug("Invalid JSON: " + e.getMessage());
             }
         }
 
@@ -210,13 +191,9 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
     /**
      * Post an activity entry for the comment added or deleted
      * 
-     * @param json
-     *            - is not sent null with this activity type - only for delete
-     * @param req
-     * @param nodeRef
-     * @param activityType
+     * @param json - is not sent null with this activity type - only for delete
      */
-    protected void postActivity(JSONObject json, WebScriptRequest req, NodeRef nodeRef, String activityType)
+    protected void postActivity(JsonNode json, WebScriptRequest req, NodeRef nodeRef, String activityType)
     {
         String jsonActivityData = "";
         String siteId = "";
@@ -249,14 +226,14 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
         {
             try
             {
-                org.json.JSONObject params = new org.json.JSONObject(getOrNull(json, JSON_KEY_PAGE_PARAMS));
+                JsonNode params = AlfrescoDefaultObjectMapper.getReader().readTree(getOrNull(json, JSON_KEY_PAGE_PARAMS));
                 String strParams = "";
 
-                Iterator<?> itr = params.keys();
+                Iterator<String> itr = params.fieldNames();
                 while (itr.hasNext())
                 {
-                    String strParam = itr.next().toString();
-                    strParams += strParam + "=" + params.getString(strParam) + "&";
+                    String strParam = itr.next();
+                    strParams += strParam + "=" + params.get(strParam).textValue() + "&";
                 }
                 page = getOrNull(json, JSON_KEY_PAGE) + "?" + (strParams != "" ? strParams.substring(0, strParams.length() - 1) : "");
                 title = getOrNull(json, JSON_KEY_ITEM_TITLE);
@@ -276,12 +253,12 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
 
         try
         {
-            JSONWriter jsonWriter = new JSONStringer().object();
-            jsonWriter.key(JSON_KEY_TITLE).value(title);
-            jsonWriter.key(JSON_KEY_PAGE).value(page);
-            jsonWriter.key(JSON_KEY_NODEREF).value(strNodeRef);
+            ObjectNode objectNode = AlfrescoDefaultObjectMapper.createObjectNode();
+            objectNode.put(JSON_KEY_TITLE, title);
+            objectNode.put(JSON_KEY_PAGE, page);
+            objectNode.put(JSON_KEY_NODEREF, strNodeRef);
 
-            jsonActivityData = jsonWriter.endObject().toString();
+            jsonActivityData = AlfrescoDefaultObjectMapper.writeValueAsString(objectNode);
             activityService.postActivity(activityType, siteId, COMMENTS_TOPIC_NAME, jsonActivityData);
         }
         catch (Exception e)
@@ -293,8 +270,6 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
 
     /**
      * returns SiteInfo needed for post activity
-     * @param req
-     * @return
      */
     protected SiteInfo getSiteInfo(WebScriptRequest req, boolean searchForSiteInJSON)
     {
@@ -302,15 +277,15 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
 
         if (siteName == null && searchForSiteInJSON )
         {
-            JSONObject json = parseJSON(req);
+            JsonNode json = parseJSON(req);
             if (json != null){
-                if (json.containsKey(JSON_KEY_SITE))
+                if (json.has(JSON_KEY_SITE))
                 {
-                    siteName = (String) json.get(JSON_KEY_SITE);
+                    siteName = json.get(JSON_KEY_SITE).textValue();
                 }
-                else if (json.containsKey(JSON_KEY_SITE_ID))
+                else if (json.has(JSON_KEY_SITE_ID))
                 {
-                    siteName = (String) json.get(JSON_KEY_SITE_ID);
+                    siteName = json.get(JSON_KEY_SITE_ID).textValue();
                 }
             }
         }
@@ -336,14 +311,6 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
         return executeImpl(nodeRef, req, status, cache);
     }
 
-    /**
-     * 
-     * @param nodeRef
-     * @param req
-     * @param status
-     * @param cache
-     * @return
-     */
     protected abstract Map<String, Object> executeImpl(NodeRef nodeRef, WebScriptRequest req, Status status, Cache cache);
 
 }

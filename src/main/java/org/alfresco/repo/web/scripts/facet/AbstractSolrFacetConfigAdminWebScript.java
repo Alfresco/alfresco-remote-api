@@ -26,10 +26,17 @@
 
 package org.alfresco.repo.web.scripts.facet;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -43,11 +50,9 @@ import org.alfresco.repo.search.impl.solr.facet.SolrFacetService;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
+import org.alfresco.util.json.JsonUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -120,52 +125,54 @@ public abstract class AbstractSolrFacetConfigAdminWebScript extends DeclarativeW
         }
     }
 
-    protected <T> T getValue(Class<T> clazz, Object value, T defaultValue) throws JSONException
+    protected <T> T getValue(Class<T> clazz, JsonNode value, T defaultValue) throws IOException
     {
-        if (JSONObject.NULL.equals(value))
+        if (value == null || value instanceof NullNode)
         {
             return defaultValue;
         }
 
         try
         {
-            return clazz.cast(value);
+            // convert value to Java object before trying to cast
+            return clazz.cast(JsonUtil.convertJSONValue((ValueNode) value));
         }
         catch (Exception ex)
         {
-            throw new JSONException("JSONObject[" + value +"] is not an instance of [" + clazz.getName() +"]");
+            throw new IOException("JSONObject[" + value +"] is not an instance of [" + clazz.getName() +"]");
         }
     }
 
-    protected Set<CustomProperties> getCustomProperties(JSONObject customPropsJsonObj) throws JSONException
+    protected Set<CustomProperties> getCustomProperties(ObjectNode customPropsJsonObj) throws IOException
     {
         if (customPropsJsonObj == null)
         {
             return null;
         }
-        JSONArray keys = customPropsJsonObj.names();
+        Iterator<String> keys = customPropsJsonObj.fieldNames();
         if (keys == null)
         {
             return Collections.emptySet();
         }
 
-        Set<CustomProperties> customProps = new HashSet<>(keys.length());
-        for (int i = 0, length = keys.length(); i < length; i++)
+        Set<CustomProperties> customProps = new HashSet<>(customPropsJsonObj.size());
+        while(keys.hasNext())
         {
-            JSONObject jsonObj = customPropsJsonObj.getJSONObject((String) keys.get(i));
+            String key = keys.next();
+            JsonNode jsonObj = customPropsJsonObj.get(key);
 
-            QName name = resolveToQName(getValue(String.class, jsonObj.opt(CUSTOM_PARAM_NAME), null));
+            QName name = resolveToQName(getValue(String.class, (ValueNode) jsonObj.get(CUSTOM_PARAM_NAME), null));
             validateMandatoryCustomProps(name, CUSTOM_PARAM_NAME);
             
             Serializable value = null;
-            Object customPropValue = jsonObj.opt(CUSTOM_PARAM_VALUE);
+            JsonNode     customPropValue = jsonObj.has(CUSTOM_PARAM_VALUE) ? jsonObj.get(CUSTOM_PARAM_VALUE) : null;
             validateMandatoryCustomProps(customPropValue, CUSTOM_PARAM_VALUE);
             
-            if(customPropValue instanceof JSONArray)
+            if(customPropValue instanceof ArrayNode)
             {
-                JSONArray array = (JSONArray) customPropValue;
-                ArrayList<Serializable> list = new ArrayList<>(array.length());
-                for(int j = 0; j < array.length(); j++)
+                ArrayNode array = (ArrayNode) customPropValue;
+                ArrayList<Serializable> list = new ArrayList<>(array.size());
+                for(int j = 0; j < array.size(); j++)
                 {
                     list.add(getSerializableValue(array.get(j)));
                 }
@@ -187,27 +194,27 @@ public abstract class AbstractSolrFacetConfigAdminWebScript extends DeclarativeW
         return customProps;
     }
 
-    protected Set<String> getScopedSites(JSONArray scopedSitesJsonArray) throws JSONException
+    protected Set<String> getScopedSites(ArrayNode scopedSitesJsonArray)
     {
         if (scopedSitesJsonArray == null)
         {
             return null;
         }
 
-        Set<String> scopedSites = new HashSet<String>(scopedSitesJsonArray.length());
-        for (int i = 0, length = scopedSitesJsonArray.length(); i < length; i++)
+        Set<String> scopedSites = new HashSet<String>(scopedSitesJsonArray.size());
+        for (int i = 0, length = scopedSitesJsonArray.size(); i < length; i++)
         {
-            String site = scopedSitesJsonArray.getString(i);
+            String site = scopedSitesJsonArray.get(i).textValue();
             scopedSites.add(site);
         }
         return scopedSites;
     }
 
-    private void validateMandatoryCustomProps(Object obj, String paramName) throws JSONException
+    private void validateMandatoryCustomProps(Object obj, String paramName) throws IOException
     {
         if (obj == null)
         {
-            throw new JSONException("Invalid JSONObject in the Custom Properties JSON. [" + paramName + "] cannot be null.");
+            throw new IOException("Invalid JSONObject in the Custom Properties JSON. [" + paramName + "] cannot be null.");
         }
 
     }
@@ -222,16 +229,17 @@ public abstract class AbstractSolrFacetConfigAdminWebScript extends DeclarativeW
         }
     }
 
-    private Serializable getSerializableValue(Object object) throws JSONException
+    private Serializable getSerializableValue(JsonNode node) throws IOException
     {
-        if (!(object instanceof Serializable))
+        if (!(node instanceof ValueNode))
         {
-            throw new JSONException("Invalid value in the Custom Properties JSON. [" + object + "] must be an instance of Serializable.");
+            throw new IOException("Invalid value in the Custom Properties JSON. [" + node.toString() + "] must be an instance of Serializable.");
         }
+        Object object = JsonUtil.convertJSONValue((ValueNode) node);
         return (Serializable) object;
     }
 
-    private QName resolveToQName(String qnameStr) throws JSONException
+    private QName resolveToQName(String qnameStr) throws IOException
     {
         QName typeQName = null;
         if (qnameStr == null)
@@ -240,7 +248,7 @@ public abstract class AbstractSolrFacetConfigAdminWebScript extends DeclarativeW
         }
         if(qnameStr.charAt(0) == QName.NAMESPACE_BEGIN && qnameStr.indexOf("solrfacetcustomproperty") < 0)
         {
-            throw new JSONException("Invalid name in the Custom Properties JSON. Namespace URL must be [" + SolrFacetModel.SOLR_FACET_CUSTOM_PROPERTY_URL + "]");
+            throw new IOException("Invalid name in the Custom Properties JSON. Namespace URL must be [" + SolrFacetModel.SOLR_FACET_CUSTOM_PROPERTY_URL + "]");
         }
         else if(qnameStr.charAt(0) == QName.NAMESPACE_BEGIN)
         {

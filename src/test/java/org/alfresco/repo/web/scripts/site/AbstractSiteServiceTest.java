@@ -25,18 +25,19 @@
  */
 package org.alfresco.repo.web.scripts.site;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
-import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.site.SiteModel;
 import org.alfresco.repo.web.scripts.BaseWebScriptTest;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
@@ -116,10 +117,10 @@ public class AbstractSiteServiceTest extends BaseWebScriptTest
         }
     }
 
-    protected JSONObject createSite(String sitePreset, String shortName, String title,
-            String description, SiteVisibility visibility, int expectedStatus) throws Exception
+    protected JsonNode createSite(String sitePreset, String shortName, String title,
+                                  String description, SiteVisibility visibility, int expectedStatus) throws Exception
     {
-        JSONObject site = new JSONObject();
+        ObjectNode site = AlfrescoDefaultObjectMapper.createObjectNode();
         site.put("sitePreset", sitePreset);
         site.put("shortName", shortName);
         site.put("title", title);
@@ -128,16 +129,16 @@ public class AbstractSiteServiceTest extends BaseWebScriptTest
         Response response = sendRequest(new PostRequest(URL_SITES, site.toString(),
                 "application/json"), expectedStatus);
         this.createdSites.add(shortName);
-        return new JSONObject(response.getContentAsString());
+        return AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     }
 
     protected void addSiteMember(String userName, String site) throws Exception
     {
-        JSONObject membership = new JSONObject();
+        ObjectNode membership = AlfrescoDefaultObjectMapper.createObjectNode();
         membership.put("role", SiteModel.SITE_CONSUMER);
-        JSONObject person = new JSONObject();
+        ObjectNode person = AlfrescoDefaultObjectMapper.createObjectNode();
         person.put("userName", userName);
-        membership.put("person", person);
+        membership.set("person", person);
 
         sendRequest(new PostRequest(URL_SITES + "/" + site + URL_MEMBERSHIPS,
                 membership.toString(), "application/json"), 200);

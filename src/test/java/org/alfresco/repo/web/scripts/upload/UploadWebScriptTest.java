@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.upload;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,13 +54,12 @@ import org.alfresco.service.cmr.version.VersionType;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.GUID;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.httpclient.methods.multipart.StringPart;
 import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
 import org.springframework.util.ResourceUtils;
@@ -119,8 +119,8 @@ public class UploadWebScriptTest extends BaseWebScriptTest
                 //Upload file in a site using webScript
                 Response response = uploadFileWs(file, fileName, siteInfo.getShortName(), "doclib");
                 assertNotNull("content of file", response.getContentAsString());
-                JSONObject jsonRsp = (JSONObject) JSONValue.parse(response.getContentAsString());
-                final String ssdNodeRefString = (String) jsonRsp.get("nodeRef");
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+                final String ssdNodeRefString = jsonRsp.get("nodeRef").textValue();
                 assertNotNull("nodeRef", ssdNodeRefString);
                 documentSite = new NodeRef(ssdNodeRefString);
 

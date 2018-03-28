@@ -25,6 +25,10 @@
  */
 package org.alfresco.repo.web.scripts.solr;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -36,7 +40,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.repo.domain.node.ContentDataWithId;
 import org.alfresco.service.cmr.dictionary.DataTypeDefinition;
 import org.alfresco.service.cmr.dictionary.DictionaryService;
@@ -56,13 +59,11 @@ import org.alfresco.service.cmr.repository.datatype.TypeConverter.Converter;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.PropertyCheck;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.surf.exception.PlatformRuntimeException;
 import org.springframework.extensions.webscripts.json.JSONUtils;
 
@@ -121,13 +122,13 @@ import org.springframework.extensions.webscripts.json.JSONUtils;
         }
     }
     
-    public <T> T serializeValue(Class<T> targetClass, Object value) throws JSONException
+    public <T> T serializeValue(Class<T> targetClass, Object value)
     {
         return typeConverter.INSTANCE.convert(targetClass, value);
     }
     
     @SuppressWarnings("unchecked")
-    public PropertyValue serialize(QName propName, Serializable value) throws IOException, JSONException
+    public PropertyValue serialize(QName propName, Serializable value) throws IOException
     {
         if(value == null)
         {
@@ -151,21 +152,21 @@ import org.springframework.extensions.webscripts.json.JSONUtils;
 
             Collection<Serializable> c = (Collection<Serializable>)value;
 
-            JSONArray body = new JSONArray();
+            ArrayNode body = AlfrescoDefaultObjectMapper.createArrayNode();
             for(Serializable o : c)
             {
                 if(dataTypeName.equals(DataTypeDefinition.MLTEXT))
                 {
                     MLText source = (MLText)o;
-                    JSONArray array = new JSONArray();
+                    ArrayNode array = AlfrescoDefaultObjectMapper.createArrayNode();
                     for(Locale locale : source.getLocales())
                     {
-                        JSONObject json = new JSONObject();
+                        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
                         json.put("locale", DefaultTypeConverter.INSTANCE.convert(String.class, locale));
                         json.put("value", source.getValue(locale));
-                        array.put(json);
+                        array.add(json);
                     }
-                    body.put(array);
+                    body.add(array);
                 }
                 else if(dataTypeName.equals(DataTypeDefinition.CONTENT))
                 {
@@ -173,7 +174,7 @@ import org.springframework.extensions.webscripts.json.JSONUtils;
                 }
                 else
                 {
-                    body.put(serializeToJSONString(o));
+                    body.add(serializeToJSONString(o));
                 }
                 
             }
@@ -236,23 +237,16 @@ import org.springframework.extensions.webscripts.json.JSONUtils;
             {
                 public String convert(MLText source)
                 {
-                    try
+                    ArrayNode array = AlfrescoDefaultObjectMapper.createArrayNode();
+                    for(Locale locale : source.getLocales())
                     {
-                        JSONArray array = new JSONArray();
-                        for(Locale locale : source.getLocales())
-                        {
-                            JSONObject json = new JSONObject();
-                            json.put("locale", DefaultTypeConverter.INSTANCE.convert(String.class, locale));
-                            json.put("value", source.getValue(locale));
-                            array.put(json);
-                        }
+                        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
+                        json.put("locale", DefaultTypeConverter.INSTANCE.convert(String.class, locale));
+                        json.put("value", source.getValue(locale));
+                        array.add(json);
+                    }
 
-                        return array.toString(3);
-                    }
-                    catch(JSONException e)
-                    {
-                        throw new AlfrescoRuntimeException("Unable to serialize content data to JSON", e);
-                    }
+                    return array.toString();
                 }
             });
             
@@ -270,23 +264,16 @@ import org.springframework.extensions.webscripts.json.JSONUtils;
             {
                 public String convert(ContentDataWithId source)
                 {
-                    JSONObject json = new JSONObject();
-                    try
-                    {
-                        json.put("contentId", String.valueOf(source.getId()));
-                        String locale = INSTANCE.convert(String.class, source.getLocale());
-                        json.put("locale", locale == null ? JSONObject.NULL : locale);
-                        String encoding = source.getEncoding();
-                        json.put("encoding", encoding == null ? JSONObject.NULL : encoding);
-                        String mimetype = source.getMimetype();
-                        json.put("mimetype", mimetype == null ? JSONObject.NULL : mimetype);
-                        json.put("size", String.valueOf(source.getSize()));
-                        return json.toString(3);
-                    }
-                    catch(JSONException e)
-                    {
-                        throw new AlfrescoRuntimeException("Unable to serialize content data to JSON", e);
-                    }
+                    ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
+                    json.put("contentId", String.valueOf(source.getId()));
+                    String locale = INSTANCE.convert(String.class, source.getLocale());
+                    json.set("locale", locale == null ? NullNode.getInstance() : TextNode.valueOf(locale));
+                    String encoding = source.getEncoding();
+                    json.set("encoding", encoding == null ? NullNode.getInstance() : TextNode.valueOf(encoding));
+                    String mimetype = source.getMimetype();
+                    json.set("mimetype", mimetype == null ? NullNode.getInstance() : TextNode.valueOf(mimetype));
+                    json.put("size", String.valueOf(source.getSize()));
+                    return json.toString();
                 }
             });
 
@@ -294,22 +281,15 @@ import org.springframework.extensions.webscripts.json.JSONUtils;
                     {
                         public String convert(ContentData source)
                         {
-                            JSONObject json = new JSONObject();
-                            try
-                            {
-                                String locale = INSTANCE.convert(String.class, source.getLocale());
-                                json.put("locale", locale == null ? JSONObject.NULL : locale);
-                                String encoding = source.getEncoding();
-                                json.put("encoding", encoding == null ? JSONObject.NULL : encoding);
-                                String mimetype = source.getMimetype();
-                                json.put("mimetype", mimetype == null ? JSONObject.NULL : mimetype);
-                                json.put("size", String.valueOf(source.getSize()));
-                                return json.toString(3);
-                            }
-                            catch(JSONException e)
-                            {
-                                throw new AlfrescoRuntimeException("Unable to serialize content data to JSON", e);
-                            }
+                            ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
+                            String locale = INSTANCE.convert(String.class, source.getLocale());
+                            json.set("locale", locale == null ? NullNode.getInstance() : TextNode.valueOf(locale));
+                            String encoding = source.getEncoding();
+                            json.set("encoding", encoding == null ? NullNode.getInstance() : TextNode.valueOf(encoding));
+                            String mimetype = source.getMimetype();
+                            json.set("mimetype", mimetype == null ? NullNode.getInstance() : TextNode.valueOf(mimetype));
+                            json.put("size", String.valueOf(source.getSize()));
+                            return json.toString();
                         }
                     });
             

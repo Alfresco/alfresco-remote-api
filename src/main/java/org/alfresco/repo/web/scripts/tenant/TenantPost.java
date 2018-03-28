@@ -25,15 +25,14 @@
  */
 package org.alfresco.repo.web.scripts.tenant;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -58,32 +57,28 @@ public class TenantPost extends AbstractTenantAdminWebScript
         
         try
         {
-            JSONObject json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
             
             if (! json.has(TENANT_DOMAIN))
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not find required 'tenantDomain' parameter");
             }
-            tenantDomain = json.getString(TENANT_DOMAIN);
+            tenantDomain = json.get(TENANT_DOMAIN).textValue();
             
             if (! json.has(TENANT_ADMIN_PASSWORD))
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not find required 'tenantAdminPassword' parameter");
             }
-            tenantAdminPassword = json.getString(TENANT_ADMIN_PASSWORD);
+            tenantAdminPassword = json.get(TENANT_ADMIN_PASSWORD).textValue();
             
             if (json.has(TENANT_CONTENT_STORE_ROOT))
             {
-                contentStoreRoot = json.getString(TENANT_CONTENT_STORE_ROOT);
+                contentStoreRoot = json.get(TENANT_CONTENT_STORE_ROOT).textValue();
             }
         }
         catch (IOException iox)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from req.", iox);
-        }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from req.", je);
         }
         
         tenantAdminService.createTenant(tenantDomain, tenantAdminPassword.toCharArray(), contentStoreRoot);

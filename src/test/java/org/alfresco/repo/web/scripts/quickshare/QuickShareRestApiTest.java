@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.quickshare;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -65,9 +66,7 @@ import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
@@ -232,10 +231,10 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         
         // get metadata for node (authenticated)
         Response rsp = sendRequest(new GetRequest(AUTH_METADATA_URL.replace("{node_ref_3}", testNodeRef_3)), expectedStatusOK, USER_ONE);
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
-        String name = jsonRsp.getString("name");
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
+        String name = jsonRsp.get("name").textValue();
         assertEquals(TEST_NAME, name);
-        String mimetype = jsonRsp.getString("mimetype");
+        String mimetype = jsonRsp.get("mimetype").textValue();
         assertEquals(TEST_MIMETYPE_JPEG, mimetype);
         
         // get content for node (authenticated)
@@ -260,8 +259,8 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         
         // share
         rsp = sendRequest(new PostRequest(SHARE_URL.replace("{node_ref_3}", testNodeRef_3), "", APPLICATION_JSON), expectedStatusOK, USER_ONE);
-        jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
-        String sharedId = jsonRsp.getString("sharedId");
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
+        String sharedId = jsonRsp.get("sharedId").textValue();
         assertNotNull(sharedId);
         assertEquals(22, sharedId.length()); // note: we may have to adjust/remove this check if we change length of id (or it becomes variable length)
         
@@ -269,10 +268,10 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         
         // get metadata for share (note: can be unauthenticated)
         rsp = sendRequest(new GetRequest(SHARE_METADATA_URL.replace("{shared_id}", sharedId)), expectedStatusOK, USER_TWO);
-        jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
-        name = jsonRsp.getString("name");
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
+        name = jsonRsp.get("name").textValue();
         assertEquals(TEST_NAME, name);
-        mimetype = jsonRsp.getString("mimetype");
+        mimetype = jsonRsp.get("mimetype").textValue();
         assertEquals(TEST_MIMETYPE_JPEG, mimetype);
         
         // get content for share (note: can be unauthenticated)
@@ -298,7 +297,7 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         rsp = sendRequest(new GetRequest(SHARE_CONTENT_THUMBNAIL_URL.replace("{shared_id}", sharedId).replace("{thumbnailname}", "doclib")), expectedStatusNotFound, USER_TWO);
     }
     
-    public void testUnshareContributer() throws UnsupportedEncodingException, IOException, JSONException
+    public void testUnshareContributer() throws UnsupportedEncodingException, IOException
     {
     	final int expectedStatusOK = 200;
         final int expectedStatusForbidden = 403;
@@ -318,8 +317,8 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         
         // share
         Response rsp= sendRequest(new PostRequest(SHARE_URL.replace("{node_ref_3}", strTestNodeRef), "", APPLICATION_JSON), expectedStatusOK, USER_ONE);
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
-        String sharedId = jsonRsp.getString("sharedId");
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
+        String sharedId = jsonRsp.get("sharedId").textValue();
         assertNotNull(sharedId);
         
         // unshare
@@ -334,13 +333,8 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
     
     /**
      * This test verifies that copying a shared node does not across the shared aspect and it's associated properties.
-     * @throws IOException 
-     * @throws UnsupportedEncodingException 
-     * @throws JSONException 
-     * @throws FileNotFoundException 
-     * @throws FileExistsException 
      */
-    public void testCopy() throws UnsupportedEncodingException, IOException, JSONException, FileExistsException, FileNotFoundException 
+    public void testCopy() throws UnsupportedEncodingException, IOException, FileExistsException, FileNotFoundException
     {
         final int expectedStatusOK = 200;
         
@@ -350,8 +344,8 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         
         // share
         Response rsp = sendRequest(new PostRequest(SHARE_URL.replace("{node_ref_3}", testNodeRef), "", APPLICATION_JSON), expectedStatusOK, USER_ONE);
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
-        String sharedId = jsonRsp.getString("sharedId");
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
+        String sharedId = jsonRsp.get("sharedId").textValue();
         assertNotNull(sharedId);
         assertEquals(22, sharedId.length()); // note: we may have to adjust/remove this check if we change length of id (or it becomes variable length)
 

@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.admin;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +53,7 @@ import org.alfresco.service.descriptor.DescriptorService;
 import org.alfresco.service.license.LicenseDescriptor;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.test_category.OwnJVMTestsCategory;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.context.ApplicationContext;
@@ -107,10 +108,10 @@ public class AdminWebScriptTest extends BaseWebScriptTest
         TestWebScriptServer.GetRequest req = new TestWebScriptServer.GetRequest(url);
         
         Response response = sendRequest(req, Status.STATUS_OK, guest);
-        JSONObject json = new JSONObject(response.getContentAsString());
-        Long maxUsers = json.isNull(AbstractAdminWebScript.JSON_KEY_USERS) ? null : json.getLong(AbstractAdminWebScript.JSON_KEY_USERS);
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        Long maxUsers = json.has(AbstractAdminWebScript.JSON_KEY_USERS) ? null : json.get(AbstractAdminWebScript.JSON_KEY_USERS).longValue();
         assertEquals("Mismatched max users", restrictions.getUsers(), maxUsers);
-        Long maxDocuments = json.isNull(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) ? null : json.getLong(AbstractAdminWebScript.JSON_KEY_DOCUMENTS);
+        Long maxDocuments = json.has(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) ? null : json.get(AbstractAdminWebScript.JSON_KEY_DOCUMENTS).longValue();
         assertEquals("Mismatched max documents", restrictions.getDocuments(), maxDocuments);
     }
     
@@ -127,25 +128,25 @@ public class AdminWebScriptTest extends BaseWebScriptTest
         
         Response response = sendRequest(req, Status.STATUS_OK, guest);
         System.out.println(response.getContentAsString());
-        JSONObject json = new JSONObject(response.getContentAsString());
-        Long users = json.isNull(AbstractAdminWebScript.JSON_KEY_USERS) ? null : json.getLong(AbstractAdminWebScript.JSON_KEY_USERS);
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        Long users = json.has(AbstractAdminWebScript.JSON_KEY_USERS) ? null : json.get(AbstractAdminWebScript.JSON_KEY_USERS).longValue();
         assertEquals("Mismatched users", usage.getUsers(), users);
-        Long documents = json.isNull(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) ? null : json.getLong(AbstractAdminWebScript.JSON_KEY_DOCUMENTS);
+        Long documents = json.has(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) ? null : json.get(AbstractAdminWebScript.JSON_KEY_DOCUMENTS).longValue();
         assertEquals("Mismatched documents", usage.getDocuments(), documents);
-        String licenseMode = json.isNull(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE) ? null : json.getString(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE);
+        String licenseMode = json.has(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE) ? null : json.get(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE).textValue();
         assertEquals("Mismatched licenseMode", usage.getLicenseMode().toString(), licenseMode);
-        boolean readOnly = json.getBoolean(AbstractAdminWebScript.JSON_KEY_READ_ONLY);
+        boolean readOnly = json.get(AbstractAdminWebScript.JSON_KEY_READ_ONLY).booleanValue();
         assertEquals("Mismatched readOnly", usage.isReadOnly(), readOnly);
-        boolean updated = json.getBoolean(AbstractAdminWebScript.JSON_KEY_UPDATED);
+        boolean updated = json.get(AbstractAdminWebScript.JSON_KEY_UPDATED).booleanValue();
         assertEquals("Mismatched updated", false, updated);
-        Long licenseValidUntil = json.isNull(AbstractAdminWebScript.JSON_KEY_LICENSE_VALID_UNTIL) ? null : json.getLong(AbstractAdminWebScript.JSON_KEY_LICENSE_VALID_UNTIL);
+        Long licenseValidUntil = json.has(AbstractAdminWebScript.JSON_KEY_LICENSE_VALID_UNTIL) ? null : json.get(AbstractAdminWebScript.JSON_KEY_LICENSE_VALID_UNTIL).longValue();
         assertEquals("Mismatched licenseValidUntil",
                 (validUntil == null) ? null : validUntil.getTime(),
                 licenseValidUntil);
-        Integer level = json.isNull(AbstractAdminWebScript.JSON_KEY_LEVEL) ? null : json.getInt(AbstractAdminWebScript.JSON_KEY_LEVEL);
+        Integer level = json.has(AbstractAdminWebScript.JSON_KEY_LEVEL) ? null : json.get(AbstractAdminWebScript.JSON_KEY_LEVEL).intValue();
         assertEquals("Mismatched level", checkLevel, level);
-        json.getJSONArray(AbstractAdminWebScript.JSON_KEY_WARNINGS);
-        json.getJSONArray(AbstractAdminWebScript.JSON_KEY_ERRORS);
+        json.get(AbstractAdminWebScript.JSON_KEY_WARNINGS);
+        json.get(AbstractAdminWebScript.JSON_KEY_ERRORS);
     }
     
     public void testUpdateUsageWithoutPermissions() throws Exception
@@ -165,16 +166,16 @@ public class AdminWebScriptTest extends BaseWebScriptTest
         
         Response response = sendRequest(req, Status.STATUS_OK, admin);
         System.out.println(response.getContentAsString());
-        JSONObject json = new JSONObject(response.getContentAsString());
-        Long users = json.isNull(AbstractAdminWebScript.JSON_KEY_USERS) ? null : json.getLong(AbstractAdminWebScript.JSON_KEY_USERS);
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        Long users = json.has(AbstractAdminWebScript.JSON_KEY_USERS) ? null : json.get(AbstractAdminWebScript.JSON_KEY_USERS).longValue();
         assertEquals("Mismatched users", usage.getUsers(), users);
-        Long documents = json.isNull(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) ? null : json.getLong(AbstractAdminWebScript.JSON_KEY_DOCUMENTS);
+        Long documents = json.has(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) ? null : json.get(AbstractAdminWebScript.JSON_KEY_DOCUMENTS).longValue();
         assertEquals("Mismatched documents", usage.getDocuments(), documents);
-        String licenseMode = json.isNull(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE) ? null : json.getString(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE);
+        String licenseMode = json.has(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE) ? null : json.get(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE).textValue();
         assertEquals("Mismatched licenseMode", usage.getLicenseMode().toString(), licenseMode);
-        boolean readOnly = json.getBoolean(AbstractAdminWebScript.JSON_KEY_READ_ONLY);
+        boolean readOnly = json.get(AbstractAdminWebScript.JSON_KEY_READ_ONLY).booleanValue();
         assertEquals("Mismatched readOnly", usage.isReadOnly(), readOnly);
-        boolean updated = json.getBoolean(AbstractAdminWebScript.JSON_KEY_UPDATED);
+        boolean updated = json.get(AbstractAdminWebScript.JSON_KEY_UPDATED).booleanValue();
         assertEquals("Mismatched updated", true, updated);
     }
 

@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.solr;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -50,11 +53,9 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.Path;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -97,25 +98,25 @@ public class NodesMetaDataGet extends DeclarativeWebScript
             {
                 throw new WebScriptException("Failed to convert request to String");
             }
-            JSONObject o = new JSONObject(content.getContent());
+            JsonNode o = AlfrescoDefaultObjectMapper.getReader().readTree(content.getContent());
             
             List<Long> nodeIds = null;
             if(o.has("nodeIds"))
             {
-                JSONArray jsonNodeIds =  o.getJSONArray("nodeIds");
-                nodeIds = new ArrayList<Long>(jsonNodeIds.length());
-                for(int i = 0; i < jsonNodeIds.length(); i++)
+                ArrayNode jsonNodeIds =  (ArrayNode) o.get("nodeIds");
+                nodeIds = new ArrayList<Long>(jsonNodeIds.size());
+                for(int i = 0; i < jsonNodeIds.size(); i++)
                 {
-                    Long nodeId = jsonNodeIds.getLong(i);
+                    Long nodeId = jsonNodeIds.get(i).longValue();
                     nodeIds.add(nodeId);
                 }
             }
             
-            Long fromNodeId = o.has("fromNodeId") ? o.getLong("fromNodeId") : null;
-            Long toNodeId = o.has("toNodeId") ? o.getLong("toNodeId") : null;
+            Long fromNodeId = o.has("fromNodeId") ? o.get("fromNodeId").longValue() : null;
+            Long toNodeId = o.has("toNodeId") ? o.get("toNodeId").longValue() : null;
             
             // 0 or Integer.MAX_VALUE => ignore
-            int maxResults = o.has("maxResults") ? o.getInt("maxResults") : 0;
+            int maxResults = o.has("maxResults") ? o.get("maxResults").intValue() : 0;
 
             int size = 0;
             if(maxResults != 0 && maxResults != Integer.MAX_VALUE)
@@ -141,43 +142,43 @@ public class NodesMetaDataGet extends DeclarativeWebScript
             MetaDataResultsFilter filter = new MetaDataResultsFilter();
             if(o.has("includeAclId"))
             {
-                filter.setIncludeAclId(o.getBoolean("includeAclId"));
+                filter.setIncludeAclId(o.get("includeAclId").booleanValue());
             }
             if(o.has("includeAspects"))
             {
-                filter.setIncludeAspects(o.getBoolean("includeAspects"));
+                filter.setIncludeAspects(o.get("includeAspects").booleanValue());
             }
             if(o.has("includeNodeRef"))
             {
-                filter.setIncludeNodeRef(o.getBoolean("includeNodeRef"));
+                filter.setIncludeNodeRef(o.get("includeNodeRef").booleanValue());
             }
             if(o.has("includeOwner"))
             {
-                filter.setIncludeOwner(o.getBoolean("includeOwner"));
+                filter.setIncludeOwner(o.get("includeOwner").booleanValue());
             }
             if(o.has("includeProperties"))
             {
-                filter.setIncludeProperties(o.getBoolean("includeProperties"));
+                filter.setIncludeProperties(o.get("includeProperties").booleanValue());
             }
             if(o.has("includePaths"))
             {
-                filter.setIncludePaths(o.getBoolean("includePaths"));
+                filter.setIncludePaths(o.get("includePaths").booleanValue());
             }
             if(o.has("includeType"))
             {
-                filter.setIncludeType(o.getBoolean("includeType"));
+                filter.setIncludeType(o.get("includeType").booleanValue());
             }
             if(o.has("includeParentAssociations"))
             {
-                filter.setIncludeParentAssociations(o.getBoolean("includeParentAssociations"));
+                filter.setIncludeParentAssociations(o.get("includeParentAssociations").booleanValue());
             }
             if(o.has("includeChildIds"))
             {
-                filter.setIncludeChildIds(o.getBoolean("includeChildIds"));
+                filter.setIncludeChildIds(o.get("includeChildIds").booleanValue());
             }
             if(o.has("includeTxnId"))
             {
-                filter.setIncludeTxnId(o.getBoolean("includeTxnId"));
+                filter.setIncludeTxnId(o.get("includeTxnId").booleanValue());
             }
             
             final ArrayList<FreemarkerNodeMetaData> nodesMetaData = 
@@ -233,10 +234,6 @@ public class NodesMetaDataGet extends DeclarativeWebScript
         {
             throw new WebScriptException("IO exception parsing request", e);
         }
-        catch(JSONException e)
-        {
-            throw new WebScriptException("Invalid JSON", e);
-        }
     }
 
     /**
@@ -264,7 +261,7 @@ public class NodesMetaDataGet extends DeclarativeWebScript
         private final String tenantDomain;
         
         public FreemarkerNodeMetaData(final SOLRSerializer solrSerializer, final NodeMetaData nodeMetaData)
-        		throws IOException, JSONException
+        		throws IOException
         {
             this.nodeId = nodeMetaData.getNodeId();
             this.tenantDomain = nodeMetaData.getTenantDomain();
@@ -282,7 +279,7 @@ public class NodesMetaDataGet extends DeclarativeWebScript
                 for(Pair<Path, QName> pair : nodeMetaData.getPaths())
                 {
                 	StringBuilder ancestorPath = new StringBuilder();
-                    JSONObject o = new JSONObject();
+                    ObjectNode o = AlfrescoDefaultObjectMapper.createObjectNode();
                     o.put("path", solrSerializer.serializeValue(String.class, pair.getFirst()));
                     o.put("qname", solrSerializer.serializeValue(String.class, pair.getSecond()));
                    
@@ -293,8 +290,8 @@ public class NodesMetaDataGet extends DeclarativeWebScript
                         ancestorPath.insert(0, ancestor.getId()).insert(0, "/");
                     }
                    
-                    o.put("apath",  ancestorPath);
-                    paths.add(o.toString(3));
+                    o.put("apath",  ancestorPath.toString());
+                    paths.add(o.toString());
                 }
             }
             this.ancestors = ancestors;
@@ -307,14 +304,14 @@ public class NodesMetaDataGet extends DeclarativeWebScript
             {
                 for(Collection<String> namePath : nodeMetaData.getNamePaths())
                 {
-                    JSONObject o = new JSONObject();
-                    JSONArray array = new JSONArray();
+                    ObjectNode o = AlfrescoDefaultObjectMapper.createObjectNode();
+                    ArrayNode array = AlfrescoDefaultObjectMapper.createArrayNode();
                     for(String element : namePath)
                     {
-                        array.put(solrSerializer.serializeValue(String.class, element));
+                        array.add(solrSerializer.serializeValue(String.class, element));
                     }
                     o.put("namePath", array);
-                    namePaths.add(o.toString(3));
+                    namePaths.add(o.toString());
                 }
             }
             this.namePaths = namePaths;

@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.rule;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.MessageFormat;
 import java.util.List;
 
@@ -44,9 +47,7 @@ import org.alfresco.service.cmr.rule.Rule;
 import org.alfresco.service.cmr.rule.RuleService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.service.transaction.TransactionService;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
@@ -187,69 +188,69 @@ public class RuleServiceTest extends BaseWebScriptTest
         this.authenticationComponent.clearCurrentSecurityContext();
     }
 
-    private JSONObject createRule(NodeRef ruleOwnerNodeRef) throws Exception
+    private JsonNode createRule(NodeRef ruleOwnerNodeRef) throws Exception
     {
         return createRule(ruleOwnerNodeRef, "test_rule");
     }
     
-    private JSONObject createRule(NodeRef ruleOwnerNodeRef, String title) throws Exception
+    private JsonNode createRule(NodeRef ruleOwnerNodeRef, String title) throws Exception
     {
-        JSONObject jsonRule = buildTestRule(title);
+        JsonNode jsonRule = buildTestRule(title);
 
         Response response = sendRequest(new PostRequest(formatRulesUrl(ruleOwnerNodeRef, false), jsonRule.toString(), "application/json"), 200);
 
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         return result;
     }
 
-    private JSONArray getNodeRules(NodeRef nodeRef, boolean inherited) throws Exception
+    private ArrayNode getNodeRules(NodeRef nodeRef, boolean inherited) throws Exception
     {
         Response response = sendRequest(new GetRequest(formatRulesUrl(nodeRef, inherited)), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         assertNotNull(result);
 
         assertTrue(result.has("data"));
 
-        JSONArray data = result.getJSONArray("data");
+        ArrayNode data = (ArrayNode) result.get("data");
 
         return data;
     }
 
-    private void checkRuleComplete(JSONObject result) throws Exception
+    private void checkRuleComplete(JsonNode result) throws Exception
     {
         assertNotNull("Response is null.", result);
 
         // if id present in response -> rule was created
         assertTrue(result.has("id"));
 
-        assertEquals(result.getString("title"), "test_rule");
-        assertEquals(result.getString("description"), "this is description for test_rule");
+        assertEquals(result.get("title").textValue(), "test_rule");
+        assertEquals(result.get("description").textValue(), "this is description for test_rule");
 
-        JSONArray ruleType = result.getJSONArray("ruleType");
+        ArrayNode ruleType = (ArrayNode) result.get("ruleType");
 
-        assertEquals(1, ruleType.length());
-        assertEquals("outbound", ruleType.getString(0));
+        assertEquals(1, ruleType.size());
+        assertEquals("outbound", ruleType.get(0).textValue());
 
-        assertTrue(result.getBoolean("applyToChildren"));
-        assertFalse(result.getBoolean("executeAsynchronously"));
-        assertFalse(result.getBoolean("disabled"));
+        assertTrue(result.get("applyToChildren").booleanValue());
+        assertFalse(result.get("executeAsynchronously").booleanValue());
+        assertFalse(result.get("disabled").booleanValue());
         assertTrue(result.has("owningNode"));
-        JSONObject owningNode = result.getJSONObject("owningNode");
+        JsonNode owningNode = result.get("owningNode");
         assertTrue(owningNode.has("nodeRef"));
         assertTrue(owningNode.has("name"));
         assertTrue(result.has("url"));
 
-        JSONObject jsonAction = result.getJSONObject("action");
+        JsonNode jsonAction = result.get("action");
 
         assertTrue(jsonAction.has("id"));
 
-        assertEquals(jsonAction.getString("actionDefinitionName"), "composite-action");
-        assertEquals(jsonAction.getString("description"), "this is description for composite-action");
-        assertEquals(jsonAction.getString("title"), "test_title");
+        assertEquals(jsonAction.get("actionDefinitionName").textValue(), "composite-action");
+        assertEquals(jsonAction.get("description").textValue(), "this is description for composite-action");
+        assertEquals(jsonAction.get("title").textValue(), "test_title");
 
-        assertTrue(jsonAction.getBoolean("executeAsync"));
+        assertTrue(jsonAction.get("executeAsync").booleanValue());
 
         assertTrue(jsonAction.has("actions"));
         assertTrue(jsonAction.has("conditions"));
@@ -257,50 +258,50 @@ public class RuleServiceTest extends BaseWebScriptTest
         assertTrue(jsonAction.has("url"));
     }
 
-    private void checkRuleSummary(JSONObject result) throws Exception
+    private void checkRuleSummary(JsonNode result) throws Exception
     {
         assertNotNull("Response is null.", result);
 
         assertTrue(result.has("data"));
 
-        JSONObject data = result.getJSONObject("data");
+        JsonNode data = result.get("data");
 
         // if id present in response -> rule was created
         assertTrue(data.has("id"));
 
-        assertEquals(data.getString("title"), "test_rule");
-        assertEquals(data.getString("description"), "this is description for test_rule");
+        assertEquals(data.get("title").textValue(), "test_rule");
+        assertEquals(data.get("description").textValue(), "this is description for test_rule");
 
-        JSONArray ruleType = data.getJSONArray("ruleType");
+        ArrayNode ruleType = (ArrayNode) data.get("ruleType");
 
-        assertEquals(1, ruleType.length());
-        assertEquals("outbound", ruleType.getString(0));
+        assertEquals(1, ruleType.size());
+        assertEquals("outbound", ruleType.get(0));
 
-        assertFalse(data.getBoolean("disabled"));
+        assertFalse(data.get("disabled").booleanValue());
         assertTrue(data.has("url"));
 
     }
 
-    private void checkUpdatedRule(JSONObject before, JSONObject after) throws JSONException
+    private void checkUpdatedRule(JsonNode before, JsonNode after)
     {
         // check saving of basic feilds 
-        assertEquals("It seams that 'id' is not correct", before.getString("id"), after.getString("id"));
+        assertEquals("It seams that 'id' is not correct", before.get("id").textValue(), after.get("id").textValue());
 
-        assertEquals("It seams that 'title' was not saved", before.getString("title"), after.getString("title"));
+        assertEquals("It seams that 'title' was not saved", before.get("title").textValue(), after.get("title").textValue());
 
-        assertEquals("It seams that 'description' was not saved", before.getString("description"), after.getString("description"));
+        assertEquals("It seams that 'description' was not saved", before.get("description").textValue(), after.get("description").textValue());
 
-        assertEquals("It seams that 'ruleType' was not saved", before.getJSONArray("ruleType").length(), after.getJSONArray("ruleType").length());
+        assertEquals("It seams that 'ruleType' was not saved", before.get("ruleType").size(), after.get("ruleType").size());
 
-        assertEquals(before.getBoolean("applyToChildren"), after.getBoolean("applyToChildren"));
-        assertEquals(before.getBoolean("executeAsynchronously"), after.getBoolean("executeAsynchronously"));
-        assertEquals(before.getBoolean("disabled"), after.getBoolean("disabled"));
+        assertEquals(before.get("applyToChildren").booleanValue(), after.get("applyToChildren").booleanValue());
+        assertEquals(before.get("executeAsynchronously").booleanValue(), after.get("executeAsynchronously").booleanValue());
+        assertEquals(before.get("disabled").booleanValue(), after.get("disabled").booleanValue());
 
         // check saving of collections        
-        JSONObject afterAction = after.getJSONObject("action");
+        JsonNode afterAction = after.get("action");
 
         // we didn't change actions collection
-        assertEquals(1, afterAction.getJSONArray("actions").length());
+        assertEquals(1, afterAction.get("actions").size());
 
         // conditions should be empty (should not present in response), 
         assertFalse(afterAction.has("conditions"));
@@ -308,31 +309,31 @@ public class RuleServiceTest extends BaseWebScriptTest
         assertEquals(before.has("url"), after.has("url"));
     }
 
-    private void checkRuleset(JSONObject result, int rulesCount, String[] ruleIds, int inhRulesCount, String[] parentRuleIds,
+    private void checkRuleset(JsonNode result, int rulesCount, String[] ruleIds, int inhRulesCount, String[] parentRuleIds,
                                 boolean isLinkedFrom, boolean isLinkedTo) throws Exception
     {
         assertNotNull("Response is null.", result);
 
         assertTrue(result.has("data"));
 
-        JSONObject data = result.getJSONObject("data");
+        JsonNode data = result.get("data");
 
         if (data.has("rules"))
         {
-            JSONArray rulesArray = data.getJSONArray("rules");
+            ArrayNode rulesArray = (ArrayNode) data.get("rules");
 
-            assertEquals(rulesCount, rulesArray.length());
+            assertEquals(rulesCount, rulesArray.size());
 
-            for (int i = 0; i < rulesArray.length(); i++)
+            for (int i = 0; i < rulesArray.size(); i++)
             {
-                JSONObject ruleSum = rulesArray.getJSONObject(i);
+                JsonNode ruleSum = rulesArray.get(i);
                 assertTrue(ruleSum.has("id"));
-                assertEquals(ruleIds[i], ruleSum.getString("id"));
+                assertEquals(ruleIds[i], ruleSum.get("id").textValue());
                 assertTrue(ruleSum.has("title"));
                 assertTrue(ruleSum.has("ruleType"));
                 assertTrue(ruleSum.has("disabled"));
                 assertTrue(ruleSum.has("owningNode"));
-                JSONObject owningNode = ruleSum.getJSONObject("owningNode");
+                JsonNode owningNode = ruleSum.get("owningNode");
                 assertTrue(owningNode.has("nodeRef"));
                 assertTrue(owningNode.has("name"));
                 assertTrue(ruleSum.has("url"));
@@ -341,20 +342,20 @@ public class RuleServiceTest extends BaseWebScriptTest
 
         if (data.has("inheritedRules"))
         {
-            JSONArray inheritedRulesArray = data.getJSONArray("inheritedRules");
+            ArrayNode inheritedRulesArray = (ArrayNode) data.get("inheritedRules");
 
-            assertEquals(inhRulesCount, inheritedRulesArray.length());
+            assertEquals(inhRulesCount, inheritedRulesArray.size());
 
-            for (int i = 0; i < inheritedRulesArray.length(); i++)
+            for (int i = 0; i < inheritedRulesArray.size(); i++)
             {
-                JSONObject ruleSum = inheritedRulesArray.getJSONObject(i);
+                JsonNode ruleSum = inheritedRulesArray.get(i);
                 assertTrue(ruleSum.has("id"));
-                assertEquals(parentRuleIds[i], ruleSum.getString("id"));
+                assertEquals(parentRuleIds[i], ruleSum.get("id").textValue());
                 assertTrue(ruleSum.has("title"));
                 assertTrue(ruleSum.has("ruleType"));
                 assertTrue(ruleSum.has("disabled"));
                 assertTrue(ruleSum.has("owningNode"));
-                JSONObject owningNode = ruleSum.getJSONObject("owningNode");
+                JsonNode owningNode = ruleSum.get("owningNode");
                 assertTrue(owningNode.has("nodeRef"));
                 assertTrue(owningNode.has("name"));
                 assertTrue(ruleSum.has("url"));
@@ -371,17 +372,17 @@ public class RuleServiceTest extends BaseWebScriptTest
     public void testGetRuleTypes() throws Exception
     {
         Response response = sendRequest(new GetRequest(URL_RULETYPES), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         assertNotNull(result);
 
         assertTrue(result.has("data"));
 
-        JSONArray data = result.getJSONArray("data");
+        ArrayNode data = (ArrayNode) result.get("data");
 
-        for (int i = 0; i < data.length(); i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            JSONObject ruleType = data.getJSONObject(i);
+            JsonNode ruleType = data.get(i);
 
             assertTrue(ruleType.has("name"));
             assertTrue(ruleType.has("displayLabel"));
@@ -392,17 +393,17 @@ public class RuleServiceTest extends BaseWebScriptTest
     public void testGetActionDefinitions() throws Exception
     {
         Response response = sendRequest(new GetRequest(URL_ACTIONDEFINITIONS), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         assertNotNull(result);
 
         assertTrue(result.has("data"));
 
-        JSONArray data = result.getJSONArray("data");
+        ArrayNode data = (ArrayNode) result.get("data");
 
-        for (int i = 0; i < data.length(); i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            JSONObject actionDefinition = data.getJSONObject(i);
+            JsonNode actionDefinition = data.get(i);
 
             assertTrue(actionDefinition.has("name"));
             assertTrue(actionDefinition.has("displayLabel"));
@@ -416,17 +417,17 @@ public class RuleServiceTest extends BaseWebScriptTest
     public void testGetActionConditionDefinitions() throws Exception
     {
         Response response = sendRequest(new GetRequest(URL_ACTIONCONDITIONDEFINITIONS), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         assertNotNull(result);
 
         assertTrue(result.has("data"));
 
-        JSONArray data = result.getJSONArray("data");
+        ArrayNode data = (ArrayNode) result.get("data");
 
-        for (int i = 0; i < data.length(); i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            JSONObject actionConditionDefinition = data.getJSONObject(i);
+            JsonNode actionConditionDefinition = data.get(i);
 
             assertTrue(actionConditionDefinition.has("name"));
             assertTrue(actionConditionDefinition.has("displayLabel"));
@@ -439,26 +440,26 @@ public class RuleServiceTest extends BaseWebScriptTest
     public void testGetActionConstraints() throws Exception
     {
         Response response = sendRequest(new GetRequest(URL_ACTIONCONSTRAINTS), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         assertNotNull(result);
 
         assertTrue(result.has("data"));
 
-        JSONArray data = result.getJSONArray("data");
+        ArrayNode data = (ArrayNode) result.get("data");
 
-        for (int i = 0; i < data.length(); i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            JSONObject actionConstraint = data.getJSONObject(i);
+            JsonNode actionConstraint = data.get(i);
 
             assertTrue(actionConstraint.has("name"));
             assertTrue(actionConstraint.has("values"));
 
-            JSONArray values = actionConstraint.getJSONArray("values");
+            ArrayNode values = (ArrayNode) actionConstraint.get("values");
 
-            for (int j = 0; j < values.length(); j++)
+            for (int j = 0; j < values.size(); j++)
             {
-                JSONObject value = values.getJSONObject(j);
+                JsonNode value = values.get(j);
 
                 assertTrue(value.has("value"));
                 assertTrue(value.has("displayLabel"));
@@ -479,22 +480,22 @@ public class RuleServiceTest extends BaseWebScriptTest
         String name = constraints.get(0).getName();
 
         Response response = sendRequest(new GetRequest(formateActionConstraintUrl(name)), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         assertNotNull(result);
 
         assertTrue(result.has("data"));
 
-        JSONObject data = result.getJSONObject("data");
+        JsonNode data = result.get("data");
 
         assertTrue(data.has("name"));
         assertTrue(data.has("values"));
 
-        JSONArray values = data.getJSONArray("values");
+        ArrayNode values = (ArrayNode) data.get("values");
 
-        for (int i = 0; i < values.length(); i++)
+        for (int i = 0; i < values.size(); i++)
         {
-            JSONObject value = values.getJSONObject(i);
+            JsonNode value = values.get(i);
 
             assertTrue(value.has("value"));
             assertTrue(value.has("displayLabel"));
@@ -505,23 +506,23 @@ public class RuleServiceTest extends BaseWebScriptTest
     {
         String url = formateQueueActionUrl(false);
 
-        JSONObject copyAction = buildCopyAction(testWorkNodeRef);
+        ObjectNode copyAction = buildCopyAction(testWorkNodeRef);
 
-        copyAction.put("actionedUponNode", testNodeRef);
+        copyAction.put("actionedUponNode", testNodeRef.toString());
 
         // execute before response (should be successful)
         Response successResponse = sendRequest(new PostRequest(url, copyAction.toString(), "application/json"), 200);
 
-        JSONObject successResult = new JSONObject(successResponse.getContentAsString());
+        JsonNode successResult = AlfrescoDefaultObjectMapper.getReader().readTree(successResponse.getContentAsString());
 
         assertNotNull(successResult);
 
         assertTrue(successResult.has("data"));
 
-        JSONObject successData = successResult.getJSONObject("data");
+        JsonNode successData = successResult.get("data");
 
         assertTrue(successData.has("status"));
-        assertEquals("success", successData.getString("status"));
+        assertEquals("success", successData.get("status").textValue());
         assertTrue(successData.has("actionedUponNode"));
         assertFalse(successData.has("exception"));
         assertTrue(successData.has("action"));
@@ -536,16 +537,16 @@ public class RuleServiceTest extends BaseWebScriptTest
         // wait while action executed
         Thread.sleep(1000);
 
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         assertNotNull(result);
 
         assertTrue(result.has("data"));
 
-        JSONObject data = result.getJSONObject("data");
+        JsonNode data = result.get("data");
 
         assertTrue(data.has("status"));
-        assertEquals("queued", data.getString("status"));
+        assertEquals("queued", data.get("status").textValue());
         assertTrue(data.has("actionedUponNode"));
         assertFalse(data.has("exception"));
         assertTrue(data.has("action"));
@@ -553,7 +554,7 @@ public class RuleServiceTest extends BaseWebScriptTest
 
     public void testCreateRule() throws Exception
     {
-        JSONObject result = createRule(testNodeRef);
+        JsonNode result = createRule(testNodeRef);
 
         checkRuleSummary(result);
 
@@ -565,25 +566,25 @@ public class RuleServiceTest extends BaseWebScriptTest
 
     public void testGetRulesCollection() throws Exception
     {
-        JSONArray data = getNodeRules(testNodeRef, false);
+        ArrayNode data = getNodeRules(testNodeRef, false);
 
-        assertEquals(0, data.length());
+        assertEquals(0, data.size());
 
         createRule(testNodeRef);
 
         data = getNodeRules(testNodeRef, false);
 
-        assertEquals(1, data.length());
+        assertEquals(1, data.size());
 
-        for (int i = 0; i < data.length(); i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            JSONObject ruleSum = data.getJSONObject(i);
+            JsonNode ruleSum = data.get(i);
             assertTrue(ruleSum.has("id"));
             assertTrue(ruleSum.has("title"));
             assertTrue(ruleSum.has("ruleType"));
             assertTrue(ruleSum.has("disabled"));
             assertTrue(ruleSum.has("owningNode"));
-            JSONObject owningNode = ruleSum.getJSONObject("owningNode");
+            JsonNode owningNode = ruleSum.get("owningNode");
             assertTrue(owningNode.has("nodeRef"));
             assertTrue(owningNode.has("name"));
             assertTrue(ruleSum.has("url"));
@@ -592,25 +593,25 @@ public class RuleServiceTest extends BaseWebScriptTest
 
     public void testGetInheritedRulesCollection() throws Exception
     {
-        JSONArray data = getNodeRules(testNodeRef, true);
+        ArrayNode data = getNodeRules(testNodeRef, true);
 
-        assertEquals(0, data.length());
+        assertEquals(0, data.size());
 
         createRule(testWorkNodeRef);
 
         data = getNodeRules(testNodeRef, true);
 
-        assertEquals(1, data.length());
+        assertEquals(1, data.size());
 
-        for (int i = 0; i < data.length(); i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            JSONObject ruleSum = data.getJSONObject(i);
+            JsonNode ruleSum = data.get(i);
             assertTrue(ruleSum.has("id"));
             assertTrue(ruleSum.has("title"));
             assertTrue(ruleSum.has("ruleType"));
             assertTrue(ruleSum.has("disabled"));
             assertTrue(ruleSum.has("owningNode"));
-            JSONObject owningNode = ruleSum.getJSONObject("owningNode");
+            JsonNode owningNode = ruleSum.get("owningNode");
             assertTrue(owningNode.has("nodeRef"));
             assertTrue(owningNode.has("name"));
             assertTrue(ruleSum.has("url"));
@@ -619,62 +620,62 @@ public class RuleServiceTest extends BaseWebScriptTest
 
     public void testGetRuleset() throws Exception
     {
-        JSONObject parentRule = createRule(testWorkNodeRef);
-        String[] parentRuleIds = new String[] { parentRule.getJSONObject("data").getString("id") };
+        JsonNode parentRule = createRule(testWorkNodeRef);
+        String[] parentRuleIds = new String[] { parentRule.get("data").get("id").textValue() };
 
-        JSONObject jsonRule = createRule(testNodeRef);
-        String[] ruleIds = new String[] { jsonRule.getJSONObject("data").getString("id") };
+        JsonNode jsonRule = createRule(testNodeRef);
+        String[] ruleIds = new String[] { jsonRule.get("data").get("id").textValue() };
 
         Action linkRulesAction = actionService.createAction(LinkRules.NAME);
         linkRulesAction.setParameterValue(LinkRules.PARAM_LINK_FROM_NODE, testNodeRef);
         actionService.executeAction(linkRulesAction, testNodeRef2);
 
         Response linkedFromResponse = sendRequest(new GetRequest(formatRulesetUrl(testNodeRef)), 200);
-        JSONObject linkedFromResult = new JSONObject(linkedFromResponse.getContentAsString());
+        JsonNode linkedFromResult = AlfrescoDefaultObjectMapper.getReader().readTree(linkedFromResponse.getContentAsString());
         
         checkRuleset(linkedFromResult, 1, ruleIds, 1, parentRuleIds, true, false);
 
         Response linkedToResponse = sendRequest(new GetRequest(formatRulesetUrl(testNodeRef2)), 200);
-        JSONObject linkedToResult = new JSONObject(linkedToResponse.getContentAsString());
+        JsonNode linkedToResult = AlfrescoDefaultObjectMapper.getReader().readTree(linkedToResponse.getContentAsString());
         
         checkRuleset(linkedToResult, 1, ruleIds, 1, parentRuleIds, false, true);
     }
 
     public void testGetRuleDetails() throws Exception
     {
-        JSONObject jsonRule = createRule(testNodeRef);
+        JsonNode jsonRule = createRule(testNodeRef);
 
-        String ruleId = jsonRule.getJSONObject("data").getString("id");
+        String ruleId = jsonRule.get("data").get("id").textValue();
 
         Response response = sendRequest(new GetRequest(formateRuleUrl(testNodeRef, ruleId)), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         checkRuleComplete(result);
     }
 
     public void testUpdateRule() throws Exception
     {
-        JSONObject jsonRule = createRule(testNodeRef);
+        JsonNode jsonRule = createRule(testNodeRef);
 
-        String ruleId = jsonRule.getJSONObject("data").getString("id");
+        String ruleId = jsonRule.get("data").get("id").textValue();
 
         Response getResponse = sendRequest(new GetRequest(formateRuleUrl(testNodeRef, ruleId)), 200);
 
-        JSONObject before = new JSONObject(getResponse.getContentAsString());
+        ObjectNode before = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(getResponse.getContentAsString());
 
         // do some changes
         before.put("description", "this is modified description for test_rule");
 
         // do some changes for action object
-        JSONObject beforeAction = before.getJSONObject("action");
+        ObjectNode beforeAction = (ObjectNode) before.get("action");
         // no changes for actions list  
         beforeAction.remove("actions");
         // clear conditions
-        beforeAction.put("conditions", new JSONArray());
+        beforeAction.set("conditions", AlfrescoDefaultObjectMapper.createArrayNode());
 
         Response putResponse = sendRequest(new PutRequest(formateRuleUrl(testNodeRef, ruleId), before.toString(), "application/json"), 200);
 
-        JSONObject after = new JSONObject(putResponse.getContentAsString());
+        JsonNode after = AlfrescoDefaultObjectMapper.getReader().readTree(putResponse.getContentAsString());
 
         // sent and retrieved objects should be the same (except ids and urls)
         // this means that all changes was saved
@@ -683,20 +684,20 @@ public class RuleServiceTest extends BaseWebScriptTest
 
     public void testDeleteRule() throws Exception
     {
-        JSONObject jsonRule = createRule(testNodeRef);
+        JsonNode jsonRule = createRule(testNodeRef);
 
         assertEquals(1, ruleService.getRules(testNodeRef).size());
 
-        String ruleId = jsonRule.getJSONObject("data").getString("id");
+        String ruleId = jsonRule.get("data").get("id").textValue();
 
         Response response = sendRequest(new DeleteRequest(formateRuleUrl(testNodeRef, ruleId)), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         assertNotNull(result);
 
         assertTrue(result.has("success"));
 
-        boolean success = result.getBoolean("success");
+        boolean success = result.get("success").booleanValue();
 
         assertTrue(success);
 
@@ -719,29 +720,29 @@ public class RuleServiceTest extends BaseWebScriptTest
         assertEquals("Rule 1", rules.get(0).getTitle());
         assertEquals("Rule 2", rules.get(1).getTitle());
         assertEquals("Rule 3", rules.get(2).getTitle());
-        
-        JSONObject action = new JSONObject();
+
+        ObjectNode action = AlfrescoDefaultObjectMapper.createObjectNode();
         action.put("actionDefinitionName", "reorder-rules");
         action.put("actionedUponNode", testNodeRef.toString());
-        
-        JSONObject params = new JSONObject();
-        JSONArray orderArray = new JSONArray();
-        orderArray.put(rules.get(2).getNodeRef().toString());
-        orderArray.put(rules.get(1).getNodeRef().toString());
-        orderArray.put(rules.get(0).getNodeRef().toString());
-        params.put("rules", orderArray);
-        action.put("parameterValues", params);
+
+        ObjectNode params = AlfrescoDefaultObjectMapper.createObjectNode();
+        ArrayNode orderArray = AlfrescoDefaultObjectMapper.createArrayNode();
+        orderArray.add(rules.get(2).getNodeRef().toString());
+        orderArray.add(rules.get(1).getNodeRef().toString());
+        orderArray.add(rules.get(0).getNodeRef().toString());
+        params.set("rules", orderArray);
+        action.set("parameterValues", params);
         
         String url = formateQueueActionUrl(false);
 
         // execute before response (should be successful)
         Response successResponse = sendRequest(new PostRequest(url, action.toString(), "application/json"), 200);
-        JSONObject successResult = new JSONObject(successResponse.getContentAsString());
+        JsonNode successResult = AlfrescoDefaultObjectMapper.getReader().readTree(successResponse.getContentAsString());
         assertNotNull(successResult);
         assertTrue(successResult.has("data"));
-        JSONObject successData = successResult.getJSONObject("data");
+        JsonNode successData = successResult.get("data");
         assertTrue(successData.has("status"));
-        assertEquals("success", successData.getString("status"));
+        assertEquals("success", successData.get("status").textValue());
         assertTrue(successData.has("actionedUponNode"));
         assertFalse(successData.has("exception"));
         assertTrue(successData.has("action"));
@@ -755,24 +756,24 @@ public class RuleServiceTest extends BaseWebScriptTest
     
     private NodeRef createRuleNodeRef(NodeRef folder, String title) throws Exception
     {
-        JSONObject jsonRule = createRule(folder, title);
-        String id = jsonRule.getJSONObject("data").getString("id");
+        JsonNode jsonRule = createRule(folder, title);
+        String id = jsonRule.get("data").get("id").textValue();
         return new NodeRef(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE, id);
     }
 
-    private JSONObject buildCopyAction(NodeRef destination) throws JSONException
+    private ObjectNode buildCopyAction(NodeRef destination)
     {
-        JSONObject result = new JSONObject();
+        ObjectNode result = AlfrescoDefaultObjectMapper.createObjectNode();
 
         // add actionDefinitionName
         result.put("actionDefinitionName", "copy");
 
         // build parameterValues
-        JSONObject parameterValues = new JSONObject();
-        parameterValues.put("destination-folder", destination);
+        ObjectNode parameterValues = AlfrescoDefaultObjectMapper.createObjectNode();
+        parameterValues.put("destination-folder", destination.toString());
 
         // add parameterValues
-        result.put("parameterValues", parameterValues);
+        result.set("parameterValues", parameterValues);
 
         // add executeAsync
         result.put("executeAsync", false);
@@ -780,17 +781,17 @@ public class RuleServiceTest extends BaseWebScriptTest
         return result;
     }
 
-    private JSONObject buildTestRule(String title) throws JSONException
+    private ObjectNode buildTestRule(String title)
     {
-        JSONObject result = new JSONObject();
+        ObjectNode result = AlfrescoDefaultObjectMapper.createObjectNode();
 
         result.put("title", title);
         result.put("description", "this is description for test_rule");
 
-        JSONArray ruleType = new JSONArray();
-        ruleType.put("outbound");
+        ArrayNode ruleType = AlfrescoDefaultObjectMapper.createArrayNode();
+        ruleType.add("outbound");
 
-        result.put("ruleType", ruleType);
+        result.set("ruleType", ruleType);
 
         result.put("applyToChildren", true);
 
@@ -798,20 +799,20 @@ public class RuleServiceTest extends BaseWebScriptTest
 
         result.put("disabled", false);
 
-        result.put("action", buildTestAction("composite-action", true, true));
+        result.set("action", buildTestAction("composite-action", true, true));
 
         return result;
     }
 
-    private JSONObject buildTestAction(String actionName, boolean addActions, boolean addCompensatingAction) throws JSONException
+    private ObjectNode buildTestAction(String actionName, boolean addActions, boolean addCompensatingAction)
     {
-        JSONObject result = new JSONObject();
+        ObjectNode result = AlfrescoDefaultObjectMapper.createObjectNode();
 
         result.put("actionDefinitionName", actionName);
         result.put("description", "this is description for " + actionName);
         result.put("title", "test_title");
 
-        //JSONObject parameterValues = new JSONObject();
+        //JsonNode parameterValues = AlfrescoDefaultObjectMapper.createObjectNode()
         //parameterValues.put("test_name", "test_value");
 
         //result.put("parameterValues", parameterValues);
@@ -820,18 +821,18 @@ public class RuleServiceTest extends BaseWebScriptTest
 
         if (addActions)
         {
-            JSONArray actions = new JSONArray();
+            ArrayNode actions = AlfrescoDefaultObjectMapper.createArrayNode();
 
-            actions.put(buildTestAction("counter", false, false));
+            actions.add(buildTestAction("counter", false, false));
 
-            result.put("actions", actions);
+            result.set("actions", actions);
         }
 
-        JSONArray conditions = new JSONArray();
+        ArrayNode conditions = AlfrescoDefaultObjectMapper.createArrayNode();
 
-        conditions.put(buildTestCondition("no-condition"));
+        conditions.add(buildTestCondition("no-condition"));
 
-        result.put("conditions", conditions);
+        result.set("conditions", conditions);
 
         if (addCompensatingAction)
         {
@@ -841,14 +842,14 @@ public class RuleServiceTest extends BaseWebScriptTest
         return result;
     }
 
-    private JSONObject buildTestCondition(String conditionName) throws JSONException
+    private ObjectNode buildTestCondition(String conditionName)
     {
-        JSONObject result = new JSONObject();
+        ObjectNode result = AlfrescoDefaultObjectMapper.createObjectNode();
 
         result.put("conditionDefinitionName", conditionName);
         result.put("invertCondition", false);
 
-        //JSONObject parameterValues = new JSONObject();
+        //JsonNode parameterValues = AlfrescoDefaultObjectMapper.createObjectNode()
         //parameterValues.put("test_name", "test_value");
 
         //result.put("parameterValues", parameterValues);

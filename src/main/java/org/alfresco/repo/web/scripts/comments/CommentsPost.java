@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.comments;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
@@ -44,7 +45,6 @@ import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.service.namespace.RegexQNamePattern;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -64,7 +64,7 @@ public class CommentsPost extends AbstractCommentsWebScript
     protected Map<String, Object> executeImpl(NodeRef nodeRef, WebScriptRequest req, Status status, Cache cache)
     {
         // get json object from request
-        JSONObject json = parseJSON(req);
+        JsonNode json = parseJSON(req);
 
         /* MNT-10231, MNT-9771 fix */
         this.behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_AUDITABLE);
@@ -95,7 +95,7 @@ public class CommentsPost extends AbstractCommentsWebScript
      * @param json
      * @return
      */
-    private NodeRef addComment(NodeRef nodeRef, JSONObject json)
+    private NodeRef addComment(NodeRef nodeRef, JsonNode json)
     {
         // fetch the parent to add the node to
         NodeRef commentsFolder = getOrCreateCommentsFolder(nodeRef);

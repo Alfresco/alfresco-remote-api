@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.rule;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,11 +33,9 @@ import java.util.Map;
 import org.alfresco.repo.web.scripts.rule.ruleset.RuleRef;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.rule.Rule;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -59,16 +58,13 @@ public class RulePost extends AbstractRuleWebScript
         // get request parameters
         NodeRef nodeRef = parseRequestForNodeRef(req);
 
-        Rule rule = null;
-        JSONObject json = null;
-
         try
         {
             // read request json
-            json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
 
             // parse request json
-            rule = parseJsonRule(json);
+            Rule rule = parseJsonRule(json);
 
             // check the rule
             checkRule(rule);
@@ -83,10 +79,6 @@ public class RulePost extends AbstractRuleWebScript
         catch (IOException iox)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from req.", iox);
-        }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from req.", je);
         }
 
         return model;

@@ -25,13 +25,12 @@
  */
 package org.alfresco.repo.web.scripts.replication;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Map;
 
 import org.alfresco.service.cmr.replication.ReplicationDefinition;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -65,11 +64,11 @@ public class ReplicationDefinitionPut extends AbstractReplicationWebscript
        // Grab the JSON, and prepare to update 
        try 
        {
-           JSONObject json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+           JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
            
            // Are they trying to rename?
            if(json.has("name")) {
-              String jsonName = json.getString("name");
+              String jsonName = json.get("name").textValue();
               if(! jsonName.equals(replicationDefinitionName)) {
                  // Name has changed, ensure the new name is spare
                  if(replicationService.loadReplicationDefinition(jsonName) != null) {
@@ -96,10 +95,6 @@ public class ReplicationDefinitionPut extends AbstractReplicationWebscript
        catch (IOException iox)
        {
            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from request.", iox);
-       }
-       catch (JSONException je)
-       {
-           throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from request.", je);
        }
       
        // Return the new details on it

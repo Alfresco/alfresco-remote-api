@@ -26,6 +26,8 @@
  
 package org.alfresco.rest.api.tests.client.data;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -36,7 +38,6 @@ import org.alfresco.rest.api.tests.PublicApiDateFormat;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.data.Properties;
 import org.apache.chemistry.opencmis.commons.data.PropertyData;
-import org.json.simple.JSONObject;
 
 /**
  * Representation of a folder node (as returned by Favourites API)
@@ -84,23 +85,23 @@ public class FavouriteFolder extends FavouriteNode implements ExpectedComparison
         return folder;
     }
 
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject json = super.toJSON();
+        ObjectNode json = super.toJSON();
         return json;
     }
 
-    public static FavouriteFolder parseFolder(JSONObject jsonObject) throws ParseException
+    public static FavouriteFolder parseFolder(JsonNode jsonObject) throws ParseException
     {
-        String id = (String)jsonObject.get("id");
-        String guid = (String)jsonObject.get("guid");
-        String name = (String)jsonObject.get("name");
-        String title = (String)jsonObject.get("title");
-        String description = (String)jsonObject.get("description");
-        Date createdAt = PublicApiDateFormat.getDateFormat().parse((String)jsonObject.get("createdAt"));
-        Date modifiedAt = PublicApiDateFormat.getDateFormat().parse((String)jsonObject.get("modifiedAt"));
-        String createdBy = (String)jsonObject.get("createdBy");
-        String modifiedBy = (String)jsonObject.get("modifiedBy");
+        String id = jsonObject.get("id").textValue();
+        String guid = jsonObject.get("guid").textValue();
+        String name = jsonObject.get("name").textValue();
+        String title = jsonObject.get("title").textValue();
+        String description = jsonObject.get("description").textValue();
+        Date createdAt = PublicApiDateFormat.getDateFormat().parse(jsonObject.get("createdAt").textValue());
+        Date modifiedAt = PublicApiDateFormat.getDateFormat().parse(jsonObject.get("modifiedAt").textValue());
+        String createdBy = jsonObject.get("createdBy").textValue();
+        String modifiedBy = jsonObject.get("modifiedBy").textValue();
 
         FavouriteFolder folder = new FavouriteFolder(id, guid);
         folder.setName(name);

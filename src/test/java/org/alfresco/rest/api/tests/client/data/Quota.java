@@ -25,7 +25,9 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import org.json.simple.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class Quota
 {
@@ -53,9 +55,9 @@ public class Quota
 		return quota;
 	}
 
-	public static Quota parseQuota(JSONObject jsonObject)
+	public static Quota parseQuota(JsonNode jsonObject)
 	{
-		String id = (String)jsonObject.get("id");
+		String id = jsonObject.get("id").textValue();
 		Object limit = jsonObject.get("limit");
 		Object quota = jsonObject.get("quota");
 		Quota ret = new Quota(id, limit, quota);
@@ -63,9 +65,9 @@ public class Quota
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject quotaJson = new JSONObject();
+		ObjectNode quotaJson = AlfrescoDefaultObjectMapper.createObjectNode();
 		quotaJson.put("id", getId());
 		quotaJson.put("quota", getQuota().toString());
 		quotaJson.put("limit", getLimit().toString());

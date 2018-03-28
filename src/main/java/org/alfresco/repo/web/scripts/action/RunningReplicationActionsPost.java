@@ -25,14 +25,13 @@
  */
 package org.alfresco.repo.web.scripts.action;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 
 import org.alfresco.service.cmr.action.Action;
 import org.alfresco.service.cmr.replication.ReplicationDefinition;
 import org.alfresco.service.cmr.replication.ReplicationService;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -53,19 +52,15 @@ public class RunningReplicationActionsPost extends AbstractExecuteActionWebscrip
       String name = req.getParameter("name");
       if(name == null) {
          try {
-            JSONObject json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
             if(! json.has("name")) {
                throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not find required 'name' parameter");
             }
-            name = json.getString("name");
+            name = json.get("name").textValue();
          }
          catch (IOException iox)
          {
              throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from request.", iox);
-         }
-         catch (JSONException je)
-         {
-             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from request.", je);
          }
       }
       

@@ -25,9 +25,10 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import static org.junit.Assert.assertTrue;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
-import org.json.simple.JSONObject;
+import static org.junit.Assert.assertTrue;
 
 public class FolderFavouriteTarget implements FavouritesTarget
 {
@@ -51,9 +52,9 @@ public class FolderFavouriteTarget implements FavouritesTarget
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject json = new JSONObject();
+		ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
 		json.put("folder", getFolder().toJSON());
 		return json;
 	}

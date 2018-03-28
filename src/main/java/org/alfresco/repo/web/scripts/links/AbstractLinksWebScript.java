@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.links;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -45,12 +47,9 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.util.ScriptPagingDetails;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -200,46 +199,46 @@ public abstract class AbstractLinksWebScript extends DeclarativeWebScript
     }
     
     
-    protected String getOrNull(JSONObject json, String key)
+    protected String getOrNull(JsonNode json, String key)
     {
-       if (json.containsKey(key))
+       if (json.has(key))
        {
-          return (String)json.get(key);
+          return json.get(key).textValue();
        }
        return null;
     }
     
-    protected List<String> getTags(JSONObject json)
+    protected List<String> getTags(JsonNode json)
     {
        List<String> tags = null;
-       if (json.containsKey("tags"))
+       if (json.has("tags"))
        {
           // Is it "tags":"" or "tags":[...] ?
-          if (json.get("tags") instanceof String)
+          if (json.get("tags") instanceof ArrayNode)
           {
-             // This is normally an empty string, skip
-             String tagsS = (String)json.get("tags");
-             if ("".equals(tagsS))
-             {
-                // No tags were given
-                return null;
-             }
-             else
-             {
-                // Log, and treat as empty
-                // (We don't support "tags":"a,b,c" in these webscripts)
-                logger.warn("Unexpected tag data: " + tagsS);
-                return null;
-             }
+              tags = new ArrayList<String>();
+              ArrayNode jsTags = (ArrayNode) json.get("tags");
+              for (int i=0; i<jsTags.size(); i++)
+              {
+                  tags.add( jsTags.get(i).textValue() );
+              }
           }
           else
           {
-             tags = new ArrayList<String>();
-             JSONArray jsTags = (JSONArray)json.get("tags");
-             for (int i=0; i<jsTags.size(); i++)
-             {
-                tags.add( (String)jsTags.get(i) );
-             }
+              // This is normally an empty string, skip
+              String tagsS = json.get("tags").textValue();
+              if ("".equals(tagsS))
+              {
+                  // No tags were given
+                  return null;
+              }
+              else
+              {
+                  // Log, and treat as empty
+                  // (We don't support "tags":"a,b,c" in these webscripts)
+                  logger.warn("Unexpected tag data: " + tagsS);
+                  return null;
+              }
           }
        }
        return tags;
@@ -262,15 +261,15 @@ public abstract class AbstractLinksWebScript extends DeclarativeWebScript
      * Generates an activity entry for the link
      */
     protected void addActivityEntry(String event, LinkInfo link, SiteInfo site, 
-          WebScriptRequest req, JSONObject json)
+          WebScriptRequest req, JsonNode json)
     {
        // What page is this for?
        String page = req.getParameter("page");
        if (page == null && json != null)
        {
-          if (json.containsKey("page"))
+          if (json.has("page"))
           {
-             page = (String)json.get("page");
+             page = json.get("page").textValue();
           }
        }
        if (page == null)
@@ -353,7 +352,7 @@ public abstract class AbstractLinksWebScript extends DeclarativeWebScript
        
        
        // Parse the JSON, if supplied
-       JSONObject json = null;
+       JsonNode json = null;
        String contentType = req.getContentType();
        if (contentType != null && contentType.indexOf(';') != -1)
        {
@@ -361,18 +360,13 @@ public abstract class AbstractLinksWebScript extends DeclarativeWebScript
        }
        if (MimetypeMap.MIMETYPE_JSON.equals(contentType))
        {
-          JSONParser parser = new JSONParser();
           try
           {
-             json = (JSONObject)parser.parse(req.getContent().getContent());
+             json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
           }
           catch (IOException io)
           {
              throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + io.getMessage());
-          }
-          catch(ParseException pe)
-          {
-             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + pe.getMessage());
           }
        }
        
@@ -385,13 +379,13 @@ public abstract class AbstractLinksWebScript extends DeclarativeWebScript
        }
        if (siteName == null && json != null)
        {
-          if (json.containsKey("siteid"))
+          if (json.has("siteid"))
           {
-             siteName = (String)json.get("siteid");
+             siteName = json.get("siteid").textValue();
           }
-          else if (json.containsKey("site"))
+          else if (json.has("site"))
           {
-             siteName = (String)json.get("site");
+             siteName = json.get("site").textValue();
           }
        }
        if (siteName == null)
@@ -427,7 +421,7 @@ public abstract class AbstractLinksWebScript extends DeclarativeWebScript
     }
     
     protected abstract Map<String, Object> executeImpl(SiteInfo site, 
-          String linkName, WebScriptRequest req, JSONObject json, 
+          String linkName, WebScriptRequest req, JsonNode json,
           Status status, Cache cache);
     
 }

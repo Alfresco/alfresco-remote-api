@@ -25,6 +25,11 @@
  */
 package org.alfresco.repo.web.scripts.replication;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Iterator;
 import javax.transaction.UserTransaction;
 
 import org.alfresco.model.ContentModel;
@@ -45,8 +50,7 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.GUID;
 import org.alfresco.util.ISO8601DateFormat;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.extensions.surf.util.URLEncoder;
 import org.springframework.extensions.webscripts.Status;
@@ -93,10 +97,10 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONObject data = json.getJSONObject("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        JsonNode data = (ArrayNode) json.get("data");
         assertNotNull(data);
-        assertTrue("ReplicationService was unexpectedly disabled.", data.getBoolean(ReplicationServiceStatusGet.ENABLED));
+        assertTrue("ReplicationService was unexpectedly disabled.", data.get(ReplicationServiceStatusGet.ENABLED).booleanValue());
     }
     
     public void testReplicationDefinitionsGet() throws Exception
@@ -120,10 +124,10 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray results = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(0, results.length());
+        assertEquals(0, results.size());
 
         
         // Add a definition, it should show up
@@ -133,25 +137,26 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
-        JSONObject jsonRD = (JSONObject)results.get(0);
+        JsonNode jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals("Test1", jsonRD.get("name"));
         assertEquals("New", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
         assertEquals("/api/replication-definition/Test1", jsonRD.get("details"));
         
         
         // Ensure we didn't get any unexpected data back,
         //  only the keys we should have done
-        JSONArray keys = jsonRD.names();
-        for(int i=0; i<keys.length(); i++) {
-           String key = keys.getString(0);
+        Iterator<String> iterator = jsonRD.fieldNames();
+        while(iterator.hasNext())
+        {
+           String key = iterator.next();
            if(key.equals("name") || key.equals("status") ||
                key.equals("startedAt") || key.equals("enabled") ||
                key.equals("details")) {
@@ -168,18 +173,18 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
-        assertEquals("Test1", jsonRD.get("name"));
-        assertEquals("Pending", jsonRD.get("status"));
-        assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
-        assertEquals("/api/replication-definition/Test1", jsonRD.get("details"));
+        assertEquals("Test1", jsonRD.get("name").textValue());
+        assertEquals("Pending", jsonRD.get("status").textValue());
+        assertEquals(true, jsonRD.get("enabled").booleanValue());
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
+        assertEquals("/api/replication-definition/Test1", jsonRD.get("details").textValue());
         
         
         // Change the status to running, and re-check
@@ -190,17 +195,17 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals("Test1", jsonRD.get("name"));
         assertEquals("Running", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test1", jsonRD.get("details"));
         
        
@@ -215,33 +220,33 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(3, results.length());
+        assertEquals(3, results.size());
         
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals("AnotherTest", jsonRD.get("name"));
         assertEquals("New", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
         assertEquals("/api/replication-definition/AnotherTest", jsonRD.get("details"));
         
-        jsonRD = (JSONObject)results.get(1);
+        jsonRD = results.get(1);
         assertNotNull(jsonRD);
         assertEquals("Test1", jsonRD.get("name"));
         assertEquals("Running", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test1", jsonRD.get("details"));
         
-        jsonRD = (JSONObject)results.get(2);
+        jsonRD = results.get(2);
         assertNotNull(jsonRD);
         assertEquals("Test2", jsonRD.get("name"));
         assertEquals("New", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
         assertEquals("/api/replication-definition/Test2", jsonRD.get("details"));
         
         
@@ -250,36 +255,36 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(3, results.length());
+        assertEquals(3, results.size());
         
         // New, name sorts higher 
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals("AnotherTest", jsonRD.get("name"));
         assertEquals("New", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
         assertEquals("/api/replication-definition/AnotherTest", jsonRD.get("details"));
         
         // New, name sorts lower
-        jsonRD = (JSONObject)results.get(1);
+        jsonRD = results.get(1);
         assertNotNull(jsonRD);
         assertEquals("Test2", jsonRD.get("name"));
         assertEquals("New", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
         assertEquals("/api/replication-definition/Test2", jsonRD.get("details"));
         
         // Running
-        jsonRD = (JSONObject)results.get(2);
+        jsonRD = results.get(2);
         assertNotNull(jsonRD);
         assertEquals("Test1", jsonRD.get("name"));
         assertEquals("Running", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test1", jsonRD.get("details"));
                 
         
@@ -298,36 +303,36 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(3, results.length());
+        assertEquals(3, results.size());
         
         // Complete
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals("Test2", jsonRD.get("name"));
         assertEquals("Completed", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt2, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt2, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test2", jsonRD.get("details"));
         
         // New
-        jsonRD = (JSONObject)results.get(1);
+        jsonRD = results.get(1);
         assertNotNull(jsonRD);
         assertEquals("AnotherTest", jsonRD.get("name"));
         assertEquals("New", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
         assertEquals("/api/replication-definition/AnotherTest", jsonRD.get("details"));
         
         // Running
-        jsonRD = (JSONObject)results.get(2);
+        jsonRD = results.get(2);
         assertNotNull(jsonRD);
         assertEquals("Test1", jsonRD.get("name"));
         assertEquals("Running", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test1", jsonRD.get("details"));
         
         
@@ -336,36 +341,36 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(3, results.length());
+        assertEquals(3, results.size());
 
         // Ran most recently
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals("Test2", jsonRD.get("name"));
         assertEquals("Completed", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt2, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt2, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test2", jsonRD.get("details"));
         
         // Ran least recently
-        jsonRD = (JSONObject)results.get(1);
+        jsonRD = results.get(1);
         assertNotNull(jsonRD);
         assertEquals("Test1", jsonRD.get("name"));
         assertEquals("Running", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test1", jsonRD.get("details"));
         
         // Never run last
-        jsonRD = (JSONObject)results.get(2);
+        jsonRD = results.get(2);
         assertNotNull(jsonRD);
         assertEquals("AnotherTest", jsonRD.get("name"));
         assertEquals("New", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
         assertEquals("/api/replication-definition/AnotherTest", jsonRD.get("details"));
         
        
@@ -381,33 +386,33 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(3, results.length());
+        assertEquals(3, results.size());
         
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals("AnotherTest", jsonRD.get("name"));
         assertEquals("CancelRequested", jsonRD.get("status"));
         assertEquals(false, jsonRD.get("enabled"));
-        assertEquals(startedAt3, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt3, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/AnotherTest", jsonRD.get("details"));
         
-        jsonRD = (JSONObject)results.get(1);
+        jsonRD = results.get(1);
         assertNotNull(jsonRD);
         assertEquals("Test1", jsonRD.get("name"));
         assertEquals("Running", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test1", jsonRD.get("details"));
         
-        jsonRD = (JSONObject)results.get(2);
+        jsonRD = results.get(2);
         assertNotNull(jsonRD);
         assertEquals("Test2", jsonRD.get("name"));
         assertEquals("Completed", jsonRD.get("status"));
         assertEquals(true, jsonRD.get("enabled"));
-        assertEquals(startedAt2, jsonRD.getJSONObject("startedAt").get("iso8601"));
+        assertEquals(startedAt2, jsonRD.get("startedAt").get("iso8601"));
         assertEquals("/api/replication-definition/Test2", jsonRD.get("details"));
     }
     
@@ -439,29 +444,30 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr).getJSONObject("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(json);
         
         // Check 
         assertEquals("Test1", json.get("name"));
         assertEquals("Testing", json.get("description"));
         assertEquals("New", json.get("status"));
-        assertEquals(JSONObject.NULL, json.get("startedAt"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
-        assertEquals(JSONObject.NULL, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("startedAt"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+        assertEquals(NullNode.getInstance(), json.get("executionDetails"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(true, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
         // Payload is empty
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(0, json.get("payload").size());
         
         
         // Ensure we didn't get any unexpected data back
-        JSONArray keys = json.names();
-        for(int i=0; i<keys.length(); i++) {
-           String key = keys.getString(0);
+        Iterator<String> iterator = json.fieldNames();
+        while(iterator.hasNext())
+        {
+            String key = iterator.next();
            if(key.equals("name") || key.equals("description") || 
                key.equals("status") || key.equals("startedAt") ||
                key.equals("endedAt") || key.equals("failureMessage") ||
@@ -485,22 +491,22 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         
         assertEquals("Test1", json.get("name"));
         assertEquals("Testing", json.get("description"));
         assertEquals("Pending", json.get("status"));
-        assertEquals(JSONObject.NULL, json.get("startedAt"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(NullNode.getInstance(), json.get("startedAt"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(true, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
         // Payload is empty
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(0, json.get("payload").size());
         
         
         // Change the status to running, and re-check
@@ -513,22 +519,22 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         
         assertEquals("Test1", json.get("name"));
         assertEquals("Testing", json.get("description"));
         assertEquals("Running", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(true, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
         // Payload is empty
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(0, json.get("payload").size());
         
         
         // Cancel it
@@ -538,22 +544,22 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         
         assertEquals("Test1", json.get("name"));
         assertEquals("Testing", json.get("description"));
         assertEquals("CancelRequested", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(true, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
         // Payload is empty
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(0, json.get("payload").size());
 
         
         // Add some payload details, ensure that they get expanded
@@ -568,31 +574,31 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         
         assertEquals("Test1", json.get("name"));
         assertEquals("Testing", json.get("description"));
         assertEquals("CancelRequested", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(true, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
         
         // Check Payload
-        assertEquals(2, json.getJSONArray("payload").length());
+        assertEquals(2, json.get("payload").size());
         
-        JSONObject payload = json.getJSONArray("payload").getJSONObject(0);
+        JsonNode payload = json.get("payload").get(0);
         assertEquals(repositoryHelper.getCompanyHome().toString(), payload.get("nodeRef"));
         assertEquals(true, payload.get("isFolder"));
         assertEquals("Company Home", payload.get("name"));
         assertEquals("/Company Home", payload.get("path"));
 
-        payload = json.getJSONArray("payload").getJSONObject(1);
+        payload = json.get("payload").get(1);
         assertEquals(dataDictionary.toString(), payload.get("nodeRef"));
         assertEquals(true, payload.get("isFolder"));
         assertEquals("Data Dictionary", payload.get("name"));
@@ -618,26 +624,26 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         
         assertEquals("Test1", json.get("name"));
         assertEquals("Testing", json.get("description"));
         assertEquals("CancelRequested", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(true, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
         
         // Check Payload
-        assertEquals(2, json.getJSONArray("payload").length());
-        payload = json.getJSONArray("payload").getJSONObject(0);
+        assertEquals(2, json.get("payload").size());
+        payload = json.get("payload").get(0);
         assertEquals("Company Home", payload.get("name"));
-        payload = json.getJSONArray("payload").getJSONObject(1);
+        payload = json.get("payload").get(1);
         assertEquals("Data Dictionary", payload.get("name"));
 
         
@@ -666,31 +672,31 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         
         assertEquals("Test1", json.get("name"));
         assertEquals("Testing", json.get("description"));
         assertEquals("CancelRequested", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(true, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
         
         // Check Payload
-        assertEquals(2, json.getJSONArray("payload").length());
+        assertEquals(2, json.get("payload").size());
         
-        payload = json.getJSONArray("payload").getJSONObject(0);
+        payload = json.get("payload").get(0);
         assertEquals(repositoryHelper.getCompanyHome().toString(), payload.get("nodeRef"));
         assertEquals(true, payload.get("isFolder"));
         assertEquals("Company Home", payload.get("name"));
         assertEquals("/Company Home", payload.get("path"));
 
-        payload = json.getJSONArray("payload").getJSONObject(1);
+        payload = json.get("payload").get(1);
         assertEquals(dataDictionary.toString(), payload.get("nodeRef"));
         assertEquals(true, payload.get("isFolder"));
         assertEquals("Data Dictionary", payload.get("name"));
@@ -702,20 +708,20 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         
         assertEquals("Test2", json.get("name"));
         assertEquals("2nd Testing", json.get("description"));
         assertEquals("New", json.get("status"));
-        assertEquals(JSONObject.NULL, json.get("startedAt"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
-        assertEquals(JSONObject.NULL, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("startedAt"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+        assertEquals(NullNode.getInstance(), json.get("executionDetails"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(true, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
+        assertEquals(0, json.get("payload").size());
         
         
         // And the 3rd one, which is failed
@@ -723,22 +729,22 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         startedAt = ISO8601DateFormat.format(rd.getExecutionStartDate());
         String endedAt = ISO8601DateFormat.format(rd.getExecutionEndDate());
         
         assertEquals("Test3", json.get("name"));
         assertEquals("3rd Testing", json.get("description"));
         assertEquals("Failed", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(endedAt, json.getJSONObject("endedAt").get("iso8601"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(endedAt, json.get("endedAt").get("iso8601"));
         assertEquals("Test Failure", json.get("failureMessage"));
-        assertEquals(JSONObject.NULL, json.get("executionDetails"));
+        assertEquals(NullNode.getInstance(), json.get("executionDetails"));
         assertEquals(repositoryHelper.getRootHome().toString(), json.get("transferLocalReport"));
         assertEquals(repositoryHelper.getCompanyHome().toString(), json.get("transferRemoteReport"));
         assertEquals(false, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
+        assertEquals(0, json.get("payload").size());
         
         
         // When pending/running, the previous end time, transfer reports and
@@ -754,21 +760,21 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         
         assertEquals("Test3", json.get("name"));
         assertEquals("3rd Testing", json.get("description"));
         assertEquals("Pending", json.get("status"));
-        assertEquals(JSONObject.NULL, json.get("startedAt"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(NullNode.getInstance(), json.get("startedAt"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(false, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
+        assertEquals(0, json.get("payload").size());
         
         
         actionTrackingService.recordActionExecuting(rd);
@@ -776,22 +782,22 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         startedAt = ISO8601DateFormat.format(rd.getExecutionStartDate());
         
         assertEquals("Test3", json.get("name"));
         assertEquals("3rd Testing", json.get("description"));
         assertEquals("Running", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(false, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
+        assertEquals(0, json.get("payload").size());
         
         
         actionTrackingService.requestActionCancellation(rd);
@@ -799,22 +805,22 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         startedAt = ISO8601DateFormat.format(rd.getExecutionStartDate());
         
         assertEquals("Test3", json.get("name"));
         assertEquals("3rd Testing", json.get("description"));
         assertEquals("CancelRequested", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(JSONObject.NULL, json.get("endedAt"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(NullNode.getInstance(), json.get("endedAt"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
               actionId + "=" + instanceId, json.get("executionDetails"));
-        assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-        assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+        assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
         assertEquals(false, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
+        assertEquals(0, json.get("payload").size());
 
         
         // These show up again when no longer running
@@ -826,22 +832,22 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr).getJSONObject("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         startedAt = ISO8601DateFormat.format(rd.getExecutionStartDate());
         endedAt = ISO8601DateFormat.format(rd.getExecutionEndDate());
         
         assertEquals("Test3", json.get("name"));
         assertEquals("3rd Testing", json.get("description"));
         assertEquals("Completed", json.get("status"));
-        assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-        assertEquals(endedAt, json.getJSONObject("endedAt").get("iso8601"));
-        assertEquals(JSONObject.NULL, json.get("failureMessage"));
-        assertEquals(JSONObject.NULL, json.get("executionDetails"));
+        assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+        assertEquals(endedAt, json.get("endedAt").get("iso8601"));
+        assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+        assertEquals(NullNode.getInstance(), json.get("executionDetails"));
         assertEquals(repositoryHelper.getRootHome().toString(), json.get("transferLocalReport"));
         assertEquals(repositoryHelper.getCompanyHome().toString(), json.get("transferRemoteReport"));
         assertEquals(false, json.get("enabled"));
-        assertEquals(JSONObject.NULL, json.get("targetName"));
-        assertEquals(0, json.getJSONArray("payload").length());
+        assertEquals(NullNode.getInstance(), json.get("targetName"));
+        assertEquals(0, json.get("payload").size());
     }
     
     public void testReplicationDefinitionsPost() throws Exception
@@ -865,7 +871,7 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
 
        
        // If you don't give it name + description, it won't like you
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        response = sendRequest(new PostRequest(URL_DEFINITIONS, json.toString(), JSON), Status.STATUS_BAD_REQUEST);
        assertEquals(Status.STATUS_BAD_REQUEST, response.getStatus());
        
@@ -882,21 +888,21 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        // Check we got the right information back
        String jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("New Definition", json.get("name"));
        assertEquals("Testing", json.get("description"));
        assertEquals("New", json.get("status"));
-       assertEquals(JSONObject.NULL, json.get("startedAt"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
-       assertEquals(JSONObject.NULL, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("startedAt"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+       assertEquals(NullNode.getInstance(), json.get("executionDetails"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(true, json.get("enabled"));
-       assertEquals(JSONObject.NULL, json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(NullNode.getInstance(), json.get("targetName"));
+       assertEquals(0, json.get("payload").size());
        
      
        // Check that the right stuff ended up in the repository
@@ -915,14 +921,14 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        
        // Post with the full set of options
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("name", "Test");
        json.put("description", "Test Description");
        json.put("targetName", "Target");
        json.put("enabled", false);
-       JSONArray payloadRefs = new JSONArray();
-       payloadRefs.put(repositoryHelper.getCompanyHome().toString());
-       payloadRefs.put(dataDictionary.toString());
+       ArrayNode payloadRefs = AlfrescoDefaultObjectMapper.createArrayNode();
+       payloadRefs.add(repositoryHelper.getCompanyHome().toString());
+       payloadRefs.add(dataDictionary.toString());
        json.put("payload", payloadRefs);
        
        response = sendRequest(new PostRequest(URL_DEFINITIONS, json.toString(), JSON), Status.STATUS_OK);
@@ -931,29 +937,29 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        // Check the response for this
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Test", json.get("name"));
        assertEquals("Test Description", json.get("description"));
        assertEquals("New", json.get("status"));
-       assertEquals(JSONObject.NULL, json.get("startedAt"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
-       assertEquals(JSONObject.NULL, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("startedAt"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+       assertEquals(NullNode.getInstance(), json.get("executionDetails"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(false, json.get("enabled"));
        assertEquals("Target", json.get("targetName"));
-       assertEquals(2, json.getJSONArray("payload").length());
+       assertEquals(2, json.get("payload").size());
        
-       JSONObject payload = json.getJSONArray("payload").getJSONObject(0);
+       JsonNode payload = json.get("payload").get(0);
        assertEquals(repositoryHelper.getCompanyHome().toString(), payload.get("nodeRef"));
        assertEquals(true, payload.get("isFolder"));
        assertEquals("Company Home", payload.get("name"));
        assertEquals("/Company Home", payload.get("path"));
 
-       payload = json.getJSONArray("payload").getJSONObject(1);
+       payload = json.get("payload").get(1);
        assertEquals(dataDictionary.toString(), payload.get("nodeRef"));
        assertEquals(true, payload.get("isFolder"));
        assertEquals("Data Dictionary", payload.get("name"));
@@ -993,7 +999,7 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        
        // Ensure we can't create with a duplicate name
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("name", "Test");
        json.put("description", "New Duplicate");
        json.put("targetName", "New Duplicate Target");
@@ -1051,27 +1057,28 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        // Check we got the right information back on it
        String jsonStr = response.getContentAsString();
-       JSONObject json = new JSONObject(jsonStr).getJSONObject("data");
+       ObjectNode json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Test", json.get("name"));
        assertEquals("Testing", json.get("description"));
        assertEquals("New", json.get("status"));
-       assertEquals(JSONObject.NULL, json.get("startedAt"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
-       assertEquals(JSONObject.NULL, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("startedAt"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+       assertEquals(NullNode.getInstance(), json.get("executionDetails"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(true, json.get("enabled"));
-       assertEquals(JSONObject.NULL, json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(NullNode.getInstance(), json.get("targetName"));
+       assertEquals(0, json.get("payload").size());
        
        
        // Ensure we didn't get any unexpected data back
-       JSONArray keys = json.names();
-       for(int i=0; i<keys.length(); i++) {
-          String key = keys.getString(0);
+        Iterator<String> iterator = json.fieldNames();
+        while(iterator.hasNext())
+        {
+            String key = iterator.next();
           if(key.equals("name") || key.equals("description") || 
               key.equals("status") || key.equals("startedAt") ||
               key.equals("endedAt") || key.equals("failureMessage") ||
@@ -1089,28 +1096,28 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        // Change some details, and see them updated in both
        //  the JSON and on the object in the repo
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("description", "Updated Description");
        json.put("enabled", false);
        response = sendRequest(new PutRequest(URL_DEFINITION + "Test", json.toString(), JSON), Status.STATUS_OK);
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Test", json.get("name"));
        assertEquals("Updated Description", json.get("description"));
        assertEquals("New", json.get("status"));
-       assertEquals(JSONObject.NULL, json.get("startedAt"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
-       assertEquals(JSONObject.NULL, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("startedAt"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+       assertEquals(NullNode.getInstance(), json.get("executionDetails"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(false, json.get("enabled"));
-       assertEquals(JSONObject.NULL, json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(NullNode.getInstance(), json.get("targetName"));
+       assertEquals(0, json.get("payload").size());
        
        rd = replicationService.loadReplicationDefinition("Test");
        assertEquals("Test", rd.getReplicationName());
@@ -1133,7 +1140,7 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        rd.setTargetName("Target");
        replicationService.saveReplicationDefinition(rd);
        
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("description", "Updated Description 2");
        json.put("enabled", false);
        response = sendRequest(new PutRequest(URL_DEFINITION + "Test2", json.toString(), JSON), Status.STATUS_OK);
@@ -1141,21 +1148,21 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        // Check the response we got
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Test2", json.get("name"));
        assertEquals("Updated Description 2", json.get("description"));
        assertEquals("New", json.get("status"));
-       assertEquals(JSONObject.NULL, json.get("startedAt"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
-       assertEquals(JSONObject.NULL, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("startedAt"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+       assertEquals(NullNode.getInstance(), json.get("executionDetails"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(false, json.get("enabled"));
        assertEquals("Target", json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(0, json.get("payload").size());
        
        // Check the 1st definition
        rd = replicationService.loadReplicationDefinition("Test");
@@ -1195,67 +1202,67 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        String actionId = rd.getId();
        int instanceId = ((ActionImpl)rd).getExecutionInstance();
        
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("enabled", true);
        json.put("targetName", "Another Target");
        response = sendRequest(new PutRequest(URL_DEFINITION + "Test", json.toString(), JSON), Status.STATUS_OK);
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Test", json.get("name"));
        assertEquals("Updated Description", json.get("description"));
        assertEquals("Running", json.get("status"));
-       assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
+       assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
              actionId + "=" + instanceId, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(true, json.get("enabled"));
        assertEquals("Another Target", json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(0, json.get("payload").size());
 
        
        // Change the payload, and see the right information in
        //  the response JSON for it
-       JSONArray payloadRefs = new JSONArray();
-       payloadRefs.put(repositoryHelper.getCompanyHome().toString());
-       payloadRefs.put(dataDictionary.toString());
-       json = new JSONObject();
+       ArrayNode payloadRefs = AlfrescoDefaultObjectMapper.createArrayNode();
+       payloadRefs.add(repositoryHelper.getCompanyHome().toString());
+       payloadRefs.add(dataDictionary.toString());
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("payload", payloadRefs);
        
        response = sendRequest(new PutRequest(URL_DEFINITION + "Test", json.toString(), JSON), Status.STATUS_OK);
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Test", json.get("name"));
        assertEquals("Updated Description", json.get("description"));
        assertEquals("Running", json.get("status"));
-       assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
+       assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
              actionId + "=" + instanceId, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(true, json.get("enabled"));
        assertEquals("Another Target", json.get("targetName"));
-       assertEquals(2, json.getJSONArray("payload").length());
+       assertEquals(2, json.get("payload").size());
        
-       JSONObject payload = json.getJSONArray("payload").getJSONObject(0);
+       JsonNode payload = json.get("payload").get(0);
        assertEquals(repositoryHelper.getCompanyHome().toString(), payload.get("nodeRef"));
        assertEquals(true, payload.get("isFolder"));
        assertEquals("Company Home", payload.get("name"));
        assertEquals("/Company Home", payload.get("path"));
 
-       payload = json.getJSONArray("payload").getJSONObject(1);
+       payload = json.get("payload").get(1);
        assertEquals(dataDictionary.toString(), payload.get("nodeRef"));
        assertEquals(true, payload.get("isFolder"));
        assertEquals("Data Dictionary", payload.get("name"));
@@ -1263,63 +1270,63 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        
        // Remove the payload again
-       json = new JSONObject();
-       payloadRefs = new JSONArray();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
+       payloadRefs = AlfrescoDefaultObjectMapper.createArrayNode();
        json.put("payload", payloadRefs);
        
        response = sendRequest(new PutRequest(URL_DEFINITION + "Test", json.toString(), JSON), Status.STATUS_OK);
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Test", json.get("name"));
        assertEquals("Updated Description", json.get("description"));
        assertEquals("Running", json.get("status"));
-       assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
+       assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
              actionId + "=" + instanceId, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(true, json.get("enabled"));
        assertEquals("Another Target", json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(0, json.get("payload").size());
 
        
        // Rename to a taken name, won't be allowed
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("name", "Test2");
        response = sendRequest(new PutRequest(URL_DEFINITION + "Test", json.toString(), JSON), Status.STATUS_BAD_REQUEST);
        assertEquals(Status.STATUS_BAD_REQUEST, response.getStatus());
        
        
        // Rename to a spare name, will be updated
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("name", "Renamed");
        
        response = sendRequest(new PutRequest(URL_DEFINITION + "Test", json.toString(), JSON), Status.STATUS_OK);
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Renamed", json.get("name"));
        assertEquals("Updated Description", json.get("description"));
        assertEquals("Running", json.get("status"));
-       assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
+       assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
              actionId + "=" + instanceId, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(true, json.get("enabled"));
        assertEquals("Another Target", json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(0, json.get("payload").size());
        
        // Check the repo too
        assertEquals(null, replicationService.loadReplicationDefinition("Test"));
@@ -1327,7 +1334,7 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
 
        
        // Rename can both rename + change details
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("name", "Renamed Again");
        json.put("description", "Was Renamed");
        json.put("targetName", "New Target");
@@ -1336,22 +1343,22 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals("Renamed Again", json.get("name"));
        assertEquals("Was Renamed", json.get("description"));
        assertEquals("Running", json.get("status"));
-       assertEquals(startedAt, json.getJSONObject("startedAt").get("iso8601"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
+       assertEquals(startedAt, json.get("startedAt").get("iso8601"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor="+
              actionId + "=" + instanceId, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(true, json.get("enabled"));
        assertEquals("New Target", json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(0, json.get("payload").size());
     }
     
     public void testReplicationDefinitionDelete() throws Exception 
@@ -1482,28 +1489,28 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        
        
        // Create
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("name", nastyName);
        json.put("description", "Nasty Characters");
        response = sendRequest(new PostRequest(URL_DEFINITIONS, json.toString(), JSON), Status.STATUS_OK);
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals(nastyName, json.get("name"));
        assertEquals("Nasty Characters", json.get("description"));
        assertEquals("New", json.get("status"));
-       assertEquals(JSONObject.NULL, json.get("startedAt"));
-       assertEquals(JSONObject.NULL, json.get("endedAt"));
-       assertEquals(JSONObject.NULL, json.get("failureMessage"));
-       assertEquals(JSONObject.NULL, json.get("executionDetails"));
-       assertEquals(JSONObject.NULL, json.get("transferLocalReport"));
-       assertEquals(JSONObject.NULL, json.get("transferRemoteReport"));
+       assertEquals(NullNode.getInstance(), json.get("startedAt"));
+       assertEquals(NullNode.getInstance(), json.get("endedAt"));
+       assertEquals(NullNode.getInstance(), json.get("failureMessage"));
+       assertEquals(NullNode.getInstance(), json.get("executionDetails"));
+       assertEquals(NullNode.getInstance(), json.get("transferLocalReport"));
+       assertEquals(NullNode.getInstance(), json.get("transferRemoteReport"));
        assertEquals(true, json.get("enabled"));
-       assertEquals(JSONObject.NULL, json.get("targetName"));
-       assertEquals(0, json.getJSONArray("payload").length());
+       assertEquals(NullNode.getInstance(), json.get("targetName"));
+       assertEquals(0, json.get("payload").size());
        
        
        // Check it turned up
@@ -1516,7 +1523,7 @@ public class ReplicationRestApiTest extends BaseWebScriptTest
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr).getJSONObject("data");
+       json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(json);
        
        assertEquals(nastyName, json.get("name"));

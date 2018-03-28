@@ -29,11 +29,11 @@ package org.alfresco.rest.api.tests.util;
 import static org.junit.Assert.assertNotNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.alfresco.rest.api.tests.client.PublicApiClient;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,22 +63,22 @@ public class RestApiUtil
      * @return list of POJOs of the given {@code clazz} type
      * @throws Exception
      */
-    public static <T> List<T> parseRestApiEntries(JSONObject jsonObject, Class<T> clazz) throws Exception
+    public static <T> List<T> parseRestApiEntries(JsonNode jsonObject, Class<T> clazz) throws Exception
     {
         assertNotNull(jsonObject);
         assertNotNull(clazz);
 
         List<T> models = new ArrayList<>();
 
-        JSONObject jsonList = (JSONObject) jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
 
-        JSONArray jsonEntries = (JSONArray) jsonList.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
         assertNotNull(jsonEntries);
 
         for (int i = 0; i < jsonEntries.size(); i++)
         {
-            JSONObject jsonEntry = (JSONObject) jsonEntries.get(i);
+            JsonNode jsonEntry = jsonEntries.get(i);
             T pojoModel = parseRestApiEntry(jsonEntry, clazz);
             models.add(pojoModel);
         }
@@ -96,7 +96,7 @@ public class RestApiUtil
      * @return the POJO of the given {@code clazz} type
      * @throws Exception
      */
-    public static <T> T parseRestApiEntry(JSONObject jsonObject, Class<T> clazz) throws Exception
+    public static <T> T parseRestApiEntry(JsonNode jsonObject, Class<T> clazz) throws Exception
     {
         return parsePojo("entry",jsonObject, clazz);
     }
@@ -107,10 +107,10 @@ public class RestApiUtil
      * @return ExpectedPaging the paging
      * @throws Exception
      */
-    public static PublicApiClient.ExpectedPaging parsePaging(JSONObject jsonObject) throws Exception
+    public static PublicApiClient.ExpectedPaging parsePaging(JsonNode jsonObject) throws Exception
     {
         assertNotNull(jsonObject);
-        JSONObject jsonList = (JSONObject) jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
         return parsePojo("pagination", jsonList, PublicApiClient.ExpectedPaging.class);
     }
@@ -119,18 +119,18 @@ public class RestApiUtil
      * Parses the alfresco REST API response, uses {@literal Jackson}
      * to convert it to its corresponding POJO based on the given {@code clazz}.
      *
-     * @param jsonObject the {@code JSONObject} derived from the response
+     * @param jsonObject the {@code JsonNode} derived from the response
      * @param clazz the class which represents the JSON payload
      * @return the POJO of the given {@code clazz} type
      * @throws Exception
      */
-    public static <T> T parsePojo(String key, JSONObject jsonObject, Class<T> clazz) throws Exception
+    public static <T> T parsePojo(String key, JsonNode jsonObject, Class<T> clazz) throws Exception
     {
         assertNotNull(jsonObject);
         assertNotNull(clazz);
 
-        JSONObject pojo = (JSONObject) jsonObject.get(key);
-        T pojoModel = OBJECT_MAPPER.readValue(pojo.toJSONString(), clazz);
+        JsonNode pojo = jsonObject.get(key);
+        T pojoModel = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(pojo), clazz);
         assertNotNull(pojoModel);
 
         return pojoModel;
@@ -143,7 +143,7 @@ public class RestApiUtil
      * @return ExpectedErrorResponse the error object
      * @throws Exception
      */
-    public static PublicApiClient.ExpectedErrorResponse parseErrorResponse(JSONObject jsonObject) throws Exception
+    public static PublicApiClient.ExpectedErrorResponse parseErrorResponse(JsonNode jsonObject) throws Exception
     {
         return parsePojo("error", jsonObject, PublicApiClient.ExpectedErrorResponse.class);
     }

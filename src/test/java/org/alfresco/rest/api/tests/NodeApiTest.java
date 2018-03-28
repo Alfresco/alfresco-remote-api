@@ -35,6 +35,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Files;
@@ -93,7 +94,6 @@ import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
 import org.alfresco.util.TempFileProvider;
-import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -452,14 +452,14 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
 
         params = Collections.singletonMap(Nodes.PARAM_RELATIVE_PATH, folder1);
         response = getAll(childrenUrl, paging, params, 200);
-        JSONObject jsonResponse = response.getJsonResponse();
+        JsonNode jsonResponse = response.getJsonResponse();
         nodes = RestApiUtil.parseRestApiEntries(jsonResponse, Document.class);
         assertEquals(1, nodes.size());
         assertEquals(contentF1_Id, nodes.get(0).getId());
 
-        JSONObject jsonList = (JSONObject)jsonResponse.get("list");
+        JsonNode jsonList = (JsonNode)jsonResponse.get("list");
         assertNotNull(jsonList);
-        JSONObject jsonSrcObj = (JSONObject)jsonResponse.get("source");
+        JsonNode jsonSrcObj = (JsonNode)jsonResponse.get("source");
         assertNull(jsonSrcObj);
 
         params = Collections.singletonMap(Nodes.PARAM_RELATIVE_PATH, "User Homes/" + user1 + "/" + folder0Name + "/" + folder2);
@@ -469,9 +469,9 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
         assertEquals(1, nodes.size());
         assertEquals(contentF2_Id, nodes.get(0).getId());
 
-        jsonList = (JSONObject)jsonResponse.get("list");
+        jsonList = (JsonNode)jsonResponse.get("list");
         assertNotNull(jsonList);
-        jsonSrcObj = (JSONObject)jsonResponse.get("source");
+        jsonSrcObj = (JsonNode)jsonResponse.get("source");
         assertNull(jsonSrcObj);
 
         // list children via relativePath and also return the source entity
@@ -491,7 +491,7 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
         assertEquals(Boolean.FALSE, doc.getIsLink());
         assertNull(doc.getName());
 
-        jsonList = (JSONObject)jsonResponse.get("list");
+        jsonList = (JsonNode)jsonResponse.get("list");
         assertNotNull(jsonList);
 
         // source is not affected by include (or fields for that matter) - returns the default node response

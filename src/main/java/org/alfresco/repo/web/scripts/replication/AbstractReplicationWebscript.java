@@ -25,6 +25,10 @@
  */
 package org.alfresco.repo.web.scripts.replication;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Map;
 
 import org.alfresco.service.cmr.action.ActionTrackingService;
@@ -34,9 +38,6 @@ import org.alfresco.service.cmr.replication.ReplicationService;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.util.ISO8601DateFormat;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -81,29 +82,28 @@ public abstract class AbstractReplicationWebscript extends DeclarativeWebScript
      * Doesn't save the definition
      * Doesn't change the name
      */
-    protected void updateDefinitionProperties(ReplicationDefinition replicationDefinition, JSONObject json) 
-    throws JSONException 
+    protected void updateDefinitionProperties(ReplicationDefinition replicationDefinition, JsonNode json)
     {
        if(json.has("description")) {
-          String description = json.getString("description");
+          String description = json.get("description").textValue();
           replicationDefinition.setDescription(description);
        }
 
        if(json.has("targetName")) {
-          String targetName = json.getString("targetName");
+          String targetName = json.get("targetName").textValue();
           replicationDefinition.setTargetName(targetName);
        }
        
        if(json.has("enabled")) {
-          boolean enabled = json.getBoolean("enabled");
+          boolean enabled = json.get("enabled").booleanValue();
           replicationDefinition.setEnabled(enabled);
        }
        
        if(json.has("payload")) {
           replicationDefinition.getPayload().clear();
-          JSONArray payload = json.getJSONArray("payload");
-          for(int i=0; i<payload.length(); i++) {
-             String node = payload.getString(i);
+          ArrayNode payload = (ArrayNode) json.get("payload");
+          for(int i=0; i<payload.size(); i++) {
+             String node = payload.get(i).asText();
              replicationDefinition.getPayload().add(
                    new NodeRef(node)
              );
@@ -113,18 +113,21 @@ public abstract class AbstractReplicationWebscript extends DeclarativeWebScript
        
        // Now for the scheduling parts
        
-       if(json.has("schedule") && !json.isNull("schedule")) {
+       if(json.has("schedule") && !(json.get("schedule") instanceof NullNode))
+       {
           // Turn on scheduling, if not already enabled
           replicationService.enableScheduling(replicationDefinition);
           
           // Update the properties
-          JSONObject schedule = json.getJSONObject("schedule");
+          JsonNode schedule = json.get("schedule");
           
-          if(schedule.has("start") && !schedule.isNull("start")) {
+          if(schedule.has("start") && !(schedule.get("start") instanceof NullNode))
+          {
              // Look for start:.... or start:{"iso8601":....}
-             String startDate = schedule.getString("start");
-             if(schedule.get("start") instanceof JSONObject) {
-                startDate = schedule.getJSONObject("start").getString("iso8601");
+             String startDate = schedule.get("start").textValue();
+             if(schedule.get("start") instanceof ObjectNode)
+             {
+                startDate = schedule.get("start").get("iso8601").textValue();
              }
              
              replicationDefinition.setScheduleStart( ISO8601DateFormat.parse(startDate) );
@@ -132,17 +135,19 @@ public abstract class AbstractReplicationWebscript extends DeclarativeWebScript
              replicationDefinition.setScheduleStart(null);
           }
           
-          if(schedule.has("intervalPeriod") && !schedule.isNull("intervalPeriod")) {
+          if(schedule.has("intervalPeriod") && !(schedule.get("intervalPeriod") instanceof NullNode))
+          {
              replicationDefinition.setScheduleIntervalPeriod(
-                   IntervalPeriod.valueOf(schedule.getString("intervalPeriod"))
+                   IntervalPeriod.valueOf(schedule.get("intervalPeriod").textValue())
              );
           } else {
              replicationDefinition.setScheduleIntervalPeriod(null);
           }
           
-          if(schedule.has("intervalCount") && !schedule.isNull("intervalCount")) {
+          if(schedule.has("intervalCount") && !(schedule.get("intervalCount") instanceof NullNode))
+          {
              replicationDefinition.setScheduleIntervalCount(
-                   schedule.getInt("intervalCount")
+                   schedule.get("intervalCount").intValue()
              );
           } else {
              replicationDefinition.setScheduleIntervalCount(null);

@@ -28,6 +28,9 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -37,8 +40,7 @@ import java.util.Map;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
 import org.alfresco.util.ISO8601DateFormat;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 /**
  * A representation of an Audit Application Entry in JUnit Test
@@ -71,9 +73,9 @@ public class AuditEntry extends org.alfresco.rest.api.model.AuditEntry implement
     }
 
     @SuppressWarnings("unchecked")
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject auditEntryJson = new JSONObject();
+        ObjectNode auditEntryJson = AlfrescoDefaultObjectMapper.createObjectNode();
         if (getId() != null)
         {
             auditEntryJson.put("id", getId());
@@ -83,46 +85,46 @@ public class AuditEntry extends org.alfresco.rest.api.model.AuditEntry implement
         {
             auditEntryJson.put("createdByUser", new UserInfo(createdByUser.getId(), createdByUser.getDisplayName()).toJSON());
         }
-        auditEntryJson.put("values", getValues());
-        auditEntryJson.put("createdAt", getCreatedAt());
+        auditEntryJson.put("values", AlfrescoDefaultObjectMapper.convertValue(getValues(), ObjectNode.class));
+        auditEntryJson.put("createdAt", getCreatedAt().toString());
 
         return auditEntryJson;
     }
 
     @SuppressWarnings("unchecked")
-    public static AuditEntry parseAuditEntry(JSONObject jsonObject)
+    public static AuditEntry parseAuditEntry(JsonNode jsonObject)
     {
-        Long id = (Long) jsonObject.get("id");
-        String auditApplicationId = (String) jsonObject.get("auditApplicationId");
+        Long id = jsonObject.get("id").longValue();
+        String auditApplicationId = jsonObject.get("auditApplicationId").textValue();
         Map<String, Serializable> values = (Map<String, Serializable>) jsonObject.get("values");
         org.alfresco.rest.api.model.UserInfo createdByUser = null;
-        JSONObject createdByUserJson = (JSONObject) jsonObject.get("createdByUser");
+        JsonNode createdByUserJson = jsonObject.get("createdByUser");
         if (createdByUserJson != null)
         {
-            String userId = (String) createdByUserJson.get("id");
-            String displayName = (String) createdByUserJson.get("displayName");
+            String userId = createdByUserJson.get("id").textValue();
+            String displayName = createdByUserJson.get("displayName").textValue();
             createdByUser = new  org.alfresco.rest.api.model.UserInfo(userId,displayName,displayName);   
         }
-        Date createdAt = ISO8601DateFormat.parse((String) jsonObject.get("createdAt"));
+        Date createdAt = ISO8601DateFormat.parse(jsonObject.get("createdAt").textValue());
 
         AuditEntry auditEntry = new AuditEntry(id, auditApplicationId, createdByUser, createdAt, values);
         return auditEntry;
     }
 
-    public static ListResponse<AuditEntry> parseAuditEntries(JSONObject jsonObject)
+    public static ListResponse<AuditEntry> parseAuditEntries(JsonNode jsonObject)
     {
         List<AuditEntry> entries = new ArrayList<>();
 
-        JSONObject jsonList = (JSONObject) jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
 
-        JSONArray jsonEntries = (JSONArray) jsonList.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
         assertNotNull(jsonEntries);
 
         for (int i = 0; i < jsonEntries.size(); i++)
         {
-            JSONObject jsonEntry = (JSONObject) jsonEntries.get(i);
-            JSONObject entry = (JSONObject) jsonEntry.get("entry");
+            JsonNode jsonEntry =  jsonEntries.get(i);
+            JsonNode entry =  jsonEntry.get("entry");
             entries.add(parseAuditEntry(entry));
         }
 

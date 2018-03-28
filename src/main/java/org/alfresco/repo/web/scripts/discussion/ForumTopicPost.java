@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.discussion;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,6 @@ import org.alfresco.service.cmr.discussion.PostInfo;
 import org.alfresco.service.cmr.discussion.TopicInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -48,7 +48,7 @@ public class ForumTopicPost extends AbstractDiscussionWebScript
 {
    @Override
    protected Map<String, Object> executeImpl(SiteInfo site, NodeRef nodeRef,
-         TopicInfo topic, PostInfo post, WebScriptRequest req, JSONObject json,
+         TopicInfo topic, PostInfo post, WebScriptRequest req, JsonNode json,
          Status status, Cache cache) 
    {
       // They shouldn't be adding to an existing Post or Topic
@@ -62,13 +62,13 @@ public class ForumTopicPost extends AbstractDiscussionWebScript
       // Grab the details of the new Topic and Post
       String title = "";
       String contents = "";
-      if (json.containsKey("title"))
+      if (json.has("title"))
       {
-         title = (String)json.get("title");
+         title = json.get("title").textValue();
       }
-      if (json.containsKey("content"))
+      if (json.has("content"))
       {
-         contents = (String)json.get("content");
+         contents = json.get("content").textValue();
       }
       List<String> tags = getTags(json);
       

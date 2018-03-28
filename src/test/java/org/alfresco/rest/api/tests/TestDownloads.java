@@ -63,7 +63,6 @@ import org.alfresco.service.cmr.download.DownloadStatus;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -558,7 +557,7 @@ public class TestDownloads extends AbstractBaseApiTest
     {
         if (asList(SC_ACCEPTED, SC_OK).contains(response.getStatusCode()))
         {
-            return RestApiUtil.parseRestApiEntry((JSONObject) response.getJsonResponse(), Download.class);
+            return RestApiUtil.parseRestApiEntry(response.getJsonResponse(), Download.class);
         }
         return null;
     }

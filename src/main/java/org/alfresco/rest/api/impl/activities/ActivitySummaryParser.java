@@ -25,8 +25,15 @@
  */
 package org.alfresco.rest.api.impl.activities;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -34,13 +41,10 @@ import java.util.regex.Pattern;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.registry.NamedObjectRegistry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 import org.springframework.extensions.surf.util.ISO8601DateFormat;
 
 /*
@@ -90,9 +94,9 @@ public class ActivitySummaryParser implements ActivitySummaryProcessorRegistry
 		processor.process(entries);
 	}
 
-	public Map<String, Object> parse(String activityType, String activitySummary) throws JSONException
+	public Map<String, Object> parse(String activityType, String activitySummary) throws IOException
 	{
-		JSONObject json = (JSONObject)JSONValue.parse(activitySummary);
+		JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(activitySummary);
 		Map<String, Object> map = convertJSONObjectToMap(json);
 		processActivitySummary(activityType, map);
 		return map;
@@ -110,37 +114,39 @@ public class ActivitySummaryParser implements ActivitySummaryProcessorRegistry
     	return matcher.matches();
     }
     
-    Map<String, Object> convertJSONObjectToMap(JSONObject jo) throws JSONException
+    Map<String, Object> convertJSONObjectToMap(JsonNode jo)
     {
         Map<String, Object> model = new HashMap<String, Object>();
+        Iterator<Map.Entry<String,JsonNode>> fields = jo.fields();
 
-        for(Object key : jo.keySet())
+        while(fields.hasNext())
         {
-            Object value = jo.get(key);
-            if (value instanceof JSONObject)
+            Map.Entry<String, JsonNode> entry = fields.next();
+            JsonNode value = entry.getValue();
+            if (value instanceof ObjectNode)
             {
-                model.put((String)key, convertJSONObjectToMap((JSONObject)value));
+                model.put(entry.getKey(), convertJSONObjectToMap(value));
             }
-            else if (value instanceof JSONArray)
+            else if (value instanceof ArrayNode)
             {
-                model.put((String)key, convertJSONArrayToList((JSONArray)value));
+                model.put(entry.getKey(), convertJSONArrayToList((ArrayNode) value));
             }
             else if (value == null)
             {
-                model.put((String)key, null);
+                model.put(entry.getKey(), null);
             }
             else
             {
-                if ((value instanceof String) && autoConvertISO8601 && (matcherISO8601.matcher((String)value).matches()))
+                if ((value instanceof TextNode) && autoConvertISO8601 && (matcherISO8601.matcher(value.textValue()).matches()))
                 {
-                	value = ISO8601DateFormat.parse((String)value);
+                    model.put(entry.getKey(), ISO8601DateFormat.parse(value.textValue()));
                 }
                 
-                if ((value instanceof String) && isNodeRef((String)value))
+                if ((value instanceof TextNode) && isNodeRef(value.textValue()))
                 {
                 	try
                 	{
-                		value = new NodeRef((String)value);
+                		model.put(entry.getKey(), new NodeRef(value.textValue()));
                 	}
                 	catch(AlfrescoRuntimeException e)
                 	{
@@ -148,15 +154,13 @@ public class ActivitySummaryParser implements ActivitySummaryProcessorRegistry
                 		logger.warn("Cannot convert activity summary NodeRef string " + value + " to a NodeRef");
                 	}
                 }
-                
-                model.put((String)key, value);
             }
         }
        
         return model;
     }
    
-    List<Object> convertJSONArrayToList(JSONArray ja) throws JSONException
+    List<Object> convertJSONArrayToList(ArrayNode ja)
     {
         List<Object> model = new ArrayList<Object>();
        
@@ -164,15 +168,15 @@ public class ActivitySummaryParser implements ActivitySummaryProcessorRegistry
         {
             Object o = ja.get(i);
             
-            if (o instanceof JSONArray)
+            if (o instanceof ArrayNode)
             {
-                model.add(convertJSONArrayToList((JSONArray)o));
+                model.add(convertJSONArrayToList((ArrayNode) o));
             }
-            else if (o instanceof JSONObject)
+            else if (o instanceof ObjectNode)
             {
-                model.add(convertJSONObjectToMap((JSONObject)o));
+                model.add(convertJSONObjectToMap((ObjectNode)o));
             }
-            else if (o == null)
+            else if (o == null || o instanceof NullNode)
             {
                 model.add(null);
             }

@@ -27,6 +27,8 @@ package org.alfresco.rest.api.tests.client;
 
 import static org.junit.Assert.assertNotNull;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -103,8 +105,6 @@ import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -842,12 +842,12 @@ public class PublicApiClient
             }
         }
 
-        public JSONObject parseListSource(JSONObject jsonResponse)
+        public JsonNode parseListSource(JsonNode jsonResponse)
         {
-            JSONObject jsonList = (JSONObject)jsonResponse.get("list");
+            JsonNode jsonList = jsonResponse.get("list");
             assertNotNull(jsonList);
 
-            JSONObject source = (JSONObject)jsonList.get("source");
+            JsonNode source = jsonList.get("source");
             assertNotNull(source);
             return source;
         }
@@ -960,7 +960,7 @@ public class PublicApiClient
             HttpResponse response = getSingle("sites", siteId, null, null, "Failed to get site " + siteId, expectedStatus);
             if ((response != null) && (response.getJsonResponse() != null))
             {
-                return SiteImpl.parseSite((JSONObject)response.getJsonResponse().get("entry"));
+                return SiteImpl.parseSite(response.getJsonResponse().get("entry"));
             }
             else
             {
@@ -976,7 +976,7 @@ public class PublicApiClient
         public Site createSite(Site site, int expectedStatus) throws PublicApiException
         {
             HttpResponse response = create("sites", null, null, null, site.toJSON().toString(), "Failed to create site "+site.getTitle(), expectedStatus);
-            return SiteImpl.parseSite((JSONObject)response.getJsonResponse().get("entry"));
+            return SiteImpl.parseSite(response.getJsonResponse().get("entry"));
         }
 
         public void removeSite(String siteId) throws PublicApiException
@@ -1000,7 +1000,7 @@ public class PublicApiClient
             HttpResponse response = update("sites", siteId, null, null, jsonizer.toJSON().toString(), null, "Failed to update site " + update.getTitle(), expectedStatus);
             if (response.getJsonResponse() != null)
             {
-                return SiteImpl.parseSite((JSONObject) response.getJsonResponse().get("entry"));
+                return SiteImpl.parseSite( response.getJsonResponse().get("entry"));
             }
             // No JSON response to parse.
             return null;
@@ -1015,21 +1015,21 @@ public class PublicApiClient
         public SiteContainer getSingleSiteContainer(String siteId, String containerId) throws PublicApiException
         {
             HttpResponse response = getSingle("sites", siteId, "containers", containerId, "Failed to get site container");
-            SiteContainer siteContainer = SiteContainer.parseSiteContainer(siteId, (JSONObject)response.getJsonResponse().get("entry"));
+            SiteContainer siteContainer = SiteContainer.parseSiteContainer(siteId, response.getJsonResponse().get("entry"));
             return siteContainer;
         }
 
         public SiteContainer updateSiteContainer(SiteContainer siteContainer) throws PublicApiException
         {
             HttpResponse response = update("sites", siteContainer.getSiteId(), "containers", siteContainer.getId(), siteContainer.toJSON().toString(), "Failed to update site container");
-            SiteContainer retSiteContainer = SiteContainer.parseSiteContainer(siteContainer.getSiteId(), (JSONObject)response.getJsonResponse().get("entry"));
+            SiteContainer retSiteContainer = SiteContainer.parseSiteContainer(siteContainer.getSiteId(), response.getJsonResponse().get("entry"));
             return retSiteContainer;
         }
 
         public SiteContainer createSiteContainer(SiteContainer siteContainer) throws PublicApiException
         {
             HttpResponse response = create("sites", siteContainer.getSiteId(), "containers", null, siteContainer.toJSON().toString(), "Failed to create site container");
-            SiteContainer retSiteContainer = SiteContainer.parseSiteContainer(siteContainer.getSiteId(), (JSONObject)response.getJsonResponse().get("entry"));
+            SiteContainer retSiteContainer = SiteContainer.parseSiteContainer(siteContainer.getSiteId(), response.getJsonResponse().get("entry"));
             return retSiteContainer;
         }
 
@@ -1038,30 +1038,30 @@ public class PublicApiClient
             remove("sites", siteContainer.getSiteId(), "containers", siteContainer.getId(), "Failed to remove site container");
         }
 
-        public ListResponse<SiteMember> getSiteMembers(String siteId, Map<String, String> params) throws PublicApiException
+        public ListResponse<SiteMember> getSiteMembers(String siteId, Map<String, String> params) throws PublicApiException, IOException
         {
             HttpResponse response = getAll("sites", siteId, "members", null, params, "Failed to get all site members");
             return SiteMember.parseSiteMembers(siteId, response.getJsonResponse());
         }
 
-        public SiteMember getSingleSiteMember(String siteId, String personId) throws PublicApiException
+        public SiteMember getSingleSiteMember(String siteId, String personId) throws PublicApiException, IOException
         {
             HttpResponse response = getSingle("sites", siteId, "members", personId, "Failed to get site member");
-            SiteMember retSiteMember = SiteMember.parseSiteMember(siteId, (JSONObject)response.getJsonResponse().get("entry"));
+            SiteMember retSiteMember = SiteMember.parseSiteMember(siteId, response.getJsonResponse().get("entry"));
             return retSiteMember;
         }
 
-        public SiteMember updateSiteMember(String siteId, SiteMember siteMember) throws PublicApiException
+        public SiteMember updateSiteMember(String siteId, SiteMember siteMember) throws PublicApiException, IOException
         {
             HttpResponse response = update("sites", siteId, "members", siteMember.getMemberId(), siteMember.toJSON().toString(), "Failed to update site member");
-            SiteMember retSiteMember = SiteMember.parseSiteMember(siteMember.getSiteId(), (JSONObject)response.getJsonResponse().get("entry"));
+            SiteMember retSiteMember = SiteMember.parseSiteMember(siteMember.getSiteId(), response.getJsonResponse().get("entry"));
             return retSiteMember;
         }
 
-        public SiteMember createSiteMember(String siteId, SiteMember siteMember) throws PublicApiException
+        public SiteMember createSiteMember(String siteId, SiteMember siteMember) throws PublicApiException, IOException
         {
             HttpResponse response = create("sites", siteId, "members", null, siteMember.toJSON().toString(), "Failed to create site member");
-            SiteMember retSiteMember = SiteMember.parseSiteMember(siteMember.getSiteId(), (JSONObject)response.getJsonResponse().get("entry"));
+            SiteMember retSiteMember = SiteMember.parseSiteMember(siteMember.getSiteId(), response.getJsonResponse().get("entry"));
             return retSiteMember;
         }
 
@@ -1079,20 +1079,20 @@ public class PublicApiClient
         public MemberOfSite getPersonSite(String personId, String siteId) throws PublicApiException
         {
             HttpResponse response = getSingle("people", personId, "sites", siteId, "Failed to get person site" + siteId);
-            return MemberOfSite.parseMemberOfSite((JSONObject)response.getJsonResponse().get("entry"));
+            return MemberOfSite.parseMemberOfSite(response.getJsonResponse().get("entry"));
         }
 
         public MemberOfSite updatePersonSite(String personId, SiteMember siteMember) throws PublicApiException
         {
             HttpResponse response = update("people", personId, "sites", siteMember.getSiteId(), siteMember.toJSON().toString(), "Failed to update person site");
-            MemberOfSite retSiteMember = MemberOfSite.parseMemberOfSite((JSONObject)response.getJsonResponse().get("entry"));
+            MemberOfSite retSiteMember = MemberOfSite.parseMemberOfSite(response.getJsonResponse().get("entry"));
             return retSiteMember;
         }
 
         public MemberOfSite createPersonSite(String personId, SiteMember siteMember) throws PublicApiException
         {
             HttpResponse response = create("people", personId, "sites", null, siteMember.toJSON().toString(), "Failed to create person site");
-            MemberOfSite retSiteMember = MemberOfSite.parseMemberOfSite((JSONObject)response.getJsonResponse().get("entry"));
+            MemberOfSite retSiteMember = MemberOfSite.parseMemberOfSite(response.getJsonResponse().get("entry"));
             return retSiteMember;
         }
 
@@ -1110,21 +1110,21 @@ public class PublicApiClient
         public FavouriteSite getSingleFavouriteSite(String personId, String siteId) throws PublicApiException
         {
             HttpResponse response = getSingle("people", personId, "favorite-sites", siteId, "Failed to get favourite site");
-            FavouriteSite favouriteSite = FavouriteSite.parseFavouriteSite((JSONObject)response.getJsonResponse().get("entry"));
+            FavouriteSite favouriteSite = FavouriteSite.parseFavouriteSite(response.getJsonResponse().get("entry"));
             return favouriteSite;
         }
 
         public FavouriteSite updateFavouriteSite(String personId, FavouriteSite site) throws PublicApiException
         {
             HttpResponse response = update("people", personId, "favorite-sites", site.getSiteId(), site.toJSON().toString(), "Failed to update favourite site");
-            FavouriteSite favouriteSite = FavouriteSite.parseFavouriteSite((JSONObject)response.getJsonResponse().get("entry"));
+            FavouriteSite favouriteSite = FavouriteSite.parseFavouriteSite(response.getJsonResponse().get("entry"));
             return favouriteSite;
         }
 
         public FavouriteSite createFavouriteSite(String personId, FavouriteSite site) throws PublicApiException
         {
             HttpResponse response = create("people", personId, "favorite-sites", null, site.toJSON().toString(), "Failed to create favourite site");
-            FavouriteSite favouriteSite = FavouriteSite.parseFavouriteSite((JSONObject)response.getJsonResponse().get("entry"));
+            FavouriteSite favouriteSite = FavouriteSite.parseFavouriteSite(response.getJsonResponse().get("entry"));
             return favouriteSite;
         }
 
@@ -1136,29 +1136,29 @@ public class PublicApiClient
 
     public class SiteMembershipRequests extends AbstractProxy
     {
-        public SiteMembershipRequest getSiteMembershipRequest(String personId, String siteId) throws PublicApiException, ParseException
+        public SiteMembershipRequest getSiteMembershipRequest(String personId, String siteId) throws PublicApiException, ParseException, IOException
         {
             HttpResponse response = getSingle("people", personId, "site-membership-requests", siteId, "Failed to get siteMembershipRequest");
-            return SiteMembershipRequest.parseSiteMembershipRequest((JSONObject) response.getJsonResponse().get("entry"));
+            return SiteMembershipRequest.parseSiteMembershipRequest( response.getJsonResponse().get("entry"));
         }
 
-        public ListResponse<SiteMembershipRequest> getSiteMembershipRequests(String personId, Map<String, String> params) throws PublicApiException, ParseException
+        public ListResponse<SiteMembershipRequest> getSiteMembershipRequests(String personId, Map<String, String> params) throws PublicApiException, ParseException, IOException
         {
             HttpResponse response = getAll("people", personId, "site-membership-requests", null, params, "Failed to get siteMembershipRequests");
             return SiteMembershipRequest.parseSiteMembershipRequests(response.getJsonResponse());
         }
 
-        public SiteMembershipRequest createSiteMembershipRequest(String personId, SiteMembershipRequest siteMembershipRequest) throws PublicApiException, ParseException
+        public SiteMembershipRequest createSiteMembershipRequest(String personId, SiteMembershipRequest siteMembershipRequest) throws PublicApiException, ParseException, IOException
         {
             HttpResponse response = create("people", personId, "site-membership-requests", null, siteMembershipRequest.toJSON().toString(), "Failed to create siteMembershipRequest");
-            SiteMembershipRequest ret = SiteMembershipRequest.parseSiteMembershipRequest((JSONObject) response.getJsonResponse().get("entry"));
+            SiteMembershipRequest ret = SiteMembershipRequest.parseSiteMembershipRequest( response.getJsonResponse().get("entry"));
             return ret;
         }
 
-        public SiteMembershipRequest updateSiteMembershipRequest(String personId, SiteMembershipRequest siteMembershipRequest) throws PublicApiException, ParseException
+        public SiteMembershipRequest updateSiteMembershipRequest(String personId, SiteMembershipRequest siteMembershipRequest) throws PublicApiException, ParseException, IOException
         {
             HttpResponse response = update("people", personId, "site-membership-requests", siteMembershipRequest.getId(), siteMembershipRequest.toJSON().toString(), "Failed to update siteMembershipRequest");
-            SiteMembershipRequest ret = SiteMembershipRequest.parseSiteMembershipRequest((JSONObject) response.getJsonResponse().get("entry"));
+            SiteMembershipRequest ret = SiteMembershipRequest.parseSiteMembershipRequest( response.getJsonResponse().get("entry"));
             return ret;
         }
 
@@ -1167,13 +1167,13 @@ public class PublicApiClient
             remove("people", personId, "site-membership-requests", siteMembershipRequestId, "Failed to cancel siteMembershipRequest");
         }
 
-        public ListResponse<SiteMembershipRequest> getSiteMembershipRequests(Map<String, String> params, String errorMessage, int expectedStatus) throws PublicApiException, ParseException
+        public ListResponse<SiteMembershipRequest> getSiteMembershipRequests(Map<String, String> params, String errorMessage, int expectedStatus) throws PublicApiException, ParseException, IOException
         {
             HttpResponse response = getAll("site-membership-requests", null, null, null, params, errorMessage, expectedStatus);
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return SiteMembershipRequest.parseSiteMembershipRequests(response.getJsonResponse());
@@ -1198,26 +1198,26 @@ public class PublicApiClient
         public Favourite getFavourite(String personId, String favouriteId) throws PublicApiException, ParseException
         {
             HttpResponse response = getSingle("people", personId, "favorites", favouriteId, "Failed to get favourite " + favouriteId);
-            return Favourite.parseFavourite((JSONObject)response.getJsonResponse().get("entry"));
+            return Favourite.parseFavourite(response.getJsonResponse().get("entry"));
         }
 
         public Favourite getFavourite(String personId, String favouriteId, Map<String, String> params) throws PublicApiException, ParseException
         {
             HttpResponse response = getSingle("people", personId, "favorites", favouriteId, params, "Failed to get favourite " + favouriteId, 200);
-            return Favourite.parseFavourite((JSONObject) response.getJsonResponse().get("entry"));
+            return Favourite.parseFavourite( response.getJsonResponse().get("entry"));
         }
 
         public Favourite createFavourite(String personId, Favourite favourite) throws PublicApiException, ParseException
         {
             HttpResponse response = create("people", personId, "favorites", null, favourite.toJSON().toString(), "Failed to create favourite");
-            Favourite ret = Favourite.parseFavourite((JSONObject)response.getJsonResponse().get("entry"));
+            Favourite ret = Favourite.parseFavourite(response.getJsonResponse().get("entry"));
             return ret;
         }
 
         public Favourite createFavourite(String personId, Favourite favourite, Map<String, String> params) throws PublicApiException, ParseException
         {
             HttpResponse response = create("people", personId, "favorites", null, favourite.toJSON().toString(), "Failed to create favourite", 201, params);
-            Favourite ret = Favourite.parseFavourite((JSONObject)response.getJsonResponse().get("entry"));
+            Favourite ret = Favourite.parseFavourite(response.getJsonResponse().get("entry"));
             return ret;
         }
 
@@ -1229,18 +1229,18 @@ public class PublicApiClient
 
     public class People extends AbstractProxy
     {
-        public ListResponse<Person> getPeople(Map<String, String> params) throws PublicApiException
+        public ListResponse<Person> getPeople(Map<String, String> params) throws PublicApiException, IOException
         {
             HttpResponse response = getAll("people", null, null, null, params, "Failed to get people");
             return Person.parsePeople(response.getJsonResponse());
         }
 
-        public Person getPerson(String personId) throws PublicApiException
+        public Person getPerson(String personId) throws PublicApiException, IOException
         {
             return getPerson(personId, 200);
         }
 
-        public Person getPerson(String personId, int expectedStatus) throws PublicApiException
+        public Person getPerson(String personId, int expectedStatus) throws PublicApiException, IOException
         {
             HttpResponse response = getSingle("people", personId, null, null, "Failed to get person", expectedStatus);
 
@@ -1252,7 +1252,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode entry =  response.getJsonResponse().get("entry");
                 if (entry != null)
                 {
                     return Person.parsePerson(entry);
@@ -1261,27 +1261,27 @@ public class PublicApiClient
             return null;
         }
 
-        public Person update(String personId, Person person) throws PublicApiException
+        public Person update(String personId, Person person) throws PublicApiException, IOException
         {
             return update(personId, person, 200);
         }
 
-        public Person update(String personId, Person person, int expectedStatus) throws PublicApiException
+        public Person update(String personId, Person person, int expectedStatus) throws PublicApiException, IOException
         {
             return update(personId, person.toJSON(true).toString(), expectedStatus);
         }
 
-        public Person update(String personId, String json, int expectedStatus) throws PublicApiException
+        public Person update(String personId, String json, int expectedStatus) throws PublicApiException, IOException
         {
             return update(personId, json, null, expectedStatus);
         }
 
-        public Person update(String personId, String json, Map<String,String> params, int expectedStatus) throws PublicApiException
+        public Person update(String personId, String json, Map<String,String> params, int expectedStatus) throws PublicApiException, IOException
         {
             HttpResponse response = update("people", personId, null, null, json, params, "Failed to update person", expectedStatus);
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode entry =  response.getJsonResponse().get("entry");
                 if (entry != null)
                 {
                     return Person.parsePerson(entry);
@@ -1290,18 +1290,18 @@ public class PublicApiClient
             return null;
         }
 
-        public Person create(Person person) throws PublicApiException
+        public Person create(Person person) throws PublicApiException, IOException
         {
             return create(person, 201);
         }
 
-        public Person create(Person person, int expectedStatus) throws PublicApiException
+        public Person create(Person person, int expectedStatus) throws PublicApiException, IOException
         {
             TestPeople.PersonJSONSerializer jsonizer = new TestPeople.PersonJSONSerializer(person) ;
             HttpResponse response = create("people", null, null, null, jsonizer.toJSON().toString(), "Failed to create person", expectedStatus);
             if ((response != null) && (response.getJsonResponse() != null))
             {
-                JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode entry =  response.getJsonResponse().get("entry");
                 if (entry != null)
                 {
                     return Person.parsePerson(entry);
@@ -1324,21 +1324,21 @@ public class PublicApiClient
         public Preference getPreference(String personId, String preferenceId) throws PublicApiException
         {
             HttpResponse response = getSingle("people", personId, "preferences", preferenceId, "Failed to get person preference");
-            Preference pref = Preference.parsePreference((JSONObject)response.getJsonResponse().get("entry"));
+            Preference pref = Preference.parsePreference(response.getJsonResponse().get("entry"));
             return pref;
         }
 
-        public Person updatePreference(String personId, Preference preference) throws PublicApiException
+        public Person updatePreference(String personId, Preference preference) throws PublicApiException, IOException
         {
             HttpResponse response = update("people", personId, "preferences", preference.getId(), preference.toJSON().toString(), "Failed to update person preference");
-            Person retSite = Person.parsePerson((JSONObject)response.getJsonResponse().get("entry"));
+            Person retSite = Person.parsePerson(response.getJsonResponse().get("entry"));
             return retSite;
         }
 
-        public Person createPreference(String personId, Preference preference) throws PublicApiException
+        public Person createPreference(String personId, Preference preference) throws PublicApiException, IOException
         {
             HttpResponse response = create("people", personId, "preferences", null, preference.toJSON().toString(), "Failed to create person preference");
-            Person retSite = Person.parsePerson((JSONObject)response.getJsonResponse().get("entry"));
+            Person retSite = Person.parsePerson(response.getJsonResponse().get("entry"));
             return retSite;
         }
 
@@ -1356,21 +1356,21 @@ public class PublicApiClient
         public PersonNetwork getNetworkMembership(String personId, String networkId) throws PublicApiException
         {
             HttpResponse response = getSingle("people", personId, "networks", networkId, "Failed to get network member");
-            PersonNetwork networkMember = PersonNetwork.parseNetworkMember((JSONObject)response.getJsonResponse().get("entry"));
+            PersonNetwork networkMember = PersonNetwork.parseNetworkMember(response.getJsonResponse().get("entry"));
             return networkMember;
         }
 
         public PersonNetwork updateNetworkMembership(String personId, PersonNetwork networkMember) throws PublicApiException
         {
             HttpResponse response = update("people", personId, "networks", networkMember.getId(), networkMember.toJSON().toString(), "Failed to update network member");
-            PersonNetwork retNetwork = PersonNetwork.parseNetworkMember((JSONObject)response.getJsonResponse().get("entry"));
+            PersonNetwork retNetwork = PersonNetwork.parseNetworkMember(response.getJsonResponse().get("entry"));
             return retNetwork;
         }
 
         public PersonNetwork createNetworkMembership(String personId, PersonNetwork network) throws PublicApiException
         {
             HttpResponse response = create("people", personId, "networks", null, network.toJSON().toString(), "Failed to create network member");
-            PersonNetwork retNetwork = PersonNetwork.parseNetworkMember((JSONObject)response.getJsonResponse().get("entry"));
+            PersonNetwork retNetwork = PersonNetwork.parseNetworkMember(response.getJsonResponse().get("entry"));
             return retNetwork;
         }
 
@@ -1379,30 +1379,30 @@ public class PublicApiClient
             remove("people", personId, "networks", networkMember.getId(), "Failed to remove network member");
         }
 
-        public ListResponse<Activity> getActivities(String personId, Map<String, String> params) throws PublicApiException
+        public ListResponse<Activity> getActivities(String personId, Map<String, String> params) throws PublicApiException, IOException
         {
             HttpResponse response = getAll("people", personId, "activities", null, params, "Failed to get activities");
             return Activities.parseActivities(response.getJsonResponse());
         }
 
-        public Activity getSingleActivity(String personId, String activityId) throws PublicApiException
+        public Activity getSingleActivity(String personId, String activityId) throws PublicApiException, IOException
         {
             HttpResponse response = getSingle("people", personId, "activities", activityId, "Failed to get activities");
-            Activity activity = Activity.parseActivity((JSONObject)response.getJsonResponse().get("entry"));
+            Activity activity = Activity.parseActivity(response.getJsonResponse().get("entry"));
             return activity;
         }
 
-        public Activity update(String personId, Activity activity) throws PublicApiException
+        public Activity update(String personId, Activity activity) throws PublicApiException, IOException
         {
             HttpResponse response = update("people", personId, "activities", String.valueOf(activity.getId()), activity.toJSON().toString(), "Failed to update activity");
-            Activity retActivity = Activity.parseActivity((JSONObject)response.getJsonResponse().get("entry"));
+            Activity retActivity = Activity.parseActivity(response.getJsonResponse().get("entry"));
             return retActivity;
         }
 
-        public Activity create(String personId, Activity activity) throws PublicApiException
+        public Activity create(String personId, Activity activity) throws PublicApiException, IOException
         {
             HttpResponse response = create("people", personId, "activities", String.valueOf(activity.getId()), activity.toJSON().toString(), "Failed to create activity");
-            Activity retActivity = Activity.parseActivity((JSONObject)response.getJsonResponse().get("entry"));
+            Activity retActivity = Activity.parseActivity(response.getJsonResponse().get("entry"));
             return retActivity;
         }
 
@@ -1467,30 +1467,30 @@ public class PublicApiClient
 
     public class Comments extends AbstractProxy
     {
-        public ListResponse<Comment> getTenantComments(Map<String, String> params) throws PublicApiException
+        public ListResponse<Comment> getTenantComments(Map<String, String> params) throws PublicApiException, IOException
         {
             HttpResponse response = getAll("comments", null, null, null, params, "Failed to get comments");
             return Comment.parseComments(null, response.getJsonResponse());
         }
 
-        public Comment getTenantComment(String commentId) throws PublicApiException
+        public Comment getTenantComment(String commentId) throws PublicApiException, IOException
         {
             HttpResponse response = getSingle("comments", commentId, null, null, "Failed to get comment");
-            Comment comment = Comment.parseComment(null, (JSONObject)response.getJsonResponse().get("entry"));
+            Comment comment = Comment.parseComment(null, response.getJsonResponse().get("entry"));
             return comment;
         }
 
-        public Comment updateTenantComment(Comment comment) throws PublicApiException
+        public Comment updateTenantComment(Comment comment) throws PublicApiException, IOException
         {
             HttpResponse response = update("comments", comment.getId(), null, null, comment.toJSON(true).toString(), "Failed to update comment");
-            Comment retComment = Comment.parseComment(null, (JSONObject)response.getJsonResponse().get("entry"));
+            Comment retComment = Comment.parseComment(null, response.getJsonResponse().get("entry"));
             return retComment;
         }
 
-        public Comment createTenantComment(Comment comment) throws PublicApiException
+        public Comment createTenantComment(Comment comment) throws PublicApiException, IOException
         {
             HttpResponse response = create("comments", null, null, null, comment.toJSON(true).toString(), "Failed to create comment");
-            Comment retComment = Comment.parseComment(null, (JSONObject)response.getJsonResponse().get("entry"));
+            Comment retComment = Comment.parseComment(null, response.getJsonResponse().get("entry"));
             return retComment;
         }
 
@@ -1499,30 +1499,30 @@ public class PublicApiClient
             remove("comments", comment.getId(), null, null, "Failed to remove comment");
         }
 
-        public ListResponse<Comment> getNodeComments(String nodeId, Map<String, String> params) throws PublicApiException
+        public ListResponse<Comment> getNodeComments(String nodeId, Map<String, String> params) throws PublicApiException, IOException
         {
             HttpResponse response = getAll("nodes", nodeId, "comments", null, params, "Failed to get comments");
             return Comment.parseComments(nodeId, response.getJsonResponse());
         }
 
-        public Comment getNodeComment(String nodeId) throws PublicApiException
+        public Comment getNodeComment(String nodeId) throws PublicApiException, IOException
         {
             HttpResponse response = getSingle("nodes", nodeId, null, null, "Failed to get comment");
-            Comment comment = Comment.parseComment(nodeId, (JSONObject)response.getJsonResponse().get("entry"));
+            Comment comment = Comment.parseComment(nodeId, response.getJsonResponse().get("entry"));
             return comment;
         }
 
-        public Comment updateNodeComment(String nodeId, String commentId, Comment comment) throws PublicApiException
+        public Comment updateNodeComment(String nodeId, String commentId, Comment comment) throws PublicApiException, IOException
         {
             HttpResponse response = update("nodes", nodeId, "comments", commentId, comment.toJSON(true).toString(), "Failed to update comment");
-            Comment retComment = Comment.parseComment(nodeId, (JSONObject)response.getJsonResponse().get("entry"));
+            Comment retComment = Comment.parseComment(nodeId, response.getJsonResponse().get("entry"));
             return retComment;
         }
 
-        public Comment createNodeComment(String nodeId, Comment comment) throws PublicApiException
+        public Comment createNodeComment(String nodeId, Comment comment) throws PublicApiException, IOException
         {
             HttpResponse response = create("nodes", nodeId, "comments", null, comment.toJSON(true).toString(), "Failed to create comment");
-            Comment retComment = Comment.parseComment(nodeId, (JSONObject)response.getJsonResponse().get("entry"));
+            Comment retComment = Comment.parseComment(nodeId, response.getJsonResponse().get("entry"));
             return retComment;
         }
 
@@ -1543,21 +1543,21 @@ public class PublicApiClient
         public Tag getSingle(String tagId) throws PublicApiException
         {
             HttpResponse response = getSingle("tags", tagId, null, null, "Failed to get tag");
-            Tag tag = Tag.parseTag(null, (JSONObject)response.getJsonResponse().get("entry"));
+            Tag tag = Tag.parseTag(null, response.getJsonResponse().get("entry"));
             return tag;
         }
 
         public Tag update(Tag tag) throws PublicApiException
         {
             HttpResponse response = update("tags", tag.getId(), null, null, tag.toJSON().toString(), "Failed to update tag");
-            Tag retTag = Tag.parseTag(null, (JSONObject)response.getJsonResponse().get("entry"));
+            Tag retTag = Tag.parseTag(null, response.getJsonResponse().get("entry"));
             return retTag;
         }
 
 //		public Tag create(Tag tag) throws PublicApiException
 //		{
 //			HttpResponse response = create("tags", tag.getTagId(), null, null, tag.toJSON().toString(), "Failed to create tag");
-//			Tag retTag = Tag.parseTag(null, (JSONObject)response.getJsonResponse().get("entry"));
+//			Tag retTag = Tag.parseTag(null, response.getJsonResponse().get("entry"));
 //			return retTag;
 //		}
 
@@ -1583,14 +1583,14 @@ public class PublicApiClient
         public Tag createNodeTag(String nodeId, Tag tag) throws PublicApiException
         {
             HttpResponse response = create("nodes", nodeId, "tags", null, tag.toJSON().toString(), "Failed to create node tag");
-            Tag tagRet = Tag.parseTag(nodeId, (JSONObject)response.getJsonResponse().get("entry"));
+            Tag tagRet = Tag.parseTag(nodeId, response.getJsonResponse().get("entry"));
             return tagRet;
         }
 
         public NodeRating getNodeRating(String nodeId, String ratingId) throws PublicApiException
         {
             HttpResponse response = getSingle("nodes", nodeId, "ratings", ratingId, "Failed to get node ratings");
-            return NodeRating.parseNodeRating(nodeId, (JSONObject)response.getJsonResponse().get("entry"));
+            return NodeRating.parseNodeRating(nodeId, response.getJsonResponse().get("entry"));
         }
 
         public ListResponse<NodeRating> getNodeRatings(String nodeId, Map<String, String> params) throws PublicApiException
@@ -1602,14 +1602,14 @@ public class PublicApiClient
         public NodeRating updateNodeRating(String nodeId, NodeRating nodeRating) throws PublicApiException
         {
             HttpResponse response = update("nodes", nodeId, "ratings", nodeRating.getId(), nodeRating.toJSON().toString(), "Failed to update node rating");
-            NodeRating nodeRatingRet = NodeRating.parseNodeRating(nodeId, (JSONObject)response.getJsonResponse().get("entry"));
+            NodeRating nodeRatingRet = NodeRating.parseNodeRating(nodeId, response.getJsonResponse().get("entry"));
             return nodeRatingRet;
         }
 
         public NodeRating createNodeRating(String nodeId, NodeRating nodeRating) throws PublicApiException
         {
             HttpResponse response = create("nodes", nodeId, "ratings", null, nodeRating.toJSON().toString(), "Failed to create node rating");
-            NodeRating nodeRatingRet = NodeRating.parseNodeRating(nodeId, (JSONObject)response.getJsonResponse().get("entry"));
+            NodeRating nodeRatingRet = NodeRating.parseNodeRating(nodeId, response.getJsonResponse().get("entry"));
             return nodeRatingRet;
         }
 
@@ -1744,28 +1744,28 @@ public class PublicApiClient
                     + count + "]";
         }
 
-        public static ExpectedPaging parsePagination(JSONObject jsonList)
+        public static ExpectedPaging parsePagination(JsonNode jsonList)
         {
             ExpectedPaging paging = new ExpectedPaging();
-            JSONObject jsonPagination = (JSONObject)jsonList.get("pagination");
+            JsonNode jsonPagination = jsonList.get("pagination");
             if(jsonPagination != null)
             {
-                Long count = (Long)jsonPagination.get("count");
+                Long count = jsonPagination.get("count").longValue();
                 paging.setCount(count.intValue());
 
-                Boolean hasMoreItems = (Boolean)jsonPagination.get("hasMoreItems");
+                Boolean hasMoreItems = jsonPagination.get("hasMoreItems").booleanValue();
                 paging.setHasMoreItems(hasMoreItems);
 
-                Long totalItems = (Long)jsonPagination.get("totalItems");
+                Long totalItems = jsonPagination.get("totalItems").longValue();
                 if(totalItems != null)
                 {
                     paging.setTotalItems(totalItems.intValue());
                 }
 
-                Long maxItems = (Long)jsonPagination.get("maxItems");
+                Long maxItems = jsonPagination.get("maxItems").longValue();
                 paging.setMaxItems(maxItems.intValue());
 
-                Long skipCount = (Long)jsonPagination.get("skipCount");
+                Long skipCount = jsonPagination.get("skipCount").longValue();
                 paging.setSkipCount(skipCount.intValue());
             }
             return paging;
@@ -2462,7 +2462,7 @@ public class PublicApiClient
     public class Groups extends AbstractProxy
     {
 
-        public Group createGroup(Group group, Map<String, String> params, int expectedStatus) throws PublicApiException
+        public Group createGroup(Group group, Map<String, String> params, int expectedStatus) throws PublicApiException, IOException
         {
             HttpResponse response = create("groups", null, null, null, group.toJSON().toString(), "Failed to create group " + group.getId(), expectedStatus, params);
             return parseGroupEntity(response);
@@ -2478,7 +2478,7 @@ public class PublicApiClient
             HttpResponse response = create("groups", groupId, "members", null, groupMember.toJSON().toString(), "Failed to create group membership", expectedStatus);
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonEntity = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode jsonEntity =  response.getJsonResponse().get("entry");
                 if (jsonEntity != null)
                 {
                     return GroupMember.parseGroupMember(response.getJsonResponse());
@@ -2487,23 +2487,23 @@ public class PublicApiClient
             return null;
         }
 
-        public Group updateGroup(String groupId, Group group, Map<String, String> params, int expectedStatus) throws PublicApiException
+        public Group updateGroup(String groupId, Group group, Map<String, String> params, int expectedStatus) throws PublicApiException, IOException
         {
             HttpResponse response = update("groups", groupId, null, null, group.toJSON().toString(), params, "Failed to update group " + group.getId(), expectedStatus);
             return parseGroupEntity(response);
         }
 
-        public Group getGroup(String groupId) throws PublicApiException
+        public Group getGroup(String groupId) throws PublicApiException, IOException
         {
             return getGroup(groupId, HttpServletResponse.SC_OK);
         }
 
-        public Group getGroup(String groupId, int expectedStatus) throws PublicApiException
+        public Group getGroup(String groupId, int expectedStatus) throws PublicApiException, IOException
         {
             return getGroup(groupId, null, expectedStatus);
         }
 
-        public Group getGroup(String groupId, Map<String, String> params, int expectedStatus) throws PublicApiException
+        public Group getGroup(String groupId, Map<String, String> params, int expectedStatus) throws PublicApiException, IOException
         {
             HttpResponse response = getSingle("groups", groupId, null, null, params, "Failed to get group " + groupId, expectedStatus);
             return parseGroupEntity(response);
@@ -2524,11 +2524,11 @@ public class PublicApiClient
             remove("groups", groupId, "members", groupMemberId, null, "Failed to remove group member", expectedStatus);
         }
 
-        private Group parseGroupEntity(HttpResponse response)
+        private Group parseGroupEntity(HttpResponse response) throws IOException
         {
             if ((response != null) && (response.getJsonResponse() != null))
             {
-                JSONObject jsonEntity = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode jsonEntity =  response.getJsonResponse().get("entry");
                 if (jsonEntity != null)
                 {
                     return Group.parseGroup(jsonEntity);
@@ -2538,13 +2538,13 @@ public class PublicApiClient
             return null;
         }
 
-        public ListResponse<Group> getGroups(Map<String, String> params, String errorMessage, int expectedStatus) throws PublicApiException, ParseException
+        public ListResponse<Group> getGroups(Map<String, String> params, String errorMessage, int expectedStatus) throws PublicApiException, ParseException, IOException
         {
             HttpResponse response = getAll("groups", null, null, null, params, errorMessage, expectedStatus);
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return Group.parseGroups(response.getJsonResponse());
@@ -2565,7 +2565,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return GroupMember.parseGroupMembers(response.getJsonResponse());
@@ -2575,13 +2575,13 @@ public class PublicApiClient
         }
 
         public ListResponse<Group> getGroupsByPersonId(String userId, Map<String, String> params, String errorMessage, int expectedStatus)
-                throws PublicApiException, ParseException
+                throws PublicApiException, ParseException, IOException
         {
             HttpResponse response = getAll("people", userId, "groups", null, params, errorMessage, expectedStatus);
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return Group.parseGroups(response.getJsonResponse());
@@ -2601,7 +2601,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return AuditApp.parseAuditApps(response.getJsonResponse());
@@ -2627,7 +2627,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonEntry = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode jsonEntry =  response.getJsonResponse().get("entry");
                 if (jsonEntry != null)
                 {
                     return AuditApp.parseAuditApp(jsonEntry);
@@ -2642,7 +2642,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonEntry = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode jsonEntry =  response.getJsonResponse().get("entry");
                 if (jsonEntry != null)
                 {
                     return AuditApp.parseAuditApp(jsonEntry);
@@ -2659,7 +2659,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return AuditEntry.parseAuditEntries(response.getJsonResponse());
@@ -2676,7 +2676,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode jsonList =  response.getJsonResponse().get("entry");
                 if (jsonList != null)
                 {
                     return AuditEntry.parseAuditEntry(jsonList);
@@ -2705,7 +2705,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return AuditEntry.parseAuditEntries(response.getJsonResponse());
@@ -2728,7 +2728,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return parseActionDefinitions(response.getJsonResponse());
@@ -2746,7 +2746,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+                JsonNode jsonList =  response.getJsonResponse().get("list");
                 if (jsonList != null)
                 {
                     return parseActionDefinitions(response.getJsonResponse());
@@ -2755,27 +2755,27 @@ public class PublicApiClient
             return null;
         }
 
-        public Action executeAction(Action action, Map<String, String> params, int expectedStatus) throws PublicApiException
+        public Action executeAction(Action action, Map<String, String> params, int expectedStatus) throws PublicApiException, IOException
         {
             HttpResponse response = create("action-executions", null, null, null, action.toJSON().toString(), "Failed to create action for action def " + action.getActionDefinitionId(), expectedStatus, params);
             return parseActionEntity(response);
         }
         
-        private ListResponse<ActionDefinition> parseActionDefinitions(JSONObject jsonResponse)
+        private ListResponse<ActionDefinition> parseActionDefinitions(JsonNode jsonResponse)
         {
             List<ActionDefinition> actionDefinitions = new ArrayList<>();
 
 
-            JSONObject jsonList = (JSONObject) jsonResponse.get("list");
+            JsonNode jsonList =  jsonResponse.get("list");
             assertNotNull(jsonList);
 
-            JSONArray jsonEntries = (JSONArray) jsonList.get("entries");
+            ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
             assertNotNull(jsonEntries);
 
             for (int i = 0; i < jsonEntries.size(); i++)
             {
-                JSONObject jsonEntry = (JSONObject) jsonEntries.get(i);
-                JSONObject entry = (JSONObject) jsonEntry.get("entry");
+                JsonNode jsonEntry =  jsonEntries.get(i);
+                JsonNode entry =  jsonEntry.get("entry");
                 actionDefinitions.add(parseActionDefinition(entry));
             }
 
@@ -2783,7 +2783,7 @@ public class PublicApiClient
             return new ListResponse<>(paging, actionDefinitions);
         }
 
-        private ActionDefinition parseActionDefinition(JSONObject entry)
+        private ActionDefinition parseActionDefinition(JsonNode entry)
         {
             ActionDefinition def = null;
             try
@@ -2798,11 +2798,11 @@ public class PublicApiClient
             return def;
         }
 
-        private Action parseActionEntity(HttpResponse response)
+        private Action parseActionEntity(HttpResponse response) throws IOException
         {
             if ((response != null) && (response.getJsonResponse() != null))
             {
-                JSONObject jsonEntity = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode jsonEntity =  response.getJsonResponse().get("entry");
                 if (jsonEntity != null)
                 {
                     return Action.parseAction(jsonEntity);
@@ -2819,7 +2819,7 @@ public class PublicApiClient
 
             if (response != null && response.getJsonResponse() != null)
             {
-                JSONObject jsonEntity = (JSONObject) response.getJsonResponse().get("entry");
+                JsonNode jsonEntity =  response.getJsonResponse().get("entry");
                 if (jsonEntity != null)
                 {
                     return parseActionDefinition(jsonEntity);

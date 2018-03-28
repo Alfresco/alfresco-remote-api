@@ -28,14 +28,16 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class Preference	implements Serializable, ExpectedComparison, Comparable<Preference>
 {
@@ -67,28 +69,28 @@ public class Preference	implements Serializable, ExpectedComparison, Comparable<
 		return "Preference [id=" + id + ", value=" + value + "]";
 	}
 	
-	public static Preference parsePreference(JSONObject jsonObject)
+	public static Preference parsePreference(JsonNode jsonObject)
 	{
-		String id = (String)jsonObject.get("id");
-		String value = jsonObject.get("value").toString();
+		String id = jsonObject.get("id").textValue();
+		String value = jsonObject.get("value").textValue();
 		Preference preference = new Preference(id, value);
 		return preference;
 	}
 	
-	public static ListResponse<Preference> parsePreferences(JSONObject jsonObject)
+	public static ListResponse<Preference> parsePreferences(JsonNode jsonObject)
 	{
 		List<Preference> preferences = new ArrayList<Preference>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode)jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+			JsonNode jsonEntry = jsonEntries.get(i);
+			JsonNode entry = jsonEntry.get("entry");
 			preferences.add(Preference.parsePreference(entry));
 		}
 
@@ -98,9 +100,9 @@ public class Preference	implements Serializable, ExpectedComparison, Comparable<
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject entry = new JSONObject();
+		ObjectNode entry = AlfrescoDefaultObjectMapper.createObjectNode();
 		entry.put("id", getId());
 		entry.put("value", getValue());
 		return entry;

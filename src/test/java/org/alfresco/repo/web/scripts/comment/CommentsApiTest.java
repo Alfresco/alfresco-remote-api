@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.comment;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Date;
@@ -65,9 +67,7 @@ import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.PropertyMap;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
@@ -396,7 +396,7 @@ public class CommentsApiTest extends BaseWebScriptTest
 
         String now = System.currentTimeMillis()+"";
 
-        JSONObject comment = new JSONObject();
+        ObjectNode comment = AlfrescoDefaultObjectMapper.createObjectNode();
         comment.put("title", "Test title updated "+now);
         comment.put("content", "Test comment updated "+now);
 
@@ -487,7 +487,7 @@ public class CommentsApiTest extends BaseWebScriptTest
             txn.commit();
 
             Response response = addComment(sharedContent, USER_THREE, 200);
-            JSONObject jsonResponse = parseResponseJSON(response);
+            JsonNode jsonResponse = parseResponseJSON(response);
             NodeRef commentNodeRef = new NodeRef(getOrNull(jsonResponse, JSON_KEY_NODEREF));
 
             // MNT-16446 - now returns 403 rather than 500
@@ -513,7 +513,7 @@ public class CommentsApiTest extends BaseWebScriptTest
             txn.commit();
 
             Response response = addComment(siteContent, USER_THREE, 200);
-            JSONObject jsonResponse = parseResponseJSON(response);
+            JsonNode jsonResponse = parseResponseJSON(response);
             NodeRef commentNodeRef = new NodeRef(getOrNull(jsonResponse, JSON_KEY_NODEREF));
 
             // MNT-16446 - now returns 403 rather than 200 !!
@@ -600,7 +600,7 @@ public class CommentsApiTest extends BaseWebScriptTest
 
         Response response1 = addComment(sitePage, USER_TWO, 200);
 
-        JSONObject jsonResponse1 = parseResponseJSON(response1);
+        JsonNode jsonResponse1 = parseResponseJSON(response1);
         String nodeRefComment1 = getOrNull(jsonResponse1, JSON_KEY_NODEREF);
         if (nodeRefComment1 != null)
         {
@@ -619,7 +619,7 @@ public class CommentsApiTest extends BaseWebScriptTest
         modifiedDateBefore = (Date) nodeService.getProperty(nodeRef, ContentModel.PROP_MODIFIED);
         Response response2 = addComment(nodeRef, USER2, 200);
 
-        JSONObject jsonResponse2 = parseResponseJSON(response2);
+        JsonNode jsonResponse2 = parseResponseJSON(response2);
         String nodeRefComment2 = getOrNull(jsonResponse2, JSON_KEY_NODEREF);
         if (nodeRefComment2 != null)
         {
@@ -648,7 +648,7 @@ public class CommentsApiTest extends BaseWebScriptTest
         feedGenerator.execute();
         int activityNumNext = activityService.getSiteFeedEntries(SITE_SHORT_NAME).size();
         assertEquals("The activity feeds were not generated after adding a comment", activityNumStart + 1, activityNumNext);
-        JSONObject jsonResponse = parseResponseJSON(response);
+        JsonNode jsonResponse = parseResponseJSON(response);
         String nodeRefComment = getOrNull(jsonResponse, JSON_KEY_NODEREF);
         NodeRef commentNodeRef = new NodeRef(nodeRefComment);
         deleteComment(commentNodeRef, sitePage, USER_TWO, 200);
@@ -719,33 +719,28 @@ public class CommentsApiTest extends BaseWebScriptTest
     
     /**
      * returns value from JSON for a given key
-     * @param json
-     * @param key
-     * @return
      */
-    protected String getOrNull(JSONObject json, String key)
+    protected String getOrNull(JsonNode json, String key)
     {
-        if (json != null && json.containsKey(key))
+        if (json != null && json.has(key))
         {
-            return (String) json.get(key);
+            return json.get(key).textValue();
         }
         
-        JSONObject itemJsonObject = (JSONObject) json.get(JSON_KEY_ITEM);
-        if (itemJsonObject != null && itemJsonObject.containsKey(key))
+        JsonNode itemJsonObject = json.get(JSON_KEY_ITEM);
+        if (itemJsonObject != null && itemJsonObject.has(key))
         {
-            return (String) itemJsonObject.get(key);
+            return itemJsonObject.get(key).textValue();
         }
         return null;
     }
     
     /**
      * parse JSON
-     * @param response
-     * @return
      */
-    protected JSONObject parseResponseJSON(Response response)
+    protected JsonNode parseResponseJSON(Response response)
     {
-        JSONObject json = null;
+        JsonNode json = null;
         String contentType = response.getContentType();
         if (contentType != null && contentType.indexOf(';') != -1)
         {
@@ -753,18 +748,13 @@ public class CommentsApiTest extends BaseWebScriptTest
         }
         if (MimetypeMap.MIMETYPE_JSON.equals(contentType))
         {
-            JSONParser parser = new JSONParser();
             try
             {
-                json = (JSONObject) parser.parse(response.getContentAsString());
+                json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             }
             catch (IOException io)
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + io.getMessage());
-            }
-            catch (ParseException pe)
-            {
-                throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + pe.getMessage());
             }
         }
         return json;

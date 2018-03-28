@@ -25,6 +25,7 @@
  */
 package org.alfresco.rest.api.tests;
 
+import java.io.IOException;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.security.authority.AuthorityDAOImpl;
 import org.alfresco.rest.AbstractSingleNetworkSiteTest;
@@ -566,7 +567,7 @@ public class GroupsTest extends AbstractSingleNetworkSiteTest
      * @param userName
      *            The user to run as.
      */
-    private void createAuthorityContext(String userName) throws PublicApiException
+    private void createAuthorityContext(String userName) throws PublicApiException, IOException
     {
         String groupName = "Group_ROOT" + GUID.generate();
 
@@ -1599,6 +1600,10 @@ public class GroupsTest extends AbstractSingleNetworkSiteTest
                 groupsProxy.createGroupMember(groupB.getId(), groupMemberB, HttpServletResponse.SC_UNAUTHORIZED);
             }
 
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
         }
         finally
         {

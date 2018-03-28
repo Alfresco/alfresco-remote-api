@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.subscriptions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,8 +37,7 @@ import org.alfresco.repo.web.scripts.BaseWebScriptTest;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
@@ -108,8 +110,8 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
 
     protected void follow(String user1, String user2) throws Exception
     {
-        JSONArray jsonUsers = new JSONArray();
-        jsonUsers.put(user2);
+        ArrayNode jsonUsers = AlfrescoDefaultObjectMapper.createArrayNode();
+        jsonUsers.add(user2);
 
         String url = getUrl(URL_FOLLOW, user1);
         sendRequest(new PostRequest(url, jsonUsers.toString(), "application/json"), Status.STATUS_NO_CONTENT);
@@ -117,8 +119,8 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
 
     protected void unfollow(String user1, String user2) throws Exception
     {
-        JSONArray jsonUsers = new JSONArray();
-        jsonUsers.put(user2);
+        ArrayNode jsonUsers = AlfrescoDefaultObjectMapper.createArrayNode();
+        jsonUsers.add(user2);
 
         String url = getUrl(URL_UNFOLLOW, user1);
         sendRequest(new PostRequest(url, jsonUsers.toString(), "application/json"), Status.STATUS_NO_CONTENT);
@@ -126,20 +128,20 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
 
     protected boolean follows(String user1, String user2) throws Exception
     {
-        JSONArray jsonUsers = new JSONArray();
-        jsonUsers.put(user2);
+        ArrayNode jsonUsers = AlfrescoDefaultObjectMapper.createArrayNode();
+        jsonUsers.add(user2);
 
         String url = getUrl(URL_FOLLOWS, user1);
         Response response = sendRequest(new PostRequest(url, jsonUsers.toString(), "application/json"),
                 Status.STATUS_OK);
 
-        JSONArray resultArray = new JSONArray(response.getContentAsString());
-        assertEquals(1, resultArray.length());
+        ArrayNode resultArray = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(1, resultArray.size());
 
-        JSONObject resultObject = resultArray.getJSONObject(0);
+        JsonNode resultObject = resultArray.get(0);
         assertTrue(resultObject.has(user2));
 
-        return resultObject.getBoolean(user2);
+        return resultObject.get(user2).booleanValue();
     }
 
     protected int getFollowingCount(String user) throws Exception
@@ -147,10 +149,10 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
         String url = getUrl(URL_FOLLOWING_COUNT, user);
         Response response = sendRequest(new GetRequest(url), Status.STATUS_OK);
 
-        JSONObject resultObject = new JSONObject(response.getContentAsString());
+        JsonNode resultObject = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertTrue(resultObject.has("count"));
 
-        return resultObject.getInt("count");
+        return resultObject.get("count").intValue();
     }
 
     protected int getFollowersCount(String user) throws Exception
@@ -158,10 +160,10 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
         String url = getUrl(URL_FOLLOWERS_COUNT, user);
         Response response = sendRequest(new GetRequest(url), Status.STATUS_OK);
 
-        JSONObject resultObject = new JSONObject(response.getContentAsString());
+        JsonNode resultObject = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertTrue(resultObject.has("count"));
 
-        return resultObject.getInt("count");
+        return resultObject.get("count").intValue();
     }
 
     protected List<String> getFollowing(String user) throws Exception
@@ -169,20 +171,20 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
         String url = getUrl(URL_FOLLOWING, user);
         Response response = sendRequest(new GetRequest(url), Status.STATUS_OK);
 
-        JSONObject resultObject = new JSONObject(response.getContentAsString());
+        JsonNode resultObject = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertTrue(resultObject.has("people"));
 
         List<String> result = new ArrayList<String>();
-        JSONArray people = resultObject.getJSONArray("people");
+        ArrayNode people = (ArrayNode) resultObject.get("people");
 
-        for (int i = 0; i < people.length(); i++)
+        for (int i = 0; i < people.size(); i++)
         {
-            JSONObject person = people.getJSONObject(i);
+            JsonNode person = people.get(i);
             assertTrue(person.has("userName"));
             assertTrue(person.has("firstName"));
             assertTrue(person.has("lastName"));
 
-            result.add(person.getString("userName"));
+            result.add(person.get("userName").textValue());
         }
 
         return result;
@@ -193,20 +195,20 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
         String url = getUrl(URL_FOLLOWERS, user);
         Response response = sendRequest(new GetRequest(url), Status.STATUS_OK);
 
-        JSONObject resultObject = new JSONObject(response.getContentAsString());
+        JsonNode resultObject = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertTrue(resultObject.has("people"));
 
         List<String> result = new ArrayList<String>();
-        JSONArray people = resultObject.getJSONArray("people");
+        ArrayNode people = (ArrayNode) resultObject.get("people");
 
-        for (int i = 0; i < people.length(); i++)
+        for (int i = 0; i < people.size(); i++)
         {
-            JSONObject person = people.getJSONObject(i);
+            JsonNode person = people.get(i);
             assertTrue(person.has("userName"));
             assertTrue(person.has("firstName"));
             assertTrue(person.has("lastName"));
 
-            result.add(person.getString("userName"));
+            result.add(person.get("userName").textValue());
         }
 
         return result;
@@ -217,24 +219,24 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
         String url = getUrl(URL_PRIVATE, user);
         Response response = sendRequest(new GetRequest(url), Status.STATUS_OK);
 
-        JSONObject resultObject = new JSONObject(response.getContentAsString());
+        JsonNode resultObject = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertTrue(resultObject.has("private"));
 
-        return resultObject.getBoolean("private");
+        return resultObject.get("private").booleanValue();
     }
 
     protected void setSubscriptionListPrivate(String user, boolean setPrivate) throws Exception
     {
-        JSONObject privateObject = new JSONObject();
+        ObjectNode privateObject = AlfrescoDefaultObjectMapper.createObjectNode();
         privateObject.put("private", setPrivate);
 
         String url = getUrl(URL_PRIVATE, user);
         Response response = sendRequest(new PutRequest(url, privateObject.toString(), "application/json"),
                 Status.STATUS_OK);
 
-        JSONObject resultObject = new JSONObject(response.getContentAsString());
+        JsonNode resultObject = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertTrue(resultObject.has("private"));
-        assertEquals(setPrivate, resultObject.getBoolean("private"));
+        assertEquals(setPrivate, resultObject.get("private"));
     }
 
     public void testFollow() throws Exception

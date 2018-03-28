@@ -28,6 +28,10 @@ package org.alfresco.rest.api.tests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.text.Collator;
@@ -134,6 +138,8 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.util.FileFilterMode.Client;
 import org.alfresco.util.GUID;
 import org.alfresco.util.Pair;
+import org.alfresco.util.json.JsonUtil;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.registry.NamedObjectRegistry;
 import org.apache.chemistry.opencmis.commons.data.CmisExtensionElement;
 import org.apache.chemistry.opencmis.commons.data.Properties;
@@ -141,9 +147,6 @@ import org.apache.chemistry.opencmis.commons.data.PropertyData;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PropertyStringImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONException;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionException;
@@ -659,15 +662,15 @@ public class RepoService
 		return new Pair<String, String>(siteId, networkId);
 	}
 
-	private Map<String, Object> parseActivitySummary(ActivityFeedEntity entity)
+	private Map<String, Object> parseActivitySummary(ActivityFeedEntity entity) throws IOException
 	{
 		String activityType = entity.getActivityType();
 		String activitySummary = entity.getActivitySummary();
-		JSONObject json = (JSONObject)JSONValue.parse(activitySummary);
+		JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(activitySummary);
 		return Activity.getActivitySummary(json, activityType);
 	}
 
-	public List<Activity> getActivities(String personId, String siteId, boolean excludeUser, boolean excludeOthers)
+	public List<Activity> getActivities(String personId, String siteId, boolean excludeUser, boolean excludeOthers) throws IOException
 	{
 		List<ActivityFeedEntity> feedEntities = activityService.getUserFeedEntries(personId, siteId, excludeUser, excludeOthers, 0);
 		List<Activity> activities = new ArrayList<Activity>(feedEntities.size());
@@ -701,10 +704,10 @@ public class RepoService
 	}
 	
 	@SuppressWarnings("unchecked")
-	public Map<String, Object> getActivitySummary(ActivityFeedEntity entity) throws JSONException
+	public Map<String, Object> getActivitySummary(ActivityFeedEntity entity) throws IOException
 	{
 		Map<String, Object> activitySummary = activities.getActivitySummary(entity);
-		JSONObject json = new JSONObject();
+		ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
 		for(String key : activitySummary.keySet())
 		{
 			Object value = activitySummary.get(key);
@@ -712,9 +715,9 @@ public class RepoService
 			{
 				value = ((NodeRef)value).getId();
 			}
-			json.put(key, value);
+			json.set(key, AlfrescoDefaultObjectMapper.convertValue(value, JsonNode.class));
 		}
-		return json;
+		return JsonUtil.convertJSONObjectToMap(json);
 	}
 	
     public void checkSiteMember(final TestPerson person, final TestSite site, SiteRole siteRole) throws Exception
@@ -1096,9 +1099,9 @@ public class RepoService
 		}, tenantDomain);
     }
 
-    public void postActivity(final String activityType, final String siteId, final JSONObject activityData) throws JobExecutionException
+    public void postActivity(final String activityType, final String siteId, final JsonNode activityData) throws JsonProcessingException
     {
-    	activityService.postActivity(activityType, siteId, "documentlibrary", activityData.toString());
+    	activityService.postActivity(activityType, siteId, "documentlibrary", AlfrescoDefaultObjectMapper.writeValueAsString(activityData));
     }
     
     public NodeRef createDocument(final NodeRef parentNodeRef, final String name, final String content)

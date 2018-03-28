@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,8 +64,8 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.StoreRef;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.HttpStatus;
-import org.json.simple.JSONArray;
 import org.junit.Test;
 
 public class TestNodeRatings extends AbstractBaseApiTest
@@ -472,7 +473,8 @@ public class TestNodeRatings extends AbstractBaseApiTest
 				ratings.add(new NodeRating("likes", false));
                 
 				publicApiClient.setRequestContext(new RequestContext(network1.getId(), person11.getId()));
-				nodesProxy.create("nodes", node1Id, "ratings", null, JSONArray.toJSONString(ratings), "Unable to POST to multiple ratings");
+				nodesProxy.create("nodes", node1Id, "ratings", null,
+                        AlfrescoDefaultObjectMapper.convertValue(ratings, ArrayNode.class).toString(), "Unable to POST to multiple ratings");
 				fail();
 			}
 			catch(PublicApiException e)

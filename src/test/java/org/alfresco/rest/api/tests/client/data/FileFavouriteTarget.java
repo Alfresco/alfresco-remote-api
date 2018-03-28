@@ -25,9 +25,10 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import static org.junit.Assert.assertTrue;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
-import org.json.simple.JSONObject;
+import static org.junit.Assert.assertTrue;
 
 public class FileFavouriteTarget implements FavouritesTarget
 {
@@ -52,9 +53,9 @@ public class FileFavouriteTarget implements FavouritesTarget
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject favouriteJson = new JSONObject();
+        ObjectNode favouriteJson = AlfrescoDefaultObjectMapper.createObjectNode();
 		favouriteJson.put("file", getDocument().toJSON());
 		return favouriteJson;
 	}

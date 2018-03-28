@@ -25,13 +25,13 @@
  */
 package org.alfresco.repo.web.scripts.discussion;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
 
 import org.alfresco.service.cmr.discussion.PostInfo;
 import org.alfresco.service.cmr.discussion.TopicInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -47,7 +47,7 @@ public class ForumPostGet extends AbstractDiscussionWebScript
 {
    @Override
    protected Map<String, Object> executeImpl(SiteInfo site, NodeRef nodeRef,
-         TopicInfo topic, PostInfo post, WebScriptRequest req, JSONObject json,
+         TopicInfo topic, PostInfo post, WebScriptRequest req, JsonNode json,
          Status status, Cache cache) 
    {
       // Build the common model parts

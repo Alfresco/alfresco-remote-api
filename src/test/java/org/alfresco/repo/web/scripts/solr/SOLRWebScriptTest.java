@@ -25,7 +25,11 @@
  */
 package org.alfresco.repo.web.scripts.solr;
 
-import java.io.PrintWriter;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.domain.node.NodeDAO;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
@@ -57,11 +60,10 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.Pair;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.JsonUtil;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer;
@@ -123,7 +125,7 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         super.tearDown();
     }
 
-    private JSONArray getTransactions(long fromCommitTime) throws Exception
+    private ArrayNode getTransactions(long fromCommitTime) throws Exception
     {
         String url = "/api/solr/transactions?fromCommitTime=" + fromCommitTime;
         TestWebScriptServer.GetRequest req = new TestWebScriptServer.GetRequest(url);
@@ -135,11 +137,11 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         {
             logger.debug(response.getContentAsString());
         }
-        JSONObject json = new JSONObject(response.getContentAsString());
+        ArrayNode json = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-        JSONArray transactions = json.getJSONArray("transactions");
+        ArrayNode transactions = (ArrayNode) json.get("transactions");
         
-        logger.debug("Got " + transactions.length() + " txns in " + (endTime - startTime) + " ms");
+        logger.debug("Got " + transactions.size() + " txns in " + (endTime - startTime) + " ms");
         
         return transactions;
     }
@@ -156,11 +158,11 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         {
             logger.debug(response.getContentAsString());
         }
-        JSONObject json = new JSONObject(response.getContentAsString());
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-        JSONArray aclChangeSets = json.getJSONArray("aclChangeSets");
+        ArrayNode aclChangeSets = (ArrayNode) json.get("aclChangeSets");
         
-        logger.debug("Got " + aclChangeSets.length() + " txns in " + (endTime - startTime) + " ms");
+        logger.debug("Got " + aclChangeSets.size() + " txns in " + (endTime - startTime) + " ms");
     }
 
     public void testAclsGet() throws Exception
@@ -171,8 +173,8 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
             return;         // Can't test, but very unlikely
         }
         // Build JSON using these
-        JSONObject json = new JSONObject();
-        JSONArray aclChangeSetIdsJSON = new JSONArray();
+        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
+        ArrayNode aclChangeSetIdsJSON = AlfrescoDefaultObjectMapper.createArrayNode();
         int count = 0;
         List<Long> aclChangeSetIds = new ArrayList<Long>();
         for (AclChangeSet aclChangeSet : aclChangeSets)
@@ -186,7 +188,7 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
                 continue;           // No ACLs
             }
             Long aclChangeSetId = aclChangeSet.getId();
-            aclChangeSetIdsJSON.put(aclChangeSetId);
+            aclChangeSetIdsJSON.add(aclChangeSetId);
             aclChangeSetIds.add(aclChangeSetId);
             count++;
         }
@@ -199,12 +201,12 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         {
             logger.debug(response.getContentAsString());
         }
-        json = new JSONObject(response.getContentAsString());
-        JSONArray acls = json.getJSONArray("acls");
+        json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        ArrayNode acls = (ArrayNode) json.get("acls");
         
         // Check
         List<Acl> aclsCheck = solrTrackingComponent.getAcls(aclChangeSetIds, null, 512);
-        assertEquals("Script and API returned different number of results", aclsCheck.size(), acls.length());
+        assertEquals("Script and API returned different number of results", aclsCheck.size(), acls.size());
     }
     
     public void testAclReadersGet() throws Exception
@@ -239,15 +241,15 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         }
         List<Acl> acls = solrTrackingComponent.getAcls(aclChangeSetIds, null, 1024);
         List<Long> aclIds = new ArrayList<Long>(acls.size());
-        JSONObject json = new JSONObject();
-        JSONArray aclIdsJSON = new JSONArray();
+        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
+        ArrayNode aclIdsJSON = AlfrescoDefaultObjectMapper.createArrayNode();
         for (Acl acl : acls)
         {
             Long aclId = acl.getId();
             aclIds.add(aclId);
-            aclIdsJSON.put(aclId);
+            aclIdsJSON.add(aclId);
         }
-        json.put("aclIds", aclIdsJSON);
+        json.set("aclIds", aclIdsJSON);
         
         // Now get the readers
         List<AclReaders> aclsReaders = solrTrackingComponent.getAclsReaders(aclIds);
@@ -274,50 +276,50 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         {
             logger.debug(response.getContentAsString());
         }
-        json = new JSONObject(response.getContentAsString());
-        JSONArray aclsReadersJSON = json.getJSONArray("aclsReaders");
+        json = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        ArrayNode aclsReadersJSON = (ArrayNode) json.get("aclsReaders");
         // Check
-        assertEquals("Script and API returned different number of results", readersByAclId.size(), aclsReadersJSON.length());
+        assertEquals("Script and API returned different number of results", readersByAclId.size(), aclsReadersJSON.size());
         
         // Iterate of the JSON and ensure that the list of ACL readers is correct
-        for (int i = 0; i < aclsReadersJSON.length(); i++)
+        for (int i = 0; i < aclsReadersJSON.size(); i++)
         {
             // Choose an ACL and check the readers
-            JSONObject aclReadersJSON = aclsReadersJSON.getJSONObject(i);
-            Long aclIdJSON = aclReadersJSON.getLong("aclId");
+            JsonNode aclReadersJSON = aclsReadersJSON.get(i);
+            Long aclIdJSON = aclReadersJSON.get("aclId").longValue();
             Set<String> readersCheck = readersByAclId.get(aclIdJSON);
-            JSONArray readersJSON = aclReadersJSON.getJSONArray("readers");
-            assertEquals("Readers list for ACL " + aclIdJSON + " is wrong. ", readersCheck.size(), readersJSON.length());
-            for (int j = 0; j < readersJSON.length(); j++)
+            ArrayNode readersJSON = (ArrayNode) aclReadersJSON.get("readers");
+            assertEquals("Readers list for ACL " + aclIdJSON + " is wrong. ", readersCheck.size(), readersJSON.size());
+            for (int j = 0; j < readersJSON.size(); j++)
             {
-                String readerJSON = readersJSON.getString(j);
+                String readerJSON = readersJSON.get(j).textValue();
                 assertTrue("Found reader not in check set: " + readerJSON, readersCheck.contains(readerJSON));
             }
             
             Set<String> deniedCheck = deniedByAclId.get(aclIdJSON);
-            JSONArray deniedJSON = aclReadersJSON.getJSONArray("denied");
-            assertEquals("Denied list for ACL " + aclIdJSON + " is wrong. ", deniedCheck.size(), deniedJSON.length());
-            for (int j = 0; j < deniedJSON.length(); j++)
+            ArrayNode deniedJSON = (ArrayNode) aclReadersJSON.get("denied");
+            assertEquals("Denied list for ACL " + aclIdJSON + " is wrong. ", deniedCheck.size(), deniedJSON.size());
+            for (int j = 0; j < deniedJSON.size(); j++)
             {
-                String denyJSON = deniedJSON.getString(j);
+                String denyJSON = deniedJSON.get(j).textValue();
                 assertTrue("Found denied authority not in check set: " + denyJSON, deniedCheck.contains(denyJSON));
             }
         }
     }
 
-    private JSONArray getNodes(GetNodesParameters parameters, int maxResults, int expectedNumNodes) throws Exception
+    private ArrayNode getNodes(GetNodesParameters parameters, int maxResults, int expectedNumNodes) throws Exception
     {
     	StringBuilder url = new StringBuilder("/api/solr/nodes");
         
-        JSONObject json = new JSONObject();
+        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
         if(parameters.getTransactionIds() != null)
         {
-            JSONArray array = new JSONArray();
+            ArrayNode array = AlfrescoDefaultObjectMapper.createArrayNode();
             for(Long txnId : parameters.getTransactionIds())
             {
-                array.put(txnId);
+                array.add(txnId);
             }
-            json.put("txnIds", array);
+            json.set("txnIds", array);
         }
     	
     	if(parameters.getFromNodeId() != null)
@@ -332,22 +334,22 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
     	
         if(parameters.getExcludeAspects() != null)
         {
-            JSONArray array = new JSONArray();
+            ArrayNode array = AlfrescoDefaultObjectMapper.createArrayNode();
             for(QName excludeAspect : parameters.getExcludeAspects())
             {
-                array.put(excludeAspect.toString());
+                array.add(excludeAspect.toString());
             }
-            json.put("excludeAspects", array);
+            json.set("excludeAspects", array);
         }
         
         if(parameters.getIncludeAspects() != null)
         {
-            JSONArray array = new JSONArray();
+            ArrayNode array = AlfrescoDefaultObjectMapper.createArrayNode();
             for(QName includeAspect : parameters.getIncludeAspects())
             {
-                array.put(includeAspect.toString());
+                array.add(includeAspect.toString());
             }
-            json.put("includeAspects", array);
+            json.set("includeAspects", array);
         }
 
         if(parameters.getStoreProtocol() != null)
@@ -375,29 +377,28 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
     		logger.debug(response.getContentAsString());
     	}
     	//logger.debug("getNodes: " + response.getContentAsString());
-        JSONObject jsonResponse = new JSONObject(response.getContentAsString());
-        jsonResponse.write(new PrintWriter(System.out));
+        JsonNode jsonResponse = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-        JSONArray nodes = jsonResponse.getJSONArray("nodes");
+        ArrayNode nodes = (ArrayNode) jsonResponse.get("nodes");
 
-        //assertEquals("Node count is incorrect", nodes.length(), json.getInt("count"));
+        //assertEquals("Node count is incorrect", nodes.size(), json.getInt("count"));
 
-        logger.debug("Got " + nodes.length() + " nodes in " + (endTime - startTime) + " ms");
+        logger.debug("Got " + nodes.size() + " nodes in " + (endTime - startTime) + " ms");
 
-        assertEquals("Number of returned node meta data results is incorrect", expectedNumNodes, nodes.length());
+        assertEquals("Number of returned node meta data results is incorrect", expectedNumNodes, nodes.size());
 
         return nodes;
     }
     
-    private List<Long> getTransactionIds(JSONArray transactions) throws JSONException
+    private List<Long> getTransactionIds(ArrayNode transactions)
     {
-        List<Long> txnIds = new ArrayList<Long>(transactions.length());
+        List<Long> txnIds = new ArrayList<Long>(transactions.size());
 
-        int numTxns = transactions.length();
+        int numTxns = transactions.size();
         for(int i = 0; i < numTxns; i++)
         {
-            JSONObject txn = transactions.getJSONObject(i);
-            txnIds.add(txn.getLong("id"));
+            JsonNode txn = transactions.get(i);
+            txnIds.add(txn.get("id").longValue());
         }
 
         return txnIds;
@@ -484,19 +485,19 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         });
     }
 
-    private JSONArray getNodesMetaData(List<Long> nodeIds, int maxResults, int numMetaDataNodes) throws Exception
+    private ArrayNode getNodesMetaData(List<Long> nodeIds, int maxResults, int numMetaDataNodes) throws Exception
     {
         StringBuilder url = new StringBuilder("/api/solr/metadata");
 
-        JSONObject json = new JSONObject();
+        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
         if(nodeIds != null && nodeIds.size() > 0)
         {
-            JSONArray array = new JSONArray();
+            ArrayNode array = AlfrescoDefaultObjectMapper.createArrayNode();
             for(Long nodeId : nodeIds)
             {
-                array.put(nodeId);
+                array.add(nodeId);
             }
-            json.put("nodeIds", array);
+            json.set("nodeIds", array);
         }
 
         json.put("maxResults", maxResults);
@@ -513,22 +514,22 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
             logger.debug("nodesMetaData = " + content);
         }
 
-        JSONObject jsonResponse = null;
+        JsonNode jsonResponse = null;
 
         try
         {
-        	jsonResponse = new JSONObject(content);
+        	jsonResponse = AlfrescoDefaultObjectMapper.getReader().readTree(content);
         }
-        catch(JSONException e)
+        catch(IOException e)
         {
         	fail(e.getMessage());
         }
 
-        JSONArray nodes = jsonResponse.getJSONArray("nodes");
+        ArrayNode nodes = (ArrayNode) jsonResponse.get("nodes");
 
-        logger.debug("Got metadata for " + nodes.length() + " nodes in " + (endTime - startTime) + " ms");
+        logger.debug("Got metadata for " + nodes.size() + " nodes in " + (endTime - startTime) + " ms");
         
-        assertEquals("Number of returned nodes is incorrect", numMetaDataNodes, nodes.length());
+        assertEquals("Number of returned nodes is incorrect", numMetaDataNodes, nodes.size());
         
         return nodes;
     }
@@ -575,8 +576,8 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
 
         buildTransactions5();
 
-        JSONArray transactions = getTransactions(fromCommitTime);
-        assertEquals("Number of transactions is incorrect", 1, transactions.length());
+        ArrayNode transactions = getTransactions(fromCommitTime);
+        assertEquals("Number of transactions is incorrect", 1, transactions.size());
 
         List<Long> transactionIds = getTransactionIds(transactions);
 
@@ -584,39 +585,39 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         params.setTransactionIds(transactionIds);
         params.setStoreProtocol(storeRef.getProtocol());
         params.setStoreIdentifier(storeRef.getIdentifier());
-        JSONArray nodes = getNodes(params, 0, 2);
+        ArrayNode nodes = getNodes(params, 0, 2);
         
-        List<Long> nodeIds = new ArrayList<Long>(nodes.length());
-        for(int i = 0; i < nodes.length(); i++)
+        List<Long> nodeIds = new ArrayList<Long>(nodes.size());
+        for(int i = 0; i < nodes.size(); i++)
         {
-            JSONObject node = nodes.getJSONObject(i);
-            nodeIds.add(node.getLong("id"));
+            JsonNode node = nodes.get(i);
+            nodeIds.add(node.get("id").longValue());
         }
         
-        JSONArray nodesMetaData = getNodesMetaData(nodeIds, 0, 2);
+        ArrayNode nodesMetaData = getNodesMetaData(nodeIds, 0, 2);
 
         // test second entry (second node created in buildTransactions)
         NodeRef expectedNodeRef = contents.get(0);
         
-        JSONObject node = nodesMetaData.getJSONObject(1);
-        NodeRef nodeRef = new NodeRef(node.getString("nodeRef"));
+        JsonNode node = nodesMetaData.get(1);
+        NodeRef nodeRef = new NodeRef(node.get("nodeRef").textValue());
 
         assertEquals("NodeRef is incorrect", expectedNodeRef, nodeRef);
         
-        JSONArray aspects = node.getJSONArray("aspects");
-        JSONObject properties = node.getJSONObject("properties");
+        ArrayNode aspects = (ArrayNode) node.get("aspects");
+        JsonNode properties = node.get("properties");
         Map<QName, String> propertyMap = getPropertyMap(properties);
         
         assertTrue("Expected author aspect", containsAspect(aspects, ContentModel.ASPECT_AUTHOR));
         assertTrue("Expected author property", containsProperty(propertyMap, ContentModel.PROP_AUTHOR, "steve"));
         
-        JSONArray paths = node.getJSONArray("paths");
+        ArrayNode paths = (ArrayNode) node.get("paths");
         List<Path> expectedPaths = nodeService.getPaths(expectedNodeRef, false);
-        for(int i = 0; i < paths.length(); i++)
+        for(int i = 0; i < paths.size(); i++)
         {
-            JSONObject o = paths.getJSONObject(i);
-            String path = o.getString("path");
-            String qname = o.has("qname") ? o.getString("qname") : null;
+            JsonNode o = paths.get(i);
+            String path = o.get("path").textValue();
+            String qname = o.has("qname") ? o.get("qname").textValue() : null;
             String expectedPath = expectedPaths.get(i).toString();
             assertEquals("Path element " + i + " is incorrect", expectedPath, path);
             assertNull("qname should be null", qname);
@@ -658,8 +659,8 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
 
         buildTransactions7();
 
-        JSONArray transactions = getTransactions(fromCommitTime);
-        assertEquals("Number of transactions is incorrect", 1, transactions.length());
+        ArrayNode transactions = getTransactions(fromCommitTime);
+        assertEquals("Number of transactions is incorrect", 1, transactions.size());
 
         List<Long> transactionIds = getTransactionIds(transactions);
 
@@ -667,27 +668,27 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         params.setTransactionIds(transactionIds);
         params.setStoreProtocol(storeRef.getProtocol());
         params.setStoreIdentifier(storeRef.getIdentifier());
-        JSONArray nodes = getNodes(params, 0, 2);
+        ArrayNode nodes = getNodes(params, 0, 2);
         
-        List<Long> nodeIds = new ArrayList<Long>(nodes.length());
-        for(int i = 0; i < nodes.length(); i++)
+        List<Long> nodeIds = new ArrayList<Long>(nodes.size());
+        for(int i = 0; i < nodes.size(); i++)
         {
-            JSONObject node = nodes.getJSONObject(i);
-            nodeIds.add(node.getLong("id"));
+            JsonNode node = nodes.get(i);
+            nodeIds.add(node.get("id").longValue());
         }
         
-        JSONArray nodesMetaData = getNodesMetaData(nodeIds, 0, 2);
+        ArrayNode nodesMetaData = getNodesMetaData(nodeIds, 0, 2);
 
         // test second entry (second node created in buildTransactions)
         NodeRef expectedNodeRef = contents.get(0);
         
-        JSONObject node = nodesMetaData.getJSONObject(1);
-        NodeRef nodeRef = new NodeRef(node.getString("nodeRef"));
+        JsonNode node = nodesMetaData.get(1);
+        NodeRef nodeRef = new NodeRef(node.get("nodeRef").textValue());
 
         assertEquals("NodeRef is incorrect", expectedNodeRef, nodeRef);
         
-        JSONArray aspects = node.getJSONArray("aspects");
-        JSONObject properties = node.getJSONObject("properties");
+        ArrayNode aspects = (ArrayNode) node.get("aspects");
+        JsonNode properties = node.get("properties");
         Map<QName, String> propertyMap = getPropertyMap(properties);
 
         assertTrue("Expected author aspect", containsAspect(aspects, ContentModel.ASPECT_AUTHOR));
@@ -700,8 +701,8 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
 
         buildTransactions6();
 
-        JSONArray transactions = getTransactions(fromCommitTime);
-        assertEquals("Number of transactions is incorrect", 1, transactions.length());
+        ArrayNode transactions = getTransactions(fromCommitTime);
+        assertEquals("Number of transactions is incorrect", 1, transactions.size());
 
         List<Long> transactionIds = getTransactionIds(transactions);
 
@@ -709,18 +710,18 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         params.setStoreProtocol(storeRef.getProtocol());
         params.setStoreIdentifier(storeRef.getIdentifier());
         params.setTransactionIds(transactionIds);
-        JSONArray nodes = getNodes(params, 0, 2001);
+        ArrayNode nodes = getNodes(params, 0, 2001);
         
-        List<Long> nodeIds = new ArrayList<Long>(nodes.length());
-        for(int i = 0; i < nodes.length(); i++)
+        List<Long> nodeIds = new ArrayList<Long>(nodes.size());
+        for(int i = 0; i < nodes.size(); i++)
         {
-            JSONObject node = nodes.getJSONObject(i);
-            nodeIds.add(node.getLong("id"));
+            JsonNode node = nodes.get(i);
+            nodeIds.add(node.get("id").longValue());
         }
 
         // make sure caches are warm - time last call
         @SuppressWarnings("unused")
-        JSONArray nodesMetaData = getNodesMetaData(nodeIds, 0, 2001);
+        ArrayNode nodesMetaData = getNodesMetaData(nodeIds, 0, 2001);
         nodesMetaData = getNodesMetaData(nodeIds, 0, 2001);
 
         // sleep for a couple of seconds
@@ -746,7 +747,7 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         nodesMetaData = getNodesMetaData(nodeIds, 0, 2001);
     }
     
-    private boolean containsAspect(JSONArray aspectsArray, QName aspect) throws Exception
+    private boolean containsAspect(ArrayNode aspectsArray, QName aspect) throws Exception
     {
         if(aspect == null)
         {
@@ -754,9 +755,9 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         }
 
         boolean success = false;
-        for(int i = 0; i < aspectsArray.length(); i++)
+        for(int i = 0; i < aspectsArray.size(); i++)
         {
-            String qName = aspectsArray.getString(i);
+            String qName = aspectsArray.get(i).textValue();
             if(aspect.equals(QName.createQName(qName, namespaceService)))
             {
                 success |= true;
@@ -767,17 +768,18 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         return success;
     }
 
-    private Map<QName, String> getPropertyMap(JSONObject properties) throws Exception
+    private Map<QName, String> getPropertyMap(JsonNode properties)
     {
-        Map<QName, String> propertyMap = new HashMap<QName, String>(properties.length());
-        @SuppressWarnings("rawtypes")
-        Iterator propNames = properties.keys();
-        while(propNames.hasNext())
+        Map<QName, String> propertyMap = new HashMap<QName, String>(properties.size());
+        Iterator<Map.Entry<String, JsonNode>> props = properties.fields();
+        while(props.hasNext())
         {
-            String propName = (String)propNames.next();
-            String value = properties.getString(propName);
+            Map.Entry<String, JsonNode> prop = props.next();
+            String propName = prop.getKey();
+            JsonNode value = prop.getValue();
 
-            propertyMap.put(QName.resolveToQName(namespaceService, propName), value);
+            propertyMap.put(QName.resolveToQName(namespaceService, propName),
+                    JsonUtil.convertJSONValue((ValueNode) value).toString());
         }
 
         return propertyMap;

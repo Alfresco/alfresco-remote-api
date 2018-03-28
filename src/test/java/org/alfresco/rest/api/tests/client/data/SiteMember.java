@@ -28,6 +28,10 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.Collator;
 import java.util.ArrayList;
@@ -35,8 +39,7 @@ import java.util.List;
 
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class SiteMember implements Serializable, ExpectedComparison, Comparable<SiteMember>
 {
@@ -128,30 +131,30 @@ public class SiteMember implements Serializable, ExpectedComparison, Comparable<
 				+ status + "]";
 	}
 
-	public static SiteMember parseSiteMember(String siteId, JSONObject jsonObject)
-	{
-		String id = (String)jsonObject.get("id");
-		String role = (String)jsonObject.get("role");
-		JSONObject personJSON = (JSONObject)jsonObject.get("person");
+	public static SiteMember parseSiteMember(String siteId, JsonNode jsonObject) throws IOException
+    {
+		String id = jsonObject.get("id").textValue();
+		String role = jsonObject.get("role").textValue();
+		JsonNode personJSON = jsonObject.get("person");
 		Person member = Person.parsePerson(personJSON);
 		SiteMember siteMember = new SiteMember(id, member, siteId, role);
 		return siteMember;
 	}
 
-	public static ListResponse<SiteMember> parseSiteMembers(String siteId, JSONObject jsonObject)
-	{
+	public static ListResponse<SiteMember> parseSiteMembers(String siteId, JsonNode jsonObject) throws IOException
+    {
 		List<SiteMember> siteMembers = new ArrayList<SiteMember>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode)jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+            JsonNode jsonEntry = jsonEntries.get(i);
+            JsonNode entry = jsonEntry.get("entry");
 			siteMembers.add(parseSiteMember(siteId, entry));
 		}
 		
@@ -162,9 +165,9 @@ public class SiteMember implements Serializable, ExpectedComparison, Comparable<
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject entry = new JSONObject();
+        ObjectNode entry = AlfrescoDefaultObjectMapper.createObjectNode();
         
 		if (getMemberId() != null)
 		{

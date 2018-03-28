@@ -28,14 +28,16 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 /**
  * A representation of a Audit App in JUnit Test
@@ -63,9 +65,9 @@ public class AuditApp extends org.alfresco.rest.api.model.AuditApp implements Se
         AssertUtil.assertEquals("isEnabled", getIsEnabled(), other.getIsEnabled());
     }
 
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject auditAppJson = new JSONObject();
+        ObjectNode auditAppJson = AlfrescoDefaultObjectMapper.createObjectNode();
         if (getId() != null)
         {
             auditAppJson.put("id", getId());
@@ -77,11 +79,11 @@ public class AuditApp extends org.alfresco.rest.api.model.AuditApp implements Se
         return auditAppJson;
     }
 
-    public static AuditApp parseAuditApp(JSONObject jsonObject)
+    public static AuditApp parseAuditApp(JsonNode jsonObject)
     {
-        String id = (String) jsonObject.get("id");
-        String name = (String) jsonObject.get("name");
-        Boolean isEnabled = (Boolean) jsonObject.get("isEnabled");
+        String id = jsonObject.get("id").textValue();
+        String name = jsonObject.get("name").textValue();
+        Boolean isEnabled = jsonObject.get("isEnabled").booleanValue();
 
         AuditApp auditApp = new AuditApp();
         auditApp.setId(id);
@@ -91,20 +93,20 @@ public class AuditApp extends org.alfresco.rest.api.model.AuditApp implements Se
         return auditApp;
     }
 
-    public static ListResponse<AuditApp> parseAuditApps(JSONObject jsonObject)
+    public static ListResponse<AuditApp> parseAuditApps(JsonNode jsonObject)
     {
         List<AuditApp> groups = new ArrayList<>();
 
-        JSONObject jsonList = (JSONObject) jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
 
-        JSONArray jsonEntries = (JSONArray) jsonList.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
         assertNotNull(jsonEntries);
 
         for (int i = 0; i < jsonEntries.size(); i++)
         {
-            JSONObject jsonEntry = (JSONObject) jsonEntries.get(i);
-            JSONObject entry = (JSONObject) jsonEntry.get("entry");
+            JsonNode jsonEntry = jsonEntries.get(i);
+            JsonNode entry = jsonEntry.get("entry");
             groups.add(parseAuditApp(entry));
         }
 

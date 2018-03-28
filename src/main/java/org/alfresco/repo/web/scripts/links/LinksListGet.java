@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.links;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -38,7 +39,6 @@ import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.service.cmr.links.LinkInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.surf.util.URLDecoder;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
@@ -57,7 +57,7 @@ public class LinksListGet extends AbstractLinksWebScript
    
    @Override
    protected Map<String, Object> executeImpl(SiteInfo site, String linkName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+      WebScriptRequest req, JsonNode json, Status status, Cache cache)
    {
       // Decide on what kind of request they wanted
       String filter = req.getParameter("filter");

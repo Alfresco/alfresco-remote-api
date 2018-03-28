@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.audit;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.net.URL;
 import java.util.Date;
 import java.util.Map;
@@ -49,9 +51,8 @@ import org.alfresco.service.cmr.search.SearchService;
 import org.alfresco.service.cmr.security.AuthenticationService;
 import org.alfresco.test_category.OwnJVMTestsCategory;
 import org.alfresco.util.GUID;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.testing.category.LuceneTests;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.experimental.categories.Category;
 import org.springframework.context.ApplicationContext;
 import org.springframework.extensions.surf.util.ISO8601DateFormat;
@@ -215,11 +216,11 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         TestWebScriptServer.GetRequest req = new TestWebScriptServer.GetRequest(url);
         
         Response response = sendRequest(req, Status.STATUS_OK, admin);
-        JSONObject json = new JSONObject(response.getContentAsString());
-        boolean enabled = json.getBoolean(AbstractAuditWebScript.JSON_KEY_ENABLED);
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        boolean enabled = json.get(AbstractAuditWebScript.JSON_KEY_ENABLED).booleanValue();
         assertEquals("Mismatched global audit enabled", wasEnabled, enabled);
-        JSONArray apps = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_APPLICATIONS);
-        assertEquals("Incorrect number of applications reported", checkApps.size(), apps.length());
+        ArrayNode apps = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_APPLICATIONS);
+        assertEquals("Incorrect number of applications reported", checkApps.size(), apps.size());
     }
     
     public void testGetIsAuditEnabledMissingApp() throws Exception
@@ -261,13 +262,13 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         if (wasEnabled)
         {
             Response response = sendRequest(req, Status.STATUS_OK, admin);
-            JSONObject json = new JSONObject(response.getContentAsString());
-            JSONArray apps = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_APPLICATIONS);
-            assertEquals("Incorrect number of applications reported", 1, apps.length());
-            JSONObject app = apps.getJSONObject(0);
-            String appName = app.getString(AbstractAuditWebScript.JSON_KEY_NAME);
-            String appPath = app.getString(AbstractAuditWebScript.JSON_KEY_PATH);
-            boolean appEnabled = app.getBoolean(AbstractAuditWebScript.JSON_KEY_ENABLED);
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+            ArrayNode apps = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_APPLICATIONS);
+            assertEquals("Incorrect number of applications reported", 1, apps.size());
+            JsonNode app = apps.get(0);
+            String appName = app.get(AbstractAuditWebScript.JSON_KEY_NAME).textValue();
+            String appPath = app.get(AbstractAuditWebScript.JSON_KEY_PATH).textValue();
+            boolean appEnabled = app.get(AbstractAuditWebScript.JSON_KEY_ENABLED).booleanValue();
             assertEquals("Mismatched application audit enabled", wasEnabled, appEnabled);
             assertEquals("Mismatched application audit name", APP_REPOTEST_NAME, appName);
             assertEquals("Mismatched application audit path", APP_REPOTEST_PATH, appPath);
@@ -280,8 +281,8 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         String url = "/api/audit/clear/" + APP_SEARCHTEST_NAME;
         TestWebScriptServer.PostRequest postReq = new TestWebScriptServer.PostRequest(url, "", MimetypeMap.MIMETYPE_JSON);
         Response response = sendRequest(postReq, Status.STATUS_OK, admin);
-        JSONObject json = new JSONObject(response.getContentAsString());
-        assertTrue(json.getInt(AbstractAuditWebScript.JSON_KEY_CLEARED) >= 0);
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertTrue(json.get(AbstractAuditWebScript.JSON_KEY_CLEARED).intValue() >= 0);
 
         // create a file
         this.testRoot = this.repositoryHelper.getCompanyHome();
@@ -300,13 +301,13 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         TestWebScriptServer.GetRequest getReq = new TestWebScriptServer.GetRequest(url);
 
         response = sendRequest(getReq, Status.STATUS_OK, admin);
-        json = new JSONObject(response.getContentAsString());
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-        JSONArray jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
-        assertEquals("Incorrect number of entries reported", 1, jsonEntries.length());
+        ArrayNode jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+        assertEquals("Incorrect number of entries reported", 1, jsonEntries.size());
 
-        JSONObject values = (JSONObject) ((JSONObject) jsonEntries.get(0)).get(AbstractAuditWebScript.JSON_KEY_ENTRY_VALUES);
-        assertTrue("Audit entry was not found", values.toString(0).contains("query==cm:name:" + filename));
+        JsonNode values =  jsonEntries.get(0).get(AbstractAuditWebScript.JSON_KEY_ENTRY_VALUES);
+        assertTrue("Audit entry was not found", values.get(0).toString().contains("query==cm:name:" + filename));
 
         // clear audit entries for the application
         auditService.clearAudit(APP_SEARCHTEST_NAME, null, null);
@@ -379,8 +380,8 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         String url = "/api/audit/clear/" + APP_REPOTEST_NAME + "?fromTime=" + future;
         TestWebScriptServer.PostRequest req = new TestWebScriptServer.PostRequest(url, "", MimetypeMap.MIMETYPE_JSON);
         Response response = sendRequest(req, Status.STATUS_OK, admin);
-        JSONObject json = new JSONObject(response.getContentAsString());
-        int cleared = json.getInt(AbstractAuditWebScript.JSON_KEY_CLEARED);
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        int cleared = json.get(AbstractAuditWebScript.JSON_KEY_CLEARED).intValue();
         assertEquals("Could not have cleared more than 0", 0, cleared);
         
         // ALF-3055 : auditing of failures is now asynchronous, so loop 60 times with a
@@ -391,8 +392,8 @@ public class AuditWebScriptTest extends BaseWebScriptTest
             url = "/api/audit/clear/" + APP_REPOTEST_NAME + "?fromTime=" + now + "&toTime=" + future;
             req = new TestWebScriptServer.PostRequest(url, "", MimetypeMap.MIMETYPE_JSON);
             response = sendRequest(req, Status.STATUS_OK, admin);
-            json = new JSONObject(response.getContentAsString());
-            cleared = json.getInt(AbstractAuditWebScript.JSON_KEY_CLEARED);
+            json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+            cleared = json.get(AbstractAuditWebScript.JSON_KEY_CLEARED).intValue();
             if (cleared > 0)
             {
                 break;
@@ -406,8 +407,8 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         url = "/api/audit/clear/" + APP_REPOTEST_NAME;;
         req = new TestWebScriptServer.PostRequest(url, "", MimetypeMap.MIMETYPE_JSON);
         response = sendRequest(req, Status.STATUS_OK, admin);
-        json = new JSONObject(response.getContentAsString());
-        cleared = json.getInt(AbstractAuditWebScript.JSON_KEY_CLEARED);
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        cleared = json.get(AbstractAuditWebScript.JSON_KEY_CLEARED).intValue();
     }
     
     @SuppressWarnings("unused")
@@ -423,10 +424,10 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         
         // Query for audit entries that could not have happened
         String url = "/api/audit/query/" + APP_REPOTEST_NAME + "?fromTime=" + now + "&verbose=true";
-        JSONArray jsonEntries = null;
+        ArrayNode jsonEntries = null;
         TestWebScriptServer.GetRequest req = null;
         Response response = null;
-        JSONObject json = null;
+        JsonNode json = null;
         Long entryCount = null;
         // ALF-3055 : auditing of failures is now asynchronous, so loop 60 times with a
         // 1 second sleep to ensure that the audit is processed
@@ -434,26 +435,26 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         {
 	        req = new TestWebScriptServer.GetRequest(url);
 	        response = sendRequest(req, Status.STATUS_OK, admin);
-	        json = new JSONObject(response.getContentAsString());
-	        entryCount = json.getLong(AbstractAuditWebScript.JSON_KEY_ENTRY_COUNT);
-	        jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+	        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+	        entryCount = json.get(AbstractAuditWebScript.JSON_KEY_ENTRY_COUNT).longValue();
+	        jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
 
-	        if(jsonEntries.length() > 0)
+	        if(jsonEntries.size() > 0)
 	        {
 	        	break;
 	        }
         	Thread.sleep(1000);
         }
-        assertTrue("Expected at least one entry", jsonEntries.length() > 0);
-        assertEquals("Entry count and physical count don't match", new Long(jsonEntries.length()), entryCount);
-        JSONObject jsonEntry = jsonEntries.getJSONObject(0);
-        Long entryId = jsonEntry.getLong(AbstractAuditWebScript.JSON_KEY_ENTRY_ID);
+        assertTrue("Expected at least one entry", jsonEntries.size() > 0);
+        assertEquals("Entry count and physical count don't match", new Long(jsonEntries.size()), entryCount);
+        JsonNode jsonEntry = jsonEntries.get(0);
+        Long entryId = jsonEntry.get(AbstractAuditWebScript.JSON_KEY_ENTRY_ID).longValue();
         assertNotNull("No entry ID", entryId);
-        String entryTimeStr = jsonEntry.getString(AbstractAuditWebScript.JSON_KEY_ENTRY_TIME);
+        String entryTimeStr = jsonEntry.get(AbstractAuditWebScript.JSON_KEY_ENTRY_TIME).textValue();
         assertNotNull("No entry time String", entryTimeStr);
         Date entryTime = ISO8601DateFormat.parse((String)entryTimeStr); // Check conversion
-        JSONObject jsonValues = jsonEntry.getJSONObject(AbstractAuditWebScript.JSON_KEY_ENTRY_VALUES);
-        String entryUsername = jsonValues.getString("/repositorytest/login/error/user");
+        JsonNode jsonValues = jsonEntry.get(AbstractAuditWebScript.JSON_KEY_ENTRY_VALUES);
+        String entryUsername = jsonValues.get("/repositorytest/login/error/user").textValue();
         assertEquals("Didn't find the login-failure-user", getName(), entryUsername);
         
         // Query using well-known ID
@@ -462,25 +463,25 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         url = "/api/audit/query/" + APP_REPOTEST_NAME + "?fromId=" + fromEntryId + "&toId=" + toEntryId;
         req = new TestWebScriptServer.GetRequest(url);
         response = sendRequest(req, Status.STATUS_OK, admin);
-        json = new JSONObject(response.getContentAsString());
-        jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
-        assertEquals("Incorrect number of search results", 1, jsonEntries.length());
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+        assertEquals("Incorrect number of search results", 1, jsonEntries.size());
         
         // Query using a non-existent entry path
         url = "/api/audit/query/" + APP_REPOTEST_NAME + "/repositorytest/login/error/userXXX" + "?verbose=true";
         req = new TestWebScriptServer.GetRequest(url);
         response = sendRequest(req, Status.STATUS_OK, admin);
-        json = new JSONObject(response.getContentAsString());
-        jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
-        assertTrue("Should not have found anything", jsonEntries.length() == 0);
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+        assertTrue("Should not have found anything", jsonEntries.size() == 0);
         
         // Query using a good entry path
         url = "/api/audit/query/" + APP_REPOTEST_NAME + "/repositorytest/login/error/user" + "?verbose=true";
         req = new TestWebScriptServer.GetRequest(url);
         response = sendRequest(req, Status.STATUS_OK, admin);
-        json = new JSONObject(response.getContentAsString());
-        jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
-        assertTrue("Should have found entries", jsonEntries.length() > 0);
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+        assertTrue("Should have found entries", jsonEntries.size() > 0);
         
         // Now login with failure using a GUID and ensure that we can find it
         String missingUser = new Long(System.currentTimeMillis()).toString();
@@ -489,9 +490,9 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         url = "/api/audit/query/" + APP_REPOTEST_NAME + "/repositorytest/login/error/user" + "?value=" + missingUser;
         req = new TestWebScriptServer.GetRequest(url);
         response = sendRequest(req, Status.STATUS_OK, admin);
-        json = new JSONObject(response.getContentAsString());
-        jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
-        assertEquals("Incorrect number of search results", 0, jsonEntries.length());
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+        assertEquals("Incorrect number of search results", 0, jsonEntries.size());
         
         loginWithFailure(missingUser);
         
@@ -503,23 +504,23 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         {
 	        req = new TestWebScriptServer.GetRequest(url);
 	        response = sendRequest(req, Status.STATUS_OK, admin);
-	        json = new JSONObject(response.getContentAsString());
-	        jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
-	        if(jsonEntries.length() == 1)
+	        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+	        jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+	        if(jsonEntries.size() == 1)
 	        {
 	        	break;
 	        }
         	Thread.sleep(1000);
         }
-        assertEquals("Incorrect number of search results", 1, jsonEntries.length());
+        assertEquals("Incorrect number of search results", 1, jsonEntries.size());
         
         // Query for event, but casting the value to the incorrect type
         url = "/api/audit/query/" + APP_REPOTEST_NAME + "/repositorytest/login/error/user" + "?value=" + missingUser + "&valueType=java.lang.Long";
         req = new TestWebScriptServer.GetRequest(url);
         response = sendRequest(req, Status.STATUS_OK, admin);
-        json = new JSONObject(response.getContentAsString());
-        jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
-        assertEquals("Incorrect number of search results", 0, jsonEntries.length());
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+        assertEquals("Incorrect number of search results", 0, jsonEntries.size());
         
         // Test what happens when the target data needs encoding
         now = System.currentTimeMillis();
@@ -535,21 +536,21 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         {
             req = new TestWebScriptServer.GetRequest(url);
             response = sendRequest(req, Status.STATUS_OK, admin);
-            json = new JSONObject(response.getContentAsString());
-            jsonEntries = json.getJSONArray(AbstractAuditWebScript.JSON_KEY_ENTRIES);
-	        if(jsonEntries.length() == 1)
+            json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+            jsonEntries = (ArrayNode) json.get(AbstractAuditWebScript.JSON_KEY_ENTRIES);
+	        if(jsonEntries.size() == 1)
 	        {
 	        	break;
 	        }
         	Thread.sleep(1000);
         }
-        assertEquals("Incorrect number of search results", 1, jsonEntries.length());
+        assertEquals("Incorrect number of search results", 1, jsonEntries.size());
 
-        jsonEntry = jsonEntries.getJSONObject(0);
-        entryId = jsonEntry.getLong(AbstractAuditWebScript.JSON_KEY_ENTRY_ID);
+        jsonEntry = jsonEntries.get(0);
+        entryId = jsonEntry.get(AbstractAuditWebScript.JSON_KEY_ENTRY_ID).longValue();
         assertNotNull("No entry ID", entryId);
-        jsonValues = jsonEntry.getJSONObject(AbstractAuditWebScript.JSON_KEY_ENTRY_VALUES);
-        entryUsername = jsonValues.getString("/repositorytest/login/error/user");
+        jsonValues = jsonEntry.get(AbstractAuditWebScript.JSON_KEY_ENTRY_VALUES);
+        entryUsername = jsonValues.get("/repositorytest/login/error/user").textValue();
         assertEquals("Didn't find the login-failure-user", oddUser, entryUsername);
     }
 }

@@ -26,6 +26,7 @@
 
 package org.alfresco.repo.web.scripts.transfer;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -36,7 +37,6 @@ import org.alfresco.util.json.ExceptionJsonSerializer;
 import org.alfresco.util.json.JsonSerializer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.AbstractWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -52,7 +52,7 @@ public class TransferWebScript extends AbstractWebScript
     
     private boolean enabled = true;
     private Map<String, CommandProcessor> processors = new TreeMap<String, CommandProcessor>();
-    private JsonSerializer<Throwable, JSONObject> errorSerializer = new ExceptionJsonSerializer();
+    private JsonSerializer<Throwable, String> errorSerializer = new ExceptionJsonSerializer();
     
     public void setEnabled(boolean enabled)
     {
@@ -111,9 +111,8 @@ public class TransferWebScript extends AbstractWebScript
                     {
                         log.debug("transfer exception caught", ex);
                         res.setStatus(Status.STATUS_INTERNAL_SERVER_ERROR);
-                        JSONObject errorObject = errorSerializer.serialize(ex);
-                        String error = errorObject.toString();
-                        
+                        String error = errorSerializer.serialize(ex);
+
                         res.setContentType("application/json");
                         res.setContentEncoding("UTF-8");
                         int length = error.getBytes("UTF-8").length;

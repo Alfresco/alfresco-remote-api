@@ -28,12 +28,14 @@ package org.alfresco.rest.api.tests.client.data;
 
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Date;
 
 import org.alfresco.rest.api.tests.util.RestApiUtil;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 /**
  * Alfresco API - Favourite node representation.
@@ -186,7 +188,7 @@ public class FavouriteNode implements Serializable, ExpectedComparison
         this.path = pathInfo;
     }
 
-    protected void parseAndSetPath(JSONObject jsonObject) throws ParseException
+    protected void parseAndSetPath(JsonNode jsonObject) throws ParseException
     {
         if (jsonObject.get("path") != null)
         {
@@ -231,9 +233,9 @@ public class FavouriteNode implements Serializable, ExpectedComparison
     }
 
     @SuppressWarnings("unchecked")
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject json = new JSONObject();
+        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
         json.put("guid", getGuid());
         json.put("id", getNodeId());
         return json;

@@ -25,6 +25,10 @@
  */
 package org.alfresco.repo.web.scripts.facet;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,10 +49,7 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.util.GUID;
 import org.alfresco.util.PropertyMap;
 import org.alfresco.util.collections.CollectionUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
@@ -148,7 +149,7 @@ public class FacetRestApiTest extends BaseWebScriptTest
     public void testNonSearchAdminUserCannotCreateUpdateSolrFacets() throws Exception
     {
         // Create a filter
-        final JSONObject filter = new JSONObject();
+        final ObjectNode filter = AlfrescoDefaultObjectMapper.createObjectNode();
         final String filterName = "filter" + System.currentTimeMillis();
         filters.add(filterName);
         filter.put("filterID", filterName);
@@ -191,9 +192,9 @@ public class FacetRestApiTest extends BaseWebScriptTest
             public Void doWork() throws Exception
             {
                 Response response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
-                assertEquals(filterName, jsonRsp.getString("filterID"));
-                assertEquals(5, jsonRsp.getInt("maxFilters"));
+                ObjectNode jsonRsp = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+                assertEquals(filterName, jsonRsp.get("filterID"));
+                assertEquals(5, jsonRsp.get("maxFilters"));
                 // Now change the maxFilters value and try to update
                 jsonRsp.put("maxFilters", 10);
                 sendRequest(new PutRequest(PUT_FACETS_URL, jsonRsp.toString(), "application/json"), 403);
@@ -210,8 +211,8 @@ public class FacetRestApiTest extends BaseWebScriptTest
             @Override public Void doWork() throws Exception
             {
                 Response response = sendRequest(new GetRequest(GET_FACETS_URL), 200);
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
-                List<String> filters = getListFromJsonArray(jsonRsp.getJSONArray(FACETS));
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+                List<String> filters = getListFromJsonArray((ArrayNode) jsonRsp.get(FACETS));
                 assertTrue(filters.size() > 0);
                 return null;
             }
@@ -227,10 +228,10 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 Response rsp = sendRequest(new GetRequest(GET_FACETS_URL), 200);
 
                 String contentAsString = rsp.getContentAsString();
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(contentAsString));
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(contentAsString);
 
                 // FIXME The JSON payload should be contained within a 'data' object.
-                JSONArray facetsArray = (JSONArray)jsonRsp.get(FACETS);
+                ArrayNode facetsArray = (ArrayNode)jsonRsp.get(FACETS);
                 assertNotNull("JSON 'facets' array was null", facetsArray);
 
                 // We'll not add any further assertions on the JSON content. If we've
@@ -249,19 +250,19 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 // get the existing facets.
                 Response rsp = sendRequest(new GetRequest(GET_FACETS_URL), 200);
 
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
 
-                final JSONArray facetsArray = (JSONArray)jsonRsp.get(FACETS);
+                final ArrayNode facetsArray = (ArrayNode)jsonRsp.get(FACETS);
                 assertNotNull("JSON 'facets' array was null", facetsArray);
 
-                System.out.println("Received " + facetsArray.length() + " facets");
+                System.out.println("Received " + facetsArray.size() + " facets");
 
                 final List<String> idsIndexes = getListFromJsonArray(facetsArray);
 
                 System.out.println(" IDs, indexes = " + idsIndexes);
 
                 // Reorder them such that the last facet is moved left one place.
-                assertTrue("There should be more than 1 built-in facet", facetsArray.length() > 1);
+                assertTrue("There should be more than 1 built-in facet", facetsArray.size() > 1);
 
                 final String lastIndexId = idsIndexes.get(idsIndexes.size() - 1);
                 final String url = PUT_FACET_URL_FORMAT.replace("{0}", lastIndexId)
@@ -272,12 +273,12 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 // Now get the facets back and we should see that one has moved.
                 rsp = sendRequest(new GetRequest(GET_FACETS_URL), 200);
 
-                jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+                jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
 
-                JSONArray newfacetsArray = (JSONArray)jsonRsp.get(FACETS);
+                ArrayNode newfacetsArray = (ArrayNode)jsonRsp.get(FACETS);
                 assertNotNull("JSON 'facets' array was null", newfacetsArray);
 
-                System.out.println("Received " + newfacetsArray.length() + " facets");
+                System.out.println("Received " + newfacetsArray.size() + " facets");
 
                 final List<String> newIdsIndexes = getListFromJsonArray(newfacetsArray);
 
@@ -298,7 +299,7 @@ public class FacetRestApiTest extends BaseWebScriptTest
             public Void doWork() throws Exception
             {
                 // Build the Filter object - ignore the optional values
-                JSONObject filter_one = new JSONObject();
+                ObjectNode filter_one = AlfrescoDefaultObjectMapper.createObjectNode();
                 String filterNameOne = "filterOne" + System.currentTimeMillis();
                 filters.add(filterNameOne);
                 filter_one.put("filterID", filterNameOne);
@@ -315,22 +316,22 @@ public class FacetRestApiTest extends BaseWebScriptTest
 
                 // Retrieve the created filter
                 response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterNameOne), 200);
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
-                assertEquals(filterNameOne, jsonRsp.getString("filterID"));
-                assertEquals("{http://www.alfresco.org/model/content/1.0}test1", jsonRsp.getString("facetQName"));
-                assertEquals("facet-menu.facet.test1", jsonRsp.getString("displayName"));
-                assertEquals("alfresco/search/FacetFilters/test1", jsonRsp.getString("displayControl"));
-                assertEquals(5, jsonRsp.getInt("maxFilters"));
-                assertEquals(1, jsonRsp.getInt("hitThreshold"));
-                assertEquals(4, jsonRsp.getInt("minFilterValueLength"));
-                assertEquals("ALPHABETICALLY", jsonRsp.getString("sortBy"));
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+                assertEquals(filterNameOne, jsonRsp.get("filterID"));
+                assertEquals("{http://www.alfresco.org/model/content/1.0}test1", jsonRsp.get("facetQName"));
+                assertEquals("facet-menu.facet.test1", jsonRsp.get("displayName"));
+                assertEquals("alfresco/search/FacetFilters/test1", jsonRsp.get("displayControl"));
+                assertEquals(5, jsonRsp.get("maxFilters"));
+                assertEquals(1, jsonRsp.get("hitThreshold"));
+                assertEquals(4, jsonRsp.get("minFilterValueLength"));
+                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy"));
                 // Check the Default values
-                assertEquals("ALL", jsonRsp.getString("scope"));
-                assertFalse(jsonRsp.getBoolean("isEnabled"));
-                assertFalse(jsonRsp.getBoolean("isDefault"));
+                assertEquals("ALL", jsonRsp.get("scope"));
+                assertFalse(jsonRsp.get("isEnabled").booleanValue());
+                assertFalse(jsonRsp.get("isDefault").booleanValue());
 
                 // Build the Filter object with all the values
-                JSONObject filter_two = new JSONObject();
+                ObjectNode filter_two = AlfrescoDefaultObjectMapper.createObjectNode();
                 String filterNameTwo = "filterTwo" + System.currentTimeMillis();
                 filters.add(filterNameTwo);
                 filter_two.put("filterID", filterNameTwo);
@@ -343,7 +344,7 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 filter_two.put("sortBy", "ALPHABETICALLY");
                 filter_two.put("scope", "SCOPED_SITES");
                 List<String> expectedValues = Arrays.asList(new String[] { "sit1", "site2", "site3" });
-                filter_two.put("scopedSites", expectedValues);
+                filter_two.put("scopedSites", AlfrescoDefaultObjectMapper.convertValue(expectedValues, ArrayNode.class));
                 filter_two.put("isEnabled", true);
 
                 // Post the filter
@@ -351,12 +352,12 @@ public class FacetRestApiTest extends BaseWebScriptTest
 
                 // Retrieve the created filter
                 response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterNameTwo), 200);
-                jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
+                jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-                assertEquals(filterNameTwo, jsonRsp.getString("filterID"));
-                assertEquals("SCOPED_SITES", jsonRsp.getString("scope"));
-                assertTrue(jsonRsp.getBoolean("isEnabled"));
-                JSONArray jsonArray = jsonRsp.getJSONArray("scopedSites");
+                assertEquals(filterNameTwo, jsonRsp.get("filterID"));
+                assertEquals("SCOPED_SITES", jsonRsp.get("scope"));
+                assertTrue(jsonRsp.get("isEnabled").booleanValue());
+                ArrayNode jsonArray = (ArrayNode) jsonRsp.get("scopedSites");
                 List<String> retrievedValues = getListFromJsonArray(jsonArray);
                 // Sort the list
                 Collections.sort(retrievedValues);
@@ -375,7 +376,7 @@ public class FacetRestApiTest extends BaseWebScriptTest
             public Void doWork() throws Exception
             {
                 // Build the Filter object
-                JSONObject filter = new JSONObject();
+                ObjectNode filter = AlfrescoDefaultObjectMapper.createObjectNode();
                 String filterName = "filter" + System.currentTimeMillis();
                 filters.add(filterName);
                 filter.put("filterID", filterName);
@@ -387,18 +388,18 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 filter.put("minFilterValueLength", 4);
                 filter.put("sortBy", "ALPHABETICALLY");
 
-                JSONObject customProp = new JSONObject();
+                ObjectNode customProp = AlfrescoDefaultObjectMapper.createObjectNode();
                 // 1st custom prop
-                JSONObject blockIncludeRequest = new JSONObject();
+                ObjectNode blockIncludeRequest = AlfrescoDefaultObjectMapper.createObjectNode();
                 blockIncludeRequest.put("name", "blockIncludeFacetRequest");
                 blockIncludeRequest.put("value", "true");
                 customProp.put("blockIncludeFacetRequest", blockIncludeRequest);
 
                 // 2nd custom prop
-                JSONObject multipleValue = new JSONObject();
+                ObjectNode multipleValue = AlfrescoDefaultObjectMapper.createObjectNode();
                 multipleValue.put("name", "multipleValueTest");
                 List<String> expectedValues = Arrays.asList(new String[] { "sit1", "site2", "site3" });
-                multipleValue.put("value", expectedValues);
+                multipleValue.put("value", AlfrescoDefaultObjectMapper.convertValue(expectedValues, ArrayNode.class));
                 customProp.put("multipleValueTest", multipleValue);
 
                 filter.put("customProperties", customProp);
@@ -407,17 +408,17 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 Response response = sendRequest(new PostRequest(POST_FACETS_URL, filter.toString(),"application/json"), 200);
                 // Retrieve the created filter
                 response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
-                customProp = jsonRsp.getJSONObject("customProperties");
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+                customProp = (ObjectNode) jsonRsp.get("customProperties");
 
-                blockIncludeRequest = customProp.getJSONObject("blockIncludeFacetRequest");
+                blockIncludeRequest = (ObjectNode) customProp.get("blockIncludeFacetRequest");
                 assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}blockIncludeFacetRequest", blockIncludeRequest.get("name"));
                 assertEquals("true", blockIncludeRequest.get("value"));
 
-                multipleValue = customProp.getJSONObject("multipleValueTest");
+                multipleValue = (ObjectNode) customProp.get("multipleValueTest");
                 assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}multipleValueTest", multipleValue.get("name"));
 
-                JSONArray jsonArray = (JSONArray) multipleValue.get("value");
+                ArrayNode jsonArray = (ArrayNode) multipleValue.get("value");
                 List<String> retrievedValues = getListFromJsonArray(jsonArray);
                 // Sort the list
                 Collections.sort(retrievedValues);
@@ -431,7 +432,7 @@ public class FacetRestApiTest extends BaseWebScriptTest
     public void testCreateUpdateFacetWithInvalidFilterId() throws Exception
     {
         // Build the Filter object
-        final JSONObject filter = new JSONObject();
+        final ObjectNode filter = AlfrescoDefaultObjectMapper.createObjectNode();
         final String filterName = "filter" + System.currentTimeMillis();
         filters.add(filterName);
         filter.put("filterID", filterName);
@@ -462,10 +463,10 @@ public class FacetRestApiTest extends BaseWebScriptTest
             {
                 // Retrieve the created filter
                 Response response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
-                assertEquals(filterName, jsonRsp.getString("filterID"));
+                ObjectNode jsonRsp = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+                assertEquals(filterName, jsonRsp.get("filterID"));
                 // Now change the filterID value and try to update
-                jsonRsp.put("filterID", filterName + "Modified");
+                jsonRsp.set("filterID", TextNode.valueOf(filterName + "Modified"));
                 sendRequest(new PutRequest(PUT_FACETS_URL, jsonRsp.toString(), "application/json"), 400);
 
                 return null;
@@ -492,8 +493,8 @@ public class FacetRestApiTest extends BaseWebScriptTest
             public Void doWork() throws Exception
             {
                 Response response = sendRequest(new GetRequest(GET_FACETS_URL), 200);
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
-                JSONArray facetsArray = (JSONArray) jsonRsp.get(FACETS);
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+                ArrayNode facetsArray = (ArrayNode) jsonRsp.get(FACETS);
                 assertNotNull("JSON 'facets' array was null", facetsArray);
                 final List<String> facets = getListFromJsonArray(facetsArray);
 
@@ -503,8 +504,8 @@ public class FacetRestApiTest extends BaseWebScriptTest
 
                 // Retrieve all filters
                 response = sendRequest(new GetRequest(GET_FACETS_URL), 200);
-                jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
-                facetsArray = (JSONArray) jsonRsp.get(FACETS);
+                jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+                facetsArray = (ArrayNode) jsonRsp.get(FACETS);
 
                 assertNotNull("JSON 'facets' array was null", facetsArray);
                 final List<String> newFacets = getListFromJsonArray(facetsArray);
@@ -519,7 +520,7 @@ public class FacetRestApiTest extends BaseWebScriptTest
     /** The REST API should accept both 'cm:name' and '{http://www.alfresco.org/model/content/1.0}name' forms of filter IDs. */
     public void testCreateFacetWithLongFormQnameFilterId() throws Exception
     {
-        final JSONObject filter = new JSONObject();
+        final ObjectNode filter = AlfrescoDefaultObjectMapper.createObjectNode();
         final String filterName = "filter" + GUID.generate();
         filters.add(filterName);
         filter.put("filterID", filterName);
@@ -547,7 +548,7 @@ public class FacetRestApiTest extends BaseWebScriptTest
     public void testUpdateSingleValue() throws Exception
     {
         // Build the Filter object
-        final JSONObject filter = new JSONObject();
+        final ObjectNode filter = AlfrescoDefaultObjectMapper.createObjectNode();
         final String filterName = "filter" + System.currentTimeMillis();
         filters.add(filterName);
         filter.put("filterID", filterName);
@@ -560,9 +561,9 @@ public class FacetRestApiTest extends BaseWebScriptTest
         filter.put("sortBy", "ALPHABETICALLY");
         filter.put("isEnabled", true);
 
-        JSONObject customProp = new JSONObject();
+        ObjectNode customProp = AlfrescoDefaultObjectMapper.createObjectNode();
         // 1st custom prop
-        JSONObject blockIncludeRequest = new JSONObject();
+        ObjectNode blockIncludeRequest = AlfrescoDefaultObjectMapper.createObjectNode();
         blockIncludeRequest.put("name", "blockIncludeFacetRequest");
         blockIncludeRequest.put("value", "true");
         customProp.put("blockIncludeFacetRequest", blockIncludeRequest);
@@ -587,15 +588,15 @@ public class FacetRestApiTest extends BaseWebScriptTest
             {
                 // Retrieve the created filter
                 Response response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-                assertEquals(filterName, jsonRsp.getString("filterID"));
-                assertEquals("facet-menu.facet.test1", jsonRsp.getString("displayName"));
-                assertEquals("{http://www.alfresco.org/model/content/1.0}test", jsonRsp.getString("facetQName"));
-                assertTrue(jsonRsp.getBoolean("isEnabled"));
+                assertEquals(filterName, jsonRsp.get("filterID"));
+                assertEquals("facet-menu.facet.test1", jsonRsp.get("displayName"));
+                assertEquals("{http://www.alfresco.org/model/content/1.0}test", jsonRsp.get("facetQName"));
+                assertTrue(jsonRsp.get("isEnabled").booleanValue());
 
                 // Just supply the filterID and the required value
-                JSONObject singleValueJson = new JSONObject();
+                ObjectNode singleValueJson = AlfrescoDefaultObjectMapper.createObjectNode();
                 singleValueJson.put("filterID", filterName);
                 // Change the displayName value and update
                 singleValueJson.put("displayName", "facet-menu.facet.modifiedValue");
@@ -604,58 +605,58 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 // Change the isEnabled value and update
                 // We simulate two PUT requests without refreshing the page in
                 // between updates
-                singleValueJson = new JSONObject();
+                singleValueJson = AlfrescoDefaultObjectMapper.createObjectNode();
                 singleValueJson.put("filterID", filterName);
                 singleValueJson.put("isEnabled", false);
                 sendRequest(new PutRequest(PUT_FACETS_URL, singleValueJson.toString(), "application/json"), 200);
 
                 response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
-                jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
+                jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
                 // Now see if the two changes have been persisted
-                assertEquals("facet-menu.facet.modifiedValue", jsonRsp.getString("displayName"));
-                assertFalse(jsonRsp.getBoolean("isEnabled"));
+                assertEquals("facet-menu.facet.modifiedValue", jsonRsp.get("displayName"));
+                assertFalse(jsonRsp.get("isEnabled").booleanValue());
                 // Make sure the rest of values haven't been changed
-                assertEquals(filterName, jsonRsp.getString("filterID"));
-                assertEquals("{http://www.alfresco.org/model/content/1.0}test", jsonRsp.getString("facetQName"));
-                assertEquals("alfresco/search/FacetFilters/test", jsonRsp.getString("displayControl"));
-                assertEquals(5, jsonRsp.getInt("maxFilters"));
-                assertEquals(1, jsonRsp.getInt("hitThreshold"));
-                assertEquals(4, jsonRsp.getInt("minFilterValueLength"));
-                assertEquals("ALPHABETICALLY", jsonRsp.getString("sortBy"));
-                assertEquals("ALL", jsonRsp.getString("scope"));
-                assertFalse(jsonRsp.getBoolean("isDefault"));
+                assertEquals(filterName, jsonRsp.get("filterID"));
+                assertEquals("{http://www.alfresco.org/model/content/1.0}test", jsonRsp.get("facetQName"));
+                assertEquals("alfresco/search/FacetFilters/test", jsonRsp.get("displayControl"));
+                assertEquals(5, jsonRsp.get("maxFilters"));
+                assertEquals(1, jsonRsp.get("hitThreshold"));
+                assertEquals(4, jsonRsp.get("minFilterValueLength"));
+                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy"));
+                assertEquals("ALL", jsonRsp.get("scope"));
+                assertFalse(jsonRsp.get("isDefault").booleanValue());
                 // Make sure custom properties haven't been deleted
-                JSONObject retrievedCustomProp = jsonRsp.getJSONObject("customProperties");
-                JSONObject retrievedBlockIncludeRequest = retrievedCustomProp.getJSONObject("blockIncludeFacetRequest");
+                JsonNode retrievedCustomProp = jsonRsp.get("customProperties");
+                JsonNode retrievedBlockIncludeRequest = retrievedCustomProp.get("blockIncludeFacetRequest");
                 assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}blockIncludeFacetRequest", retrievedBlockIncludeRequest.get("name"));
                 assertEquals("true", retrievedBlockIncludeRequest.get("value"));
 
                 // Change the facetQName value and update
-                singleValueJson = new JSONObject();
+                singleValueJson = AlfrescoDefaultObjectMapper.createObjectNode();
                 singleValueJson.put("filterID", filterName);
                 singleValueJson.put("facetQName", "cm:testModifiedValue");
                 // We simulate that 'testModifiedValue' QName doesn't have custom properties
-                singleValueJson.put("customProperties", new JSONObject());
+                singleValueJson.put("customProperties", AlfrescoDefaultObjectMapper.createObjectNode());
                 sendRequest(new PutRequest(PUT_FACETS_URL, singleValueJson.toString(), "application/json"), 200);
 
                 response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
-                jsonRsp = new JSONObject(new JSONTokener(response.getContentAsString()));
+                jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
                 // Now see if the facetQName and its side-effect have been persisted
-                assertEquals("{http://www.alfresco.org/model/content/1.0}testModifiedValue",jsonRsp.getString("facetQName"));
-                assertNull("Custom properties should have been deleted.", jsonRsp.opt("customProperties"));
+                assertEquals("{http://www.alfresco.org/model/content/1.0}testModifiedValue",jsonRsp.get("facetQName"));
+                assertNull("Custom properties should have been deleted.", jsonRsp.get("customProperties"));
                 // Make sure the rest of values haven't been changed
-                assertEquals(filterName, jsonRsp.getString("filterID"));
-                assertEquals("facet-menu.facet.modifiedValue", jsonRsp.getString("displayName"));
-                assertEquals("alfresco/search/FacetFilters/test", jsonRsp.getString("displayControl"));
-                assertEquals(5, jsonRsp.getInt("maxFilters"));
-                assertEquals(1, jsonRsp.getInt("hitThreshold"));
-                assertEquals(4, jsonRsp.getInt("minFilterValueLength"));
-                assertEquals("ALPHABETICALLY", jsonRsp.getString("sortBy"));
-                assertFalse(jsonRsp.getBoolean("isDefault"));
-                assertEquals("ALL", jsonRsp.getString("scope"));
-                assertFalse(jsonRsp.getBoolean("isEnabled"));
+                assertEquals(filterName, jsonRsp.get("filterID"));
+                assertEquals("facet-menu.facet.modifiedValue", jsonRsp.get("displayName"));
+                assertEquals("alfresco/search/FacetFilters/test", jsonRsp.get("displayControl"));
+                assertEquals(5, jsonRsp.get("maxFilters"));
+                assertEquals(1, jsonRsp.get("hitThreshold"));
+                assertEquals(4, jsonRsp.get("minFilterValueLength"));
+                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy"));
+                assertFalse(jsonRsp.get("isDefault").booleanValue());
+                assertEquals("ALL", jsonRsp.get("scope"));
+                assertFalse(jsonRsp.get("isEnabled").booleanValue());
 
                 return null;
             }
@@ -673,13 +674,13 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 // For now, we'll only perform limited testing of the response as we primarily
                 // want to know that the GET call succeeded and that it correctly identified
                 // *some* facetable properties.
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
                 
-                JSONObject data = jsonRsp.getJSONObject("data");
-                JSONArray properties = data.getJSONArray(FacetablePropertiesGet.PROPERTIES_KEY);
+                JsonNode data = jsonRsp.get("data");
+                ArrayNode properties = (ArrayNode) data.get(FacetablePropertiesGet.PROPERTIES_KEY);
                 
                 final int arbitraryLimit = 25;
-                assertTrue("Expected 'many' properties, but found 'not very many'", properties.length() > arbitraryLimit);
+                assertTrue("Expected 'many' properties, but found 'not very many'", properties.size() > arbitraryLimit);
                 
                 return null;
             }
@@ -697,30 +698,30 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 // For now, we'll only perform limited testing of the response as we primarily
                 // want to know that the GET call succeeded and that it correctly identified
                 // *some* facetable properties.
-                JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+                JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
                 
-                JSONObject data = jsonRsp.getJSONObject("data");
-                JSONArray properties = data.getJSONArray(FacetablePropertiesGet.PROPERTIES_KEY);
+                JsonNode data = jsonRsp.get("data");
+                ArrayNode properties = (ArrayNode) data.get(FacetablePropertiesGet.PROPERTIES_KEY);
                 
                 final int arbitraryLimit = 100;
-                assertTrue("Expected 'not very many' properties, but found 'many'", properties.length() < arbitraryLimit);
+                assertTrue("Expected 'not very many' properties, but found 'many'", properties.size() < arbitraryLimit);
                 
                 return null;
             }
         }, SEARCH_ADMIN_USER);
     }
     
-    private List<String> getListFromJsonArray(JSONArray facetsArray) throws JSONException
+    private List<String> getListFromJsonArray(ArrayNode facetsArray)
     {
         List<String> result = new ArrayList<>();
 
-        for (int i = 0; i < facetsArray.length(); i++)
+        for (int i = 0; i < facetsArray.size(); i++)
         {
             Object object = facetsArray.get(i);
-            if (object instanceof JSONObject)
+            if (object instanceof JsonNode)
             {
-                final JSONObject nextFacet = (JSONObject) object;
-                final String nextId = nextFacet.getString("filterID");
+                final JsonNode nextFacet = (JsonNode) object;
+                final String nextId = nextFacet.get("filterID").textValue();
                 result.add(nextId);
             }
             else

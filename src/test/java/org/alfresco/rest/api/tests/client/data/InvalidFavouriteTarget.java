@@ -25,9 +25,10 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import static org.junit.Assert.assertTrue;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
-import org.json.simple.JSONObject;
+import static org.junit.Assert.assertTrue;
 
 public class InvalidFavouriteTarget implements FavouritesTarget
 {
@@ -50,9 +51,9 @@ public class InvalidFavouriteTarget implements FavouritesTarget
 		}
 		
 		@SuppressWarnings("unchecked")
-		public JSONObject toJSON()
+		public ObjectNode toJSON()
 		{
-			JSONObject json = new JSONObject();
+            ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
 			json.put("guid", guid);
 			return json;
 		}
@@ -110,15 +111,15 @@ public class InvalidFavouriteTarget implements FavouritesTarget
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject json = new JSONObject();
+        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
 
 		if(entity instanceof JSONAble)
 		{
 			JSONAble jsonAble = (JSONAble)entity;
-			JSONObject entityJSON = jsonAble.toJSON();
-			json.put(name, entityJSON);
+            ObjectNode entityJSON = jsonAble.toJSON();
+			json.set(name, entityJSON);
 		}
 		else
 		{

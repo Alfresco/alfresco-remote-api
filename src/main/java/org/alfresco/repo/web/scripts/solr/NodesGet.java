@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.solr;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,10 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.alfresco.repo.domain.node.Node;
 import org.alfresco.repo.domain.qname.QNameDAO;
-import org.alfresco.repo.search.impl.QueryParserUtils;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.solr.NodeParameters;
 import org.alfresco.repo.solr.SOLRTrackingComponent;
@@ -43,11 +43,9 @@ import org.alfresco.repo.solr.SOLRTrackingComponent.NodeQueryCallback;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.service.cmr.repository.StoreRef;
 import org.alfresco.service.namespace.QName;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -98,76 +96,76 @@ public class NodesGet extends DeclarativeWebScript
             {
                 throw new WebScriptException("Failed to convert request to String");
             }
-            JSONObject o = new JSONObject(content.getContent());
+            JsonNode o = AlfrescoDefaultObjectMapper.getReader().readTree(content.getContent());
 
-            JSONArray aTxnIds = o.has("txnIds") ? o.getJSONArray("txnIds") : null;
-            Long fromTxnId = o.has("fromTxnId") ? o.getLong("fromTxnId") : null;
-            Long toTxnId = o.has("toTxnId") ? o.getLong("toTxnId") : null;
+            ArrayNode aTxnIds = o.has("txnIds") ? (ArrayNode) o.get("txnIds") : null;
+            Long fromTxnId = o.has("fromTxnId") ? o.get("fromTxnId").longValue() : null;
+            Long toTxnId = o.has("toTxnId") ? o.get("toTxnId").longValue() : null;
 
-            Long fromNodeId = o.has("fromNodeId") ? o.getLong("fromNodeId") : null;
-            Long toNodeId = o.has("toNodeId") ? o.getLong("toNodeId") : null;
+            Long fromNodeId = o.has("fromNodeId") ? o.get("fromNodeId").longValue() : null;
+            Long toNodeId = o.has("toNodeId") ? o.get("toNodeId").longValue() : null;
             
             Set<QName> excludeAspects = null;
             if(o.has("excludeAspects"))
             {
-                JSONArray aExcludeAspects = o.getJSONArray("excludeAspects");
-                excludeAspects = new HashSet<QName>(aExcludeAspects.length());
-                for(int i = 0; i < aExcludeAspects.length(); i++)
+                ArrayNode aExcludeAspects = (ArrayNode) o.get("excludeAspects");
+                excludeAspects = new HashSet<QName>(aExcludeAspects.size());
+                for(int i = 0; i < aExcludeAspects.size(); i++)
                 {
-                    excludeAspects.add(QName.createQName(aExcludeAspects.getString(i).trim()));
+                    excludeAspects.add(QName.createQName(aExcludeAspects.get(i).textValue().trim()));
                 }
             }
 
             Set<QName> includeAspects = null;
             if(o.has("includeAspects"))
             {
-                JSONArray aIncludeAspects = o.getJSONArray("includeAspects");
-                includeAspects = new HashSet<QName>(aIncludeAspects.length());
-                for(int i = 0; i < aIncludeAspects.length(); i++)
+                ArrayNode aIncludeAspects = (ArrayNode) o.get("includeAspects");
+                includeAspects = new HashSet<QName>(aIncludeAspects.size());
+                for(int i = 0; i < aIncludeAspects.size(); i++)
                 {
-                    includeAspects.add(QName.createQName(aIncludeAspects.getString(i).trim()));
+                    includeAspects.add(QName.createQName(aIncludeAspects.get(i).textValue().trim()));
                 }
             }
             
             Set<QName> excludeNodeTypes = null;
             if(o.has("excludeNodeTypes"))
             {
-                JSONArray aExcludeNodeTypes = o.getJSONArray("excludeNodeTypes");
-                excludeNodeTypes = new HashSet<QName>(aExcludeNodeTypes.length());
-                for(int i = 0; i < aExcludeNodeTypes.length(); i++)
+                ArrayNode aExcludeNodeTypes = (ArrayNode) o.get("excludeNodeTypes");
+                excludeNodeTypes = new HashSet<QName>(aExcludeNodeTypes.size());
+                for(int i = 0; i < aExcludeNodeTypes.size(); i++)
                 {
-                    excludeNodeTypes.add(QName.createQName(aExcludeNodeTypes.getString(i).trim()));
+                    excludeNodeTypes.add(QName.createQName(aExcludeNodeTypes.get(i).textValue().trim()));
                 }
             }
 
             Set<QName> includeNodeTypes = null;
             if(o.has("includeNodeTypes"))
             {
-                JSONArray aIncludeNodeTypes = o.getJSONArray("includeNodeTypes");
-                includeNodeTypes = new HashSet<QName>(aIncludeNodeTypes.length());
-                for(int i = 0; i < aIncludeNodeTypes.length(); i++)
+                ArrayNode aIncludeNodeTypes = (ArrayNode) o.get("includeNodeTypes");
+                includeNodeTypes = new HashSet<QName>(aIncludeNodeTypes.size());
+                for(int i = 0; i < aIncludeNodeTypes.size(); i++)
                 {
-                    includeNodeTypes.add(QName.createQName(aIncludeNodeTypes.getString(i).trim()));
+                    includeNodeTypes.add(QName.createQName(aIncludeNodeTypes.get(i).textValue().trim()));
                 }
             }
             
             // 0 or Integer.MAX_VALUE => ignore
-            int maxResults = o.has("maxResults") ? o.getInt("maxResults") : 0;
+            int maxResults = o.has("maxResults") ? o.get("maxResults").intValue() : 0;
             
-            String storeProtocol = o.has("storeProtocol") ? o.getString("storeProtocol") : null;
-            String storeIdentifier = o.has("storeIdentifier") ? o.getString("storeIdentifier") : null;
+            String storeProtocol = o.has("storeProtocol") ? o.get("storeProtocol").textValue() : null;
+            String storeIdentifier = o.has("storeIdentifier") ? o.get("storeIdentifier").textValue() : null;
             
             List<Long> txnIds = null;
             if(aTxnIds != null)
             {
-                txnIds = new ArrayList<Long>(aTxnIds.length());
-                for(int i = 0; i < aTxnIds.length(); i++)
+                txnIds = new ArrayList<Long>(aTxnIds.size());
+                for(int i = 0; i < aTxnIds.size(); i++)
                 {
-                    txnIds.add(aTxnIds.getLong(i));
+                    txnIds.add(aTxnIds.get(i).longValue());
                 }
             }
             
-            String shardProperty = o.has("shardProperty") ? o.getString("shardProperty") : null;
+            String shardProperty = o.has("shardProperty") ? o.get("shardProperty").textValue() : null;
             
             NodeParameters nodeParameters = new NodeParameters();
             nodeParameters.setTransactionIds(txnIds);
@@ -215,10 +213,6 @@ public class NodesGet extends DeclarativeWebScript
         catch(IOException e)
         {
             throw new WebScriptException("IO exception parsing request", e);
-        }
-        catch(JSONException e)
-        {
-            throw new WebScriptException("Invalid JSON", e);
         }
     }
 

@@ -25,6 +25,10 @@
  */
 package org.alfresco.rest.workflow.api.tests;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,9 +44,8 @@ import org.alfresco.rest.api.tests.client.UserDataService;
 import org.alfresco.rest.workflow.api.model.Deployment;
 import org.alfresco.rest.workflow.api.model.ProcessDefinition;
 import org.alfresco.rest.workflow.api.model.ProcessInfo;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.lang.StringUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 public class WorkflowApiClient extends PublicApiClient
 {
@@ -89,20 +92,20 @@ public class WorkflowApiClient extends PublicApiClient
     
     public class DeploymentsClient extends AbstractProxy
     {
-        public ListResponse<Deployment> getDeployments(Map<String, String> params) throws PublicApiException
+        public ListResponse<Deployment> getDeployments(Map<String, String> params) throws PublicApiException, IOException
         {
             HttpResponse response = getAll("deployments", null, null, null, params, "Failed to get deploymentsClient");
             return DeploymentParser.INSTANCE.parseList(response.getJsonResponse());
         }
         
-        public JSONObject getDeploymentsWithRawResponse(Map<String, String> params) throws PublicApiException
+        public JsonNode getDeploymentsWithRawResponse(Map<String, String> params) throws PublicApiException
         {
             HttpResponse response = getAll("deployments", null, null, null, params, "Failed to get deploymentsClient");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
 
-        public ListResponse<Deployment> getDeployments() throws PublicApiException
+        public ListResponse<Deployment> getDeployments() throws PublicApiException, IOException
         {
             return getDeployments(null);
         }
@@ -121,7 +124,7 @@ public class WorkflowApiClient extends PublicApiClient
         public Deployment findDeploymentById(String deploymentId) throws PublicApiException
         {
             HttpResponse response = getSingle("deployments", deploymentId, null, null, "Failed to get deployment");
-            JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+            JsonNode entry = response.getJsonResponse().get("entry");
             return DeploymentParser.INSTANCE.parseEntry(entry);
         }
 
@@ -133,23 +136,23 @@ public class WorkflowApiClient extends PublicApiClient
     
     public class ProcessDefinitionsClient extends AbstractProxy
     {
-        public ListResponse<ProcessDefinition> getProcessDefinitions(Map<String, String> params) throws PublicApiException
+        public ListResponse<ProcessDefinition> getProcessDefinitions(Map<String, String> params) throws PublicApiException, IOException
         {
             HttpResponse response = getAll("process-definitions", null, null, null, params, "Failed to get process definitions");
             return ProcessDefinitionParser.INSTANCE.parseList(response.getJsonResponse());
         }
         
-        public JSONObject getProcessDefinitionsWithRawResponse(Map<String, String> params) throws PublicApiException
+        public JsonNode getProcessDefinitionsWithRawResponse(Map<String, String> params) throws PublicApiException
         {
             HttpResponse response = getAll("process-definitions", null, null, null, params, "Failed to get process definitions");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
 
         public ProcessDefinition findProcessDefinitionById(String processDefinitionId) throws PublicApiException
         {
             HttpResponse response = getSingle("process-definitions", processDefinitionId, null, null, "Failed to get process definition");
-            JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+            JsonNode entry = response.getJsonResponse().get("entry");
             return ProcessDefinitionParser.INSTANCE.parseEntry(entry);
         }
 
@@ -158,54 +161,54 @@ public class WorkflowApiClient extends PublicApiClient
             return getSingle("process-definitions", processDefinitionId, "image", null, "Failed to get process definition");
         }
 
-        public JSONObject findStartFormModel(String processDefinitionId) throws PublicApiException
+        public JsonNode findStartFormModel(String processDefinitionId) throws PublicApiException
         {
             HttpResponse response = getAll("process-definitions", processDefinitionId, "start-form-model", null, null,
                     "Failed to get the start form model of the process definition");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
     }
 
     public class ProcessesClient extends AbstractProxy
     {
-        public ProcessInfo createProcess(String body) throws PublicApiException
+        public ProcessInfo createProcess(String body) throws PublicApiException, IOException
         {
             HttpResponse response = create("processes", null, null, null, body, "Failed to start new process instance");
-            return ProcessesParser.INSTANCE.parseEntry((JSONObject) response.getJsonResponse().get("entry"));
+            return ProcessesParser.INSTANCE.parseEntry(response.getJsonResponse().get("entry"));
         }
 
-        public ListResponse<ProcessInfo> getProcesses(Map<String, String> params) throws PublicApiException
+        public ListResponse<ProcessInfo> getProcesses(Map<String, String> params) throws PublicApiException, IOException
         {
             HttpResponse response = getAll("processes", null, null, null, params, "Failed to get process instances");
             return ProcessesParser.INSTANCE.parseList(response.getJsonResponse());
         }
         
-        public JSONObject getProcessesJSON(Map<String, String> params) throws PublicApiException
+        public JsonNode getProcessesJSON(Map<String, String> params) throws PublicApiException
         {
             HttpResponse response = getAll("processes", null, null, null, params, "Failed to get process instances");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
 
-        public ProcessInfo findProcessById(String processInstanceId) throws PublicApiException
+        public ProcessInfo findProcessById(String processInstanceId) throws PublicApiException, IOException
         {
             HttpResponse response = getSingle("processes", processInstanceId, null, null, "Failed to find process instance by id");
-            JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+            JsonNode entry = response.getJsonResponse().get("entry");
             return ProcessesParser.INSTANCE.parseEntry(entry);
         }
         
-        public JSONObject getTasks(String processInstanceId, Map<String, String> params) throws PublicApiException
+        public JsonNode getTasks(String processInstanceId, Map<String, String> params) throws PublicApiException
         {
             HttpResponse response = getAll("processes", processInstanceId, "tasks", null, params, "Failed to get task instances of processInstanceId " + processInstanceId);
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
         
-        public JSONObject getActivities(String processInstanceId, Map<String, String> params) throws PublicApiException
+        public JsonNode getActivities(String processInstanceId, Map<String, String> params) throws PublicApiException
         {
             HttpResponse response = getAll("processes", processInstanceId, "activities", null, params, "Failed to get activity instances of processInstanceId " + processInstanceId);
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
         
@@ -215,31 +218,33 @@ public class WorkflowApiClient extends PublicApiClient
             return response;
         }
         
-        public JSONObject findProcessItems(String processInstanceId) throws PublicApiException
+        public JsonNode findProcessItems(String processInstanceId) throws PublicApiException
         {
             HttpResponse response = getAll("processes", processInstanceId, "items", null, null,
                     "Failed to get the items of the process instance");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
         
-        public JSONObject getProcessvariables(String processInstanceId) throws PublicApiException
+        public JsonNode getProcessvariables(String processInstanceId) throws PublicApiException
         {
             HttpResponse response = getAll("processes", processInstanceId, "variables", null, null,
                     "Failed to get the variables of the process instance");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
         
-        public JSONObject createVariables(String processId, JSONArray variables) throws PublicApiException
+        public JsonNode createVariables(String processId, ArrayNode variables) throws PublicApiException, JsonProcessingException
         {
-            HttpResponse response = create("processes", processId, "variables", null, variables.toJSONString(), "Failed to create variables");
+            HttpResponse response = create("processes", processId, "variables",
+                    null, AlfrescoDefaultObjectMapper.writeValueAsString(variables), "Failed to create variables");
             return response.getJsonResponse();
         }
         
-        public JSONObject updateVariable(String processId, String variableName, JSONObject variable) throws PublicApiException
+        public JsonNode updateVariable(String processId, String variableName, JsonNode variable) throws PublicApiException, JsonProcessingException
         {
-            HttpResponse response = update("processes", processId, "variables", variableName, variable.toJSONString(), "Failed to update variable");
+            HttpResponse response = update("processes", processId, "variables",
+                    variableName, AlfrescoDefaultObjectMapper.writeValueAsString(variable), "Failed to update variable");
             return response.getJsonResponse();
         }
         
@@ -258,11 +263,11 @@ public class WorkflowApiClient extends PublicApiClient
             remove("processes", processId, "items", itemId, "Failed to delete item");
         }
         
-        public JSONObject findProcessItem(String processInstanceId, String itemId) throws PublicApiException
+        public JsonNode findProcessItem(String processInstanceId, String itemId) throws PublicApiException
         {
             HttpResponse response = getAll("processes", processInstanceId, "items", itemId, null,
                     "Failed to get the item of the process instance");
-            JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+            JsonNode entry = response.getJsonResponse().get("entry");
             return entry;
         }
 
@@ -274,58 +279,61 @@ public class WorkflowApiClient extends PublicApiClient
     
     public class TasksClient extends AbstractProxy
     {
-        public JSONObject findTaskById(String taskId) throws PublicApiException
+        public JsonNode findTaskById(String taskId) throws PublicApiException
         {
             HttpResponse response = getSingle("tasks", taskId, null, null, "Failed to get task");
-            JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+            JsonNode entry = response.getJsonResponse().get("entry");
             return entry;
         }
         
-        public JSONObject updateTask(String taskId, JSONObject task, List<String> selectedFields) throws PublicApiException
+        public JsonNode updateTask(String taskId, JsonNode task, List<String> selectedFields) throws PublicApiException, JsonProcessingException
         {
             String selectedFieldsValue = StringUtils.join(selectedFields, ",");
             Map<String, String> params = new HashMap<String, String>();
             params.put("select", selectedFieldsValue);
             
-            HttpResponse response = update("tasks", taskId, null, null, task.toJSONString(), params, "Failed to update task", 200);
+            HttpResponse response = update("tasks", taskId, null, null,
+                    AlfrescoDefaultObjectMapper.writeValueAsString(task), params, "Failed to update task", 200);
             
-            JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+            JsonNode entry = response.getJsonResponse().get("entry");
             return entry;
         }
         
-        public JSONObject findTasks(Map<String, String> params) throws PublicApiException
+        public JsonNode findTasks(Map<String, String> params) throws PublicApiException
         {
             HttpResponse response = getAll("tasks", null, null, null, params, "Failed to get all tasks");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
         
-        public JSONObject findTaskCandidates(String taskId) throws PublicApiException
+        public JsonNode findTaskCandidates(String taskId) throws PublicApiException
         {
             HttpResponse response = getAll("tasks", taskId, "candidates", null, null, "Failed to get task candidates");
             return response.getJsonResponse();
         }
         
-        public JSONObject findTaskVariables(String taskId, Map<String, String> params) throws PublicApiException
+        public JsonNode findTaskVariables(String taskId, Map<String, String> params) throws PublicApiException
         {
             HttpResponse response = getAll("tasks", taskId, "variables", null, params, "Failed to get task variables");
             return response.getJsonResponse();
         }
         
-        public JSONObject findTaskVariables(String taskId) throws PublicApiException
+        public JsonNode findTaskVariables(String taskId) throws PublicApiException
         {
             return findTaskVariables(taskId, null);
         }
         
-        public JSONObject createTaskVariables(String taskId, JSONArray variables) throws PublicApiException
+        public JsonNode createTaskVariables(String taskId, ArrayNode variables) throws PublicApiException, JsonProcessingException
         {
-            HttpResponse response = create("tasks", taskId, "variables", null, variables.toJSONString(), "Failed to create task variables");
+            HttpResponse response = create("tasks", taskId, "variables", null,
+                    AlfrescoDefaultObjectMapper.writeValueAsString(variables), "Failed to create task variables");
             return response.getJsonResponse();
         }
         
-        public JSONObject updateTaskVariable(String taskId, String variableName, JSONObject variable) throws PublicApiException
+        public JsonNode updateTaskVariable(String taskId, String variableName, JsonNode variable) throws PublicApiException, JsonProcessingException
         {
-            HttpResponse response = update("tasks", taskId, "variables", variableName, variable.toJSONString(), "Failed to update task variable");
+            HttpResponse response = update("tasks", taskId, "variables", variableName,
+                    AlfrescoDefaultObjectMapper.writeValueAsString(variable), "Failed to update task variable");
             return response.getJsonResponse();
         }
         
@@ -334,25 +342,25 @@ public class WorkflowApiClient extends PublicApiClient
             remove("tasks", taskId, "variables", variableName, "Failed to delete task variable");
         }
 
-        public JSONObject findTaskFormModel(String taskId) throws PublicApiException
+        public JsonNode findTaskFormModel(String taskId) throws PublicApiException
         {
             HttpResponse response = getAll("tasks", taskId, "task-form-model", null, null, "Failed to get task form model");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
         
-        public JSONObject findTaskItems(String taskId) throws PublicApiException
+        public JsonNode findTaskItems(String taskId) throws PublicApiException
         {
             HttpResponse response = getAll("tasks", taskId, "items", null, null,
                     "Failed to get the items of the task");
-            JSONObject list = (JSONObject) response.getJsonResponse().get("list");
+            JsonNode list = response.getJsonResponse().get("list");
             return list;
         }
         
-        public JSONObject addTaskItem(String taskId, String body) throws PublicApiException
+        public JsonNode addTaskItem(String taskId, String body) throws PublicApiException
         {
             HttpResponse response = create("tasks", taskId, "items", null, body, "Failed to add item");
-            JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+            JsonNode entry = response.getJsonResponse().get("entry");
             return entry;
         }
         
@@ -361,17 +369,17 @@ public class WorkflowApiClient extends PublicApiClient
             remove("tasks", taskId, "items", itemId, "Failed to delete item");
         }
         
-        public JSONObject findTaskItem(String taskId, String itemId) throws PublicApiException
+        public JsonNode findTaskItem(String taskId, String itemId) throws PublicApiException
         {
             HttpResponse response = getAll("tasks", taskId, "items", itemId, null,
                     "Failed to get the item of the task");
-            JSONObject entry = (JSONObject) response.getJsonResponse().get("entry");
+            JsonNode entry = response.getJsonResponse().get("entry");
             return entry;
         }
     }
     
-    public static Date parseDate(JSONObject entry, String fieldName) {
-        String dateText = (String) entry.get(fieldName);
+    public static Date parseDate(JsonNode entry, String fieldName) {
+        String dateText = entry.get(fieldName).textValue();
         if (dateText!=null) {
           try
           {

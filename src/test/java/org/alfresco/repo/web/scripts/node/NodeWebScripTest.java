@@ -25,6 +25,10 @@
  */
 package org.alfresco.repo.web.scripts.node;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,11 +58,9 @@ import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Request;
@@ -224,17 +226,16 @@ public class NodeWebScripTest extends BaseWebScriptTest
         }
     }
     
-    private JSONObject asJSON(Response response) throws Exception
+    private ObjectNode asJSON(Response response) throws IOException
     {
         String json = response.getContentAsString();
-        JSONParser p = new JSONParser();
-        Object o = p.parse(json);
+        JsonNode o = AlfrescoDefaultObjectMapper.getReader().readTree(json);
         
-        if (o instanceof JSONObject)
+        if (o instanceof ObjectNode)
         {
-            return (JSONObject)o; 
+            return (ObjectNode) o; 
         }
-        throw new IllegalArgumentException("Expected JSONObject, got " + o + " from " + json);
+        throw new IllegalArgumentException("Expected JsonNode, got " + o + " from " + json);
     }
     
     
@@ -253,15 +254,15 @@ public class NodeWebScripTest extends BaseWebScriptTest
         String testNodeName = "aNEWfolder";
         String testNodeTitle = "aTITLEforAfolder";
         String testNodeDescription = "DESCRIPTIONofAfolder";
-        JSONObject jsonReq = null;
-        JSONObject json = null;
+        ObjectNode jsonReq = null;
+        JsonNode json = null;
         NodeRef folder = null;
         
         
         // By NodeID
         Request req = new Request("POST", "/api/node/folder/"+testFolder.getStoreRef().getProtocol()+"/"+
                                    testFolder.getStoreRef().getIdentifier()+"/"+testFolder.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put("name", testNodeName);
         req.setBody(jsonReq.toString().getBytes());
         req.setType(MimetypeMap.MIMETYPE_JSON);
@@ -269,7 +270,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         json = asJSON( sendRequest(req, Status.STATUS_OK) );
         assertNotNull(json.get("nodeRef"));
 
-        folder = new NodeRef((String)json.get("nodeRef"));
+        folder = new NodeRef(json.get("nodeRef").textValue());
         assertEquals(true, nodeService.exists(folder));
         assertEquals(testNodeName, nodeService.getProperty(folder, ContentModel.PROP_NAME));
         assertEquals(testNodeName, nodeService.getProperty(folder, ContentModel.PROP_TITLE));
@@ -283,7 +284,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         
         // In a Site Container
         req = new Request("POST", "/api/site/folder/"+TEST_SITE_NAME+"/"+SiteService.DOCUMENT_LIBRARY);
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put("name", testNodeName);
         jsonReq.put("description", testNodeDescription);
         req.setBody(jsonReq.toString().getBytes());
@@ -291,7 +292,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         json = asJSON( sendRequest(req, Status.STATUS_OK) );
         assertNotNull(json.get("nodeRef"));
 
-        folder = new NodeRef((String)json.get("nodeRef"));
+        folder = new NodeRef(json.get("nodeRef").textValue());
         assertEquals(true, nodeService.exists(folder));
         assertEquals(testNodeName, nodeService.getProperty(folder, ContentModel.PROP_NAME));
         assertEquals(testNodeName, nodeService.getProperty(folder, ContentModel.PROP_TITLE));
@@ -305,7 +306,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         
         // A Child of a Site Container
         req = new Request("POST", "/api/site/folder/"+TEST_SITE_NAME+"/"+SiteService.DOCUMENT_LIBRARY+"/"+testFolderName);
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put("name", testNodeName);
         jsonReq.put("title", testNodeTitle);
         jsonReq.put("description", testNodeDescription);
@@ -314,7 +315,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         json = asJSON( sendRequest(req, Status.STATUS_OK) );
         assertNotNull(json.get("nodeRef"));
 
-        folder = new NodeRef((String)json.get("nodeRef"));
+        folder = new NodeRef(json.get("nodeRef").textValue());
         assertEquals(true, nodeService.exists(folder));
         assertEquals(testNodeName, nodeService.getProperty(folder, ContentModel.PROP_NAME));
         assertEquals(testNodeTitle, nodeService.getProperty(folder, ContentModel.PROP_TITLE));
@@ -330,7 +331,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         
         // explicit cm:folder
         req = new Request("POST", "/api/site/folder/"+TEST_SITE_NAME+"/"+SiteService.DOCUMENT_LIBRARY+"/"+testFolderName);
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put("name", testNodeName);
         jsonReq.put("type", "cm:folder");
         req.setBody(jsonReq.toString().getBytes());
@@ -338,7 +339,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         json = asJSON( sendRequest(req, Status.STATUS_OK) );
         assertNotNull(json.get("nodeRef"));
 
-        folder = new NodeRef((String)json.get("nodeRef"));
+        folder = new NodeRef(json.get("nodeRef").textValue());
         assertEquals(true, nodeService.exists(folder));
         assertEquals(testNodeName, nodeService.getProperty(folder, ContentModel.PROP_NAME));
         assertEquals(ContentModel.TYPE_FOLDER, nodeService.getType(folder));
@@ -348,7 +349,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         
         // cm:systemfolder extends from cm:folder
         req = new Request("POST", "/api/site/folder/"+TEST_SITE_NAME+"/"+SiteService.DOCUMENT_LIBRARY+"/"+testFolderName);
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put("name", testNodeName);
         jsonReq.put("type", "cm:systemfolder");
         req.setBody(jsonReq.toString().getBytes());
@@ -356,7 +357,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         json = asJSON( sendRequest(req, Status.STATUS_OK) );
         assertNotNull(json.get("nodeRef"));
 
-        folder = new NodeRef((String)json.get("nodeRef"));
+        folder = new NodeRef(json.get("nodeRef").textValue());
         assertEquals(true, nodeService.exists(folder));
         assertEquals(testNodeName, nodeService.getProperty(folder, ContentModel.PROP_NAME));
         assertEquals(ContentModel.TYPE_SYSTEM_FOLDER, nodeService.getType(folder));
@@ -366,7 +367,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         
         // cm:content isn't allowed
         req = new Request("POST", "/api/site/folder/"+TEST_SITE_NAME+"/"+SiteService.DOCUMENT_LIBRARY+"/"+testFolderName);
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put("name", testNodeName);
         jsonReq.put("type", "cm:content");
         req.setBody(jsonReq.toString().getBytes());
@@ -378,7 +379,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         AuthenticationUtil.setFullyAuthenticatedUser(USER_ONE);
         req = new Request("POST", "/api/node/folder/"+testFolder.getStoreRef().getProtocol()+"/"+
                                   testFolder.getStoreRef().getIdentifier()+"/"+testFolder.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put("name", testNodeName);
         req.setBody(jsonReq.toString().getBytes());
         req.setType(MimetypeMap.MIMETYPE_JSON);
@@ -386,7 +387,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         json = asJSON( sendRequest(req, Status.STATUS_OK) );
         assertNotNull(json.get("nodeRef"));
 
-        folder = new NodeRef((String)json.get("nodeRef"));
+        folder = new NodeRef(json.get("nodeRef").textValue());
         assertEquals(true, nodeService.exists(folder));
         nodeService.deleteNode(folder);
 
@@ -407,11 +408,11 @@ public class NodeWebScripTest extends BaseWebScriptTest
         NodeRef testFolder1 = nodeService.createNode(siteDocLib, ContentModel.ASSOC_CONTAINS,
                 QName.createQName("testingLinkCreationFolder1"), ContentModel.TYPE_FOLDER, testFolderProps).getChildRef();
 
-        JSONObject jsonReq = null;
-        JSONObject json = null;
-        JSONArray jsonArray = new JSONArray();
-        JSONArray jsonLinkNodes = null;
-        JSONObject jsonLinkNode = null;
+        ObjectNode jsonReq = null;
+        JsonNode json = null;
+        ArrayNode jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
+        ArrayNode jsonLinkNodes = null;
+        JsonNode jsonLinkNode = null;
 
         // Create files in the testFolder1
         NodeRef testFile1 = createNode(testFolder1, "testingLinkCreationFile1", ContentModel.TYPE_CONTENT,
@@ -431,7 +432,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         // Create link to file1 in same folder - testFolder1
         Request req = new Request("POST", CREATE_LINK_API + testFile1.getStoreRef().getProtocol() + "/"
                 + testFile1.getStoreRef().getIdentifier() + "/" + testFile1.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, testFolder1.toString());
 
         jsonArray.add(testFile1.toString());
@@ -440,15 +441,15 @@ public class NodeWebScripTest extends BaseWebScriptTest
         req.setType(MimetypeMap.MIMETYPE_JSON);
 
         json = asJSON(sendRequest(req, Status.STATUS_OK));
-        jsonLinkNodes = (JSONArray) json.get("linkNodes");
+        jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
         assertEquals("true", json.get("overallSuccess"));
         assertEquals("1", json.get("successCount"));
         assertEquals("0", json.get("failureCount"));
 
-        jsonLinkNode = (JSONObject) jsonLinkNodes.get(0);
-        String nodeRef = (String) jsonLinkNode.get("nodeRef");
+        jsonLinkNode = jsonLinkNodes.get(0);
+        String nodeRef =  jsonLinkNode.get("nodeRef").textValue();
         NodeRef file1Link = new NodeRef(nodeRef);
 
         // Check that app:linked aspect is added on sourceNode
@@ -460,24 +461,24 @@ public class NodeWebScripTest extends BaseWebScriptTest
         // Create link to testFolder2 in same folder (testFolder1)
         req = new Request("POST", CREATE_LINK_API + testFolder2.getStoreRef().getProtocol() + "/"
                 + testFolder2.getStoreRef().getIdentifier() + "/" + testFolder2.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, testFolder1.toString());
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFolder2.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
         req.setType(MimetypeMap.MIMETYPE_JSON);
 
         json = asJSON(sendRequest(req, Status.STATUS_OK));
-        jsonLinkNodes = (JSONArray) json.get("linkNodes");
+        jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
         assertEquals("true", json.get("overallSuccess"));
         assertEquals("1", json.get("successCount"));
         assertEquals("0", json.get("failureCount"));
 
-        jsonLinkNode = (JSONObject) jsonLinkNodes.get(0);
-        nodeRef = (String) jsonLinkNode.get("nodeRef");
+        jsonLinkNode = jsonLinkNodes.get(0);
+        nodeRef =  jsonLinkNode.get("nodeRef").textValue();
         NodeRef folder2Link = new NodeRef(nodeRef);
         assertEquals(true, nodeService.hasAspect(testFolder2, ApplicationModel.ASPECT_LINKED));
         assertEquals(true, nodeService.exists(folder2Link));
@@ -485,24 +486,24 @@ public class NodeWebScripTest extends BaseWebScriptTest
         // create another link of testFolder2 in siteDocLib
         req = new Request("POST", CREATE_LINK_API + testFolder2.getStoreRef().getProtocol() + "/"
                 + testFolder2.getStoreRef().getIdentifier() + "/" + testFolder2.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, siteDocLib.toString());
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFolder2.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
         req.setType(MimetypeMap.MIMETYPE_JSON);
 
         json = asJSON(sendRequest(req, Status.STATUS_OK));
-        jsonLinkNodes = (JSONArray) json.get("linkNodes");
+        jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
         assertEquals("true", json.get("overallSuccess"));
         assertEquals("1", json.get("successCount"));
         assertEquals("0", json.get("failureCount"));
 
-        jsonLinkNode = (JSONObject) jsonLinkNodes.get(0);
-        nodeRef = (String) jsonLinkNode.get("nodeRef");
+        jsonLinkNode = jsonLinkNodes.get(0);
+        nodeRef =  jsonLinkNode.get("nodeRef").textValue();
         NodeRef folder2Link2 = new NodeRef(nodeRef);
 
         // delete folder2Link and check that aspect exists since we have another
@@ -515,9 +516,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
         // Create link to testFile1, testFile2 and testFile3 in same testFolder1
         req = new Request("POST", CREATE_LINK_API + testFolder1.getStoreRef().getProtocol() + "/"
                 + testFolder1.getStoreRef().getIdentifier() + "/" + testFolder1.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, testFolder1.toString());
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFile1.toString());
         jsonArray.add(testFile2.toString());
         jsonArray.add(testFile3.toString());
@@ -526,7 +527,7 @@ public class NodeWebScripTest extends BaseWebScriptTest
         req.setType(MimetypeMap.MIMETYPE_JSON);
 
         json = asJSON(sendRequest(req, Status.STATUS_OK));
-        jsonLinkNodes = (JSONArray) json.get("linkNodes");
+        jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(3, jsonLinkNodes.size());
         assertEquals("true", json.get("overallSuccess"));
@@ -537,8 +538,8 @@ public class NodeWebScripTest extends BaseWebScriptTest
         List<NodeRef> fileLinks = new ArrayList<NodeRef>();
         for (int i = 0; i < jsonLinkNodes.size(); i++)
         {
-            jsonLinkNode = (JSONObject) jsonLinkNodes.get(i);
-            nodeRef = (String) jsonLinkNode.get("nodeRef");
+            jsonLinkNode = jsonLinkNodes.get(i);
+            nodeRef =  jsonLinkNode.get("nodeRef").textValue();
             fileLink = new NodeRef(nodeRef);
             fileLinks.add(fileLink);
             assertEquals(true, nodeService.exists(fileLink));
@@ -547,9 +548,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
         //try to create another link in the same location - an exception should be thrown
         req = new Request("POST", CREATE_LINK_API + testFolder1.getStoreRef().getProtocol() + "/"
                 + testFolder1.getStoreRef().getIdentifier() + "/" + testFolder1.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, testFolder1.toString());
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFile1.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
@@ -572,9 +573,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
 
         req = new Request("POST", CREATE_LINK_API + testFolder1.getStoreRef().getProtocol() + "/"
                 + testFolder1.getStoreRef().getIdentifier() + "/" + testFolder1.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, testFolder1.toString());
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(siteNodeRef.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
@@ -588,9 +589,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
                 AuthenticationUtil.getAdminUserName());
         req = new Request("POST", CREATE_LINK_API + testFolder1.getStoreRef().getProtocol() + "/"
                 + testFolder1.getStoreRef().getIdentifier() + "/" + testFolder1.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, site2DocLib.toString());
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFileSite2.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
@@ -607,10 +608,10 @@ public class NodeWebScripTest extends BaseWebScriptTest
                 AuthenticationUtil.getAdminUserName());
         req = new Request("POST", CREATE_LINK_API + testFile4.getStoreRef().getProtocol() + "/" + testFile4.getStoreRef().getIdentifier()
                 + "/" + testFile4.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, "alfresco://company/shared");
 
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFile4.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
@@ -620,10 +621,10 @@ public class NodeWebScripTest extends BaseWebScriptTest
 
         req = new Request("POST", CREATE_LINK_API + testFile4.getStoreRef().getProtocol() + "/" + testFile4.getStoreRef().getIdentifier()
                 + "/" + testFile4.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, "alfresco://user/home");
 
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFile4.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
@@ -635,10 +636,10 @@ public class NodeWebScripTest extends BaseWebScriptTest
         AuthenticationUtil.setAdminUserAsFullyAuthenticatedUser();
         req = new Request("POST", CREATE_LINK_API + testFile4.getStoreRef().getProtocol() + "/" + testFile4.getStoreRef().getIdentifier()
                 + "/" + testFile4.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, "alfresco://company/home");
 
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFile4.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
@@ -663,25 +664,25 @@ public class NodeWebScripTest extends BaseWebScriptTest
 
         req = new Request("POST", CREATE_LINK_API + testFile5.getStoreRef().getProtocol() + "/" + testFile5.getStoreRef().getIdentifier()
                 + "/" + testFile5.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, testFolder1.toString());
 
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFile5.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
         req.setType(MimetypeMap.MIMETYPE_JSON);
 
         json = asJSON(sendRequest(req, Status.STATUS_OK));
-        jsonLinkNodes = (JSONArray) json.get("linkNodes");
+        jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
         assertEquals("true", json.get("overallSuccess"));
         assertEquals("1", json.get("successCount"));
         assertEquals("0", json.get("failureCount"));
 
-        jsonLinkNode = (JSONObject) jsonLinkNodes.get(0);
-        nodeRef = (String) jsonLinkNode.get("nodeRef");
+        jsonLinkNode = jsonLinkNodes.get(0);
+        nodeRef =  jsonLinkNode.get("nodeRef").textValue();
         NodeRef file5Link = new NodeRef(nodeRef);
 
         assertEquals(true, nodeService.hasAspect(testFile5, ApplicationModel.ASPECT_LINKED));
@@ -700,10 +701,10 @@ public class NodeWebScripTest extends BaseWebScriptTest
         // try to create link for working copy
         req = new Request("POST", CREATE_LINK_API + workingCopy.getStoreRef().getProtocol() + "/"
                 + workingCopy.getStoreRef().getIdentifier() + "/" + workingCopy.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, testFolder1.toString());
 
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(workingCopy.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
@@ -739,24 +740,24 @@ public class NodeWebScripTest extends BaseWebScriptTest
         // create another link of testFile1 in MyFiles
         req = new Request("POST", CREATE_LINK_API + testFile6.getStoreRef().getProtocol() + "/"
                 + testFile6.getStoreRef().getIdentifier() + "/" + testFile6.getId());
-        jsonReq = new JSONObject();
+        jsonReq = AlfrescoDefaultObjectMapper.createObjectNode();
         jsonReq.put(DESTINATION_NODE_REF_PARAM, "alfresco://user/home");
-        jsonArray = new JSONArray();
+        jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
         jsonArray.add(testFile6.toString());
         jsonReq.put(MULTIPLE_FILES_PARAM, jsonArray);
         req.setBody(jsonReq.toString().getBytes());
         req.setType(MimetypeMap.MIMETYPE_JSON);
 
         json = asJSON(sendRequest(req, Status.STATUS_OK));
-        jsonLinkNodes = (JSONArray) json.get("linkNodes");
+        jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
         assertEquals("true", json.get("overallSuccess"));
         assertEquals("1", json.get("successCount"));
         assertEquals("0", json.get("failureCount"));
 
-        jsonLinkNode = (JSONObject) jsonLinkNodes.get(0);
-        nodeRef = (String) jsonLinkNode.get("nodeRef");
+        jsonLinkNode = jsonLinkNodes.get(0);
+        nodeRef =  jsonLinkNode.get("nodeRef").textValue();
         NodeRef testFileSite3Link = new NodeRef(nodeRef);
         nodeService.exists(testFileSite3Link);
         assertEquals(true, nodeService.hasAspect(testFile6, ApplicationModel.ASPECT_LINKED));

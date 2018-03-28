@@ -25,20 +25,18 @@
  */
 package org.alfresco.repo.web.scripts.subscriptions;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 import org.springframework.extensions.webscripts.WebScriptResponse;
 
 public class SubscriptionServicePrivateListPut extends SubscriptionServicePrivateListGet
 {
-    public JSONObject executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException,
-            ParseException
+    public JsonNode executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException
     {
-        JSONObject obj = (JSONObject) JSONValue.parseWithException(req.getContent().getContent());
+        JsonNode obj = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
 
         Object setPrivate = obj.get("private");
 

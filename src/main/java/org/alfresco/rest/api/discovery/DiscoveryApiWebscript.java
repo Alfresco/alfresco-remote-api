@@ -25,6 +25,8 @@
  */
 package org.alfresco.rest.api.discovery;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.alfresco.rest.api.model.DiscoveryDetails;
 import org.alfresco.rest.api.model.ModulePackage;
 import org.alfresco.rest.api.model.RepositoryInfo;
@@ -45,7 +47,6 @@ import org.alfresco.service.cmr.thumbnail.ThumbnailService;
 import org.alfresco.service.descriptor.Descriptor;
 import org.alfresco.service.descriptor.DescriptorService;
 import org.alfresco.util.PropertyCheck;
-import org.json.simple.JSONObject;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.extensions.webscripts.AbstractWebScript;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -176,7 +177,7 @@ public class DiscoveryApiWebscript extends AbstractWebScript implements Recogniz
     public void renderJsonResponse(final WebScriptResponse res, final Object toSerialize, final JacksonHelper jsonHelper) throws IOException
     {
         jsonHelper.withWriter(res.getOutputStream(), (generator, objectMapper) -> {
-            JSONObject obj = new JSONObject();
+            Map<String, Object> obj = new HashMap<>(1);
             obj.put("entry", toSerialize);
             objectMapper.writeValue(generator, obj);
         });

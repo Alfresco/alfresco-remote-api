@@ -25,9 +25,9 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import org.json.simple.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public interface JSONAble
 {
-	JSONObject toJSON();
+	ObjectNode toJSON();
 }

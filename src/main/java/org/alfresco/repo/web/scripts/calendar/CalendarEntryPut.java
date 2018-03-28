@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.calendar;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +35,6 @@ import java.util.StringTokenizer;
 import org.alfresco.service.cmr.calendar.CalendarEntry;
 import org.alfresco.service.cmr.calendar.CalendarEntryDTO;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.JSONException;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -49,8 +48,12 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 public class CalendarEntryPut extends AbstractCalendarWebScript
 {
    @Override
-   protected Map<String, Object> executeImpl(SiteInfo site, String eventName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+   protected Map<String, Object> executeImpl(SiteInfo site,
+                                             String eventName,
+                                             WebScriptRequest req,
+                                             JsonNode json,
+                                             Status status,
+                                             Cache cache)
    {
       final ResourceBundle rb = getResources();
        
@@ -69,10 +72,10 @@ public class CalendarEntryPut extends AbstractCalendarWebScript
       try
       {
          // Doc folder is a bit special
-         String docFolder = (String)json.get("docfolder");
+         String docFolder = json.get("docfolder").textValue();
          
          // Editing recurring events is special and a little bit odd...
-         if (entry.getRecurrenceRule() != null && !json.containsKey("recurrenceRule"))
+         if (entry.getRecurrenceRule() != null && !json.has("recurrenceRule"))
          {
             // Have an ignored event generated
             // Will allow us to override this one instance
@@ -111,7 +114,7 @@ public class CalendarEntryPut extends AbstractCalendarWebScript
          isAllDay = extractDates(entry, json);
          
          // Recurring properties, only changed if keys present
-         if (json.containsKey("recurrenceRule"))
+         if (json.has("recurrenceRule"))
          {
             if (json.get("recurrenceRule") == null)
             {
@@ -119,10 +122,10 @@ public class CalendarEntryPut extends AbstractCalendarWebScript
             }
             else
             {
-               entry.setRecurrenceRule((String)json.get("recurrenceRule"));
+               entry.setRecurrenceRule(json.get("recurrenceRule").textValue());
             }
          }
-         if (json.containsKey("recurrenceLastMeeting"))
+         if (json.has("recurrenceLastMeeting"))
          {
             if (json.get("recurrenceLastMeeting") == null)
             {
@@ -131,23 +134,23 @@ public class CalendarEntryPut extends AbstractCalendarWebScript
             else
             {
                entry.setLastRecurrence(
-                     parseDate((String)json.get("recurrenceLastMeeting")));
+                     parseDate(json.get("recurrenceLastMeeting").textValue()));
             }
          }
          
          // Handle tags
-         if (json.containsKey("tags"))
+         if (json.has("tags"))
          {
             entry.getTags().clear();
             
-            StringTokenizer st = new StringTokenizer((String)json.get("tags"), ",");
+            StringTokenizer st = new StringTokenizer(json.get("tags").textValue(), ",");
             while (st.hasMoreTokens())
             {
                entry.getTags().add(st.nextToken());
             }
          }
       }
-      catch (JSONException je)
+      catch (Exception je)
       {
          String message = rb.getString(MSG_INVALID_JSON);
          return buildError(MessageFormat.format(message, je.getMessage()));

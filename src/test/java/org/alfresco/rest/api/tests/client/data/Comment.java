@@ -28,6 +28,10 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -38,8 +42,7 @@ import java.util.List;
 import org.alfresco.rest.api.tests.PublicApiDateFormat;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class Comment implements Serializable, ExpectedComparison, Comparable<Comment>
 {
@@ -195,9 +198,9 @@ public class Comment implements Serializable, ExpectedComparison, Comparable<Com
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON(boolean createdByVisibility)
+	public ObjectNode toJSON(boolean createdByVisibility)
 	{
-		JSONObject commentJson = new JSONObject();
+		ObjectNode commentJson = AlfrescoDefaultObjectMapper.createObjectNode();
 //		commentJson.put("id", getId());
 		commentJson.put("title", getTitle());
 		commentJson.put("content", getContent());
@@ -224,45 +227,45 @@ public class Comment implements Serializable, ExpectedComparison, Comparable<Com
 				+ ", modifiedBy=" + modifiedBy + ", updated=" + updated + "]";
 	}
 
-	public static Comment parseComment(String nodeId, JSONObject jsonObject)
+	public static Comment parseComment(String nodeId, JsonNode jsonObject) throws IOException
 	{
-		String id = (String)jsonObject.get("id");
-		String title = (String)jsonObject.get("title");
-		String content = (String)jsonObject.get("content");
-		JSONObject createdByJson = (JSONObject)jsonObject.get("createdBy");
+		String id = jsonObject.get("id").textValue();
+		String title = jsonObject.get("title").textValue();
+		String content = jsonObject.get("content").textValue();
+		JsonNode createdByJson = jsonObject.get("createdBy");
 		Person createdBy = null;
 		if(createdByJson != null)
 		{
 			createdBy = Person.parsePerson(createdByJson);
 		}
-		String createdAt = (String)jsonObject.get("createdAt");
-		JSONObject modifiedByJson = (JSONObject)jsonObject.get("modifiedBy");
+		String createdAt = jsonObject.get("createdAt").textValue();
+		JsonNode modifiedByJson = jsonObject.get("modifiedBy");
 		Person modifiedBy = null;
 		if(modifiedByJson != null)
 		{
 			modifiedBy = Person.parsePerson(modifiedByJson);
 		}
-		String modifiedAt = (String)jsonObject.get("modifiedAt");
-		Boolean edited = (Boolean)jsonObject.get("edited");
-		Boolean updated = (Boolean)jsonObject.get("updated");
+		String modifiedAt = jsonObject.get("modifiedAt").textValue();
+		Boolean edited = jsonObject.get("edited").booleanValue();
+		Boolean updated = jsonObject.get("updated").booleanValue();
 		Comment comment = new Comment(nodeId, id, title, content, createdBy, createdAt, modifiedBy, modifiedAt, updated, edited);
 		return comment;
 	}
 
-	public static ListResponse<Comment> parseComments(String nodeId, JSONObject jsonObject)
+	public static ListResponse<Comment> parseComments(String nodeId, JsonNode jsonObject) throws IOException
 	{
 		List<Comment> comments = new ArrayList<Comment>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode)jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+			JsonNode jsonEntry = jsonEntries.get(i);
+			JsonNode entry = jsonEntry.get("entry");
 			comments.add(Comment.parseComment(nodeId, entry));
 		}
 

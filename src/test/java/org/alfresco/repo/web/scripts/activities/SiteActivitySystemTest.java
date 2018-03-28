@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.activities;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -40,13 +42,11 @@ import junit.framework.TestCase;
 
 import org.alfresco.repo.site.SiteModel;
 import org.alfresco.repo.web.scripts.activities.feed.UserFeedRetrieverWebScript;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.surf.util.Base64;
 import org.springframework.extensions.surf.util.ISO8601DateFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 
@@ -175,7 +175,7 @@ public class SiteActivitySystemTest extends TestCase
     
     protected void createSite(String siteId, boolean isPublic, String ticket) throws Exception
     {
-        JSONObject site = new JSONObject();
+        ObjectNode site = AlfrescoDefaultObjectMapper.createObjectNode();
         site.put("sitePreset", "myPreset");
         site.put("shortName", siteId);
         site.put("title", "myTitle");
@@ -271,8 +271,8 @@ public class SiteActivitySystemTest extends TestCase
                 logger.debug(jsonArrayResult);
             }
             
-            JSONArray ja = new JSONArray(jsonArrayResult);
-            assertEquals(expectedCount, ja.length());
+            ArrayNode ja = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonArrayResult);
+            assertEquals(expectedCount, ja.size());
         }
         else
         {
@@ -360,8 +360,8 @@ public class SiteActivitySystemTest extends TestCase
                 logger.debug(jsonArrayResult);
             }
             
-            JSONArray ja = new JSONArray(jsonArrayResult);
-            assertEquals(expectedCount, ja.length());
+            ArrayNode ja = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(jsonArrayResult);
+            assertEquals(expectedCount, ja.size());
         }
         else
         {
@@ -614,8 +614,8 @@ public class SiteActivitySystemTest extends TestCase
     private void addFollower(String follower, String user, String ticket) throws Exception
     {
         // Build the JSON follow request data
-        JSONArray jsonArray = new JSONArray();
-        jsonArray.put(user);
+        ArrayNode jsonArray = AlfrescoDefaultObjectMapper.createArrayNode();
+        jsonArray.add(user);
         
         String url = WEBSCRIPT_ENDPOINT + "/api/subscriptions/" + follower + "/follow";
         String response = callPostWebScript(url, ticket, jsonArray.toString());
@@ -632,9 +632,9 @@ public class SiteActivitySystemTest extends TestCase
     private void addMembership(String siteId, String userName, String ticket, String role) throws Exception
     {  
         // Build the JSON membership object
-        JSONObject membership = new JSONObject();
+        ObjectNode membership = AlfrescoDefaultObjectMapper.createObjectNode();
         membership.put("role", role);
-        JSONObject person = new JSONObject();
+        ObjectNode person = AlfrescoDefaultObjectMapper.createObjectNode();
         person.put("userName", userName);
         membership.put("person", person);
         
@@ -653,9 +653,9 @@ public class SiteActivitySystemTest extends TestCase
     private void updateMembership(String siteId, String userName, String ticket, String role) throws Exception
     {  
         // Build the JSON membership object
-        JSONObject membership = new JSONObject();
+        ObjectNode membership = AlfrescoDefaultObjectMapper.createObjectNode();
         membership.put("role", role);
-        JSONObject person = new JSONObject();
+        ObjectNode person = AlfrescoDefaultObjectMapper.createObjectNode();
         person.put("userName", userName);
         membership.put("person", person);
         
@@ -688,7 +688,7 @@ public class SiteActivitySystemTest extends TestCase
     private void addFeedControl(String userName, String siteId, String appToolId, String ticket) throws Exception
     {  
         // Build the JSON feedControl object
-        JSONObject feedControl = new JSONObject();
+        ObjectNode feedControl = AlfrescoDefaultObjectMapper.createObjectNode();
         feedControl.put("siteId", siteId);
         feedControl.put("appToolId", appToolId);
         
@@ -854,10 +854,10 @@ public class SiteActivitySystemTest extends TestCase
         return ticketResult;
     }
     
-    protected void createUser(String ticket, String username, String password) throws JSONException, IOException, URISyntaxException
+    protected void createUser(String ticket, String username, String password) throws IOException, URISyntaxException
     {
         // Build the JSON person object
-        JSONObject person = new JSONObject();
+        ObjectNode person = AlfrescoDefaultObjectMapper.createObjectNode();
         person.put("userName", username);
         person.put("firstName", "first");
         person.put("lastName", "last");

@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.blogs.post;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +34,6 @@ import org.alfresco.repo.web.scripts.blogs.BlogPostLibJs;
 import org.alfresco.service.cmr.blog.BlogPostInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -49,7 +49,7 @@ public class BlogPostGet extends AbstractBlogWebScript
 {
     @Override
     protected Map<String, Object> executeImpl(SiteInfo site, NodeRef nodeRef,
-         BlogPostInfo blog, WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+         BlogPostInfo blog, WebScriptRequest req, JsonNode json, Status status, Cache cache)
     {
         if (blog == null)
         {

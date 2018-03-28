@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.rating;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,10 +43,7 @@ import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONStringer;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
@@ -146,33 +146,33 @@ public class RatingRestApiTest extends BaseWebScriptTest
         final int expectedStatus = 200;
         Response rsp = sendRequest(new GetRequest(GET_RATING_DEFS_URL), expectedStatus);
 
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
         
-        JSONObject dataObj = (JSONObject)jsonRsp.get(DATA);
+        JsonNode dataObj = jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
         
-        JSONArray ratingSchemesArray = (JSONArray)dataObj.get(RATING_SCHEMES);
+        ArrayNode ratingSchemesArray = (ArrayNode)dataObj.get(RATING_SCHEMES);
         assertNotNull("JSON 'ratingSchemesArray' object was null", ratingSchemesArray);
-        assertEquals(2, ratingSchemesArray.length());
+        assertEquals(2, ratingSchemesArray.size());
 
         // The array's objects may be in different order
-        Map<String, JSONObject> ratingsMap = new HashMap<String, JSONObject>();
-        for (int i = 0 ; i < ratingSchemesArray.length(); i++)
+        Map<String, JsonNode> ratingsMap = new HashMap<String, JsonNode>();
+        for (int i = 0 ; i < ratingSchemesArray.size(); i++)
         {
-            ratingsMap.put(ratingSchemesArray.getJSONObject(i).getString(NAME), ratingSchemesArray.getJSONObject(i));
+            ratingsMap.put(ratingSchemesArray.get(i).get(NAME).textValue(), ratingSchemesArray.get(i));
         }
 
-        JSONObject scheme1 = ratingsMap.get(LIKES_RATING_SCHEME);
-        JSONObject scheme2 = ratingsMap.get(FIVE_STAR_RATING_SCHEME);
+        JsonNode scheme1 = ratingsMap.get(LIKES_RATING_SCHEME);
+        JsonNode scheme2 = ratingsMap.get(FIVE_STAR_RATING_SCHEME);
 
         assertNotNull("The response did not contain " + LIKES_RATING_SCHEME, scheme1);
-        assertEquals(1.0, scheme1.getDouble(MIN_RATING));
-        assertEquals(1.0, scheme1.getDouble(MAX_RATING));
-        assertTrue(scheme1.getBoolean("selfRatingAllowed"));
+        assertEquals(1.0, scheme1.get(MIN_RATING));
+        assertEquals(1.0, scheme1.get(MAX_RATING));
+        assertTrue(scheme1.get("selfRatingAllowed").booleanValue());
         assertNotNull("The response did not contain " + FIVE_STAR_RATING_SCHEME, scheme2);
-        assertEquals(1.0, scheme2.getDouble(MIN_RATING));
-        assertEquals(5.0, scheme2.getDouble(MAX_RATING));
-        assertFalse(scheme2.getBoolean("selfRatingAllowed"));
+        assertEquals(1.0, scheme2.get(MIN_RATING));
+        assertEquals(5.0, scheme2.get(MAX_RATING));
+        assertFalse(scheme2.get("selfRatingAllowed").booleanValue());
     }
     
     public void testGetRatingsFromUnratedNodeRef() throws Exception
@@ -183,26 +183,26 @@ public class RatingRestApiTest extends BaseWebScriptTest
         final int expectedStatus = 200;
         Response rsp = sendRequest(new GetRequest(ratingUrl), expectedStatus);
 
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
         
-        JSONObject dataObj = (JSONObject)jsonRsp.get(DATA);
+        JsonNode dataObj = jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
         
-        assertEquals(testNode.toString(), dataObj.getString(NODE_REF));
-        final JSONObject ratingsObject = dataObj.getJSONObject(RATINGS);
-        assertEquals(0, ratingsObject.length());
+        assertEquals(testNode.toString(), dataObj.get(NODE_REF));
+        final JsonNode ratingsObject = dataObj.get(RATINGS);
+        assertEquals(0, ratingsObject.size());
 
         // Unrated content
-        JSONObject statsObject = dataObj.getJSONObject(NODE_STATISTICS);
-        JSONObject likesStats = statsObject.getJSONObject(LIKES_RATING_SCHEME);
-        assertEquals("Average rating was wrong.", -1.0, likesStats.getDouble(AVERAGE_RATING));
-        assertEquals("Ratings count rating was wrong.", 0, likesStats.getInt(RATINGS_COUNT));
-        assertEquals("Ratings total was wrong.", 0.0, likesStats.getDouble(RATINGS_TOTAL));
+        JsonNode statsObject = dataObj.get(NODE_STATISTICS);
+        JsonNode likesStats = statsObject.get(LIKES_RATING_SCHEME);
+        assertEquals("Average rating was wrong.", -1.0, likesStats.get(AVERAGE_RATING));
+        assertEquals("Ratings count rating was wrong.", 0, likesStats.get(RATINGS_COUNT));
+        assertEquals("Ratings total was wrong.", 0.0, likesStats.get(RATINGS_TOTAL));
 
-        JSONObject fiveStarStats = statsObject.getJSONObject(FIVE_STAR_RATING_SCHEME);
-        assertEquals("Average rating was wrong.", -1.0, fiveStarStats.getDouble(AVERAGE_RATING));
-        assertEquals("Ratings count rating was wrong.", 0, fiveStarStats.getInt(RATINGS_COUNT));
-        assertEquals("Ratings total was wrong.", 0.0, fiveStarStats.getDouble(RATINGS_TOTAL));
+        JsonNode fiveStarStats = statsObject.get(FIVE_STAR_RATING_SCHEME);
+        assertEquals("Average rating was wrong.", -1.0, fiveStarStats.get(AVERAGE_RATING));
+        assertEquals("Ratings count rating was wrong.", 0, fiveStarStats.get(RATINGS_COUNT));
+        assertEquals("Ratings total was wrong.", 0.0, fiveStarStats.get(RATINGS_TOTAL));
     }
 
     /**
@@ -218,117 +218,110 @@ public class RatingRestApiTest extends BaseWebScriptTest
         final String testNodeRatingUrl = getRatingUrl(testNode);
         
         final float userOneRatingValue = 4.5f;
-        String jsonString = new JSONStringer().object()
-            .key("rating").value(userOneRatingValue)
-            .key("ratingScheme").value(FIVE_STAR_RATING_SCHEME)
-        .endObject()
-        .toString();
-        
+        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
+        json.put("rating", userOneRatingValue);
+        json.put("ratingScheme", FIVE_STAR_RATING_SCHEME);
         Response postRsp = sendRequest(new PostRequest(testNodeRatingUrl,
-                                 jsonString, APPLICATION_JSON), 200);
+                                 json.toString(), APPLICATION_JSON), 200);
         
         String postRspString = postRsp.getContentAsString();
         
         // Get the returned URL and validate
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(postRspString));
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(postRspString);
         
-        JSONObject dataObj = (JSONObject)jsonRsp.get(DATA);
+        JsonNode dataObj = jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
-        String returnedUrl =  dataObj.getString("ratedNodeUrl");
+        String returnedUrl =  dataObj.get("ratedNodeUrl").textValue();
         assertEquals(testNodeRatingUrl, returnedUrl);
-        assertEquals(FIVE_STAR_RATING_SCHEME, dataObj.getString("ratingScheme"));
-        assertEquals(userOneRatingValue, (float)dataObj.getDouble("rating"));
-        assertEquals(userOneRatingValue, (float)dataObj.getDouble("averageRating"));
-        assertEquals(userOneRatingValue, (float)dataObj.getDouble("ratingsTotal"));
-        assertEquals(1, dataObj.getInt("ratingsCount"));
+        assertEquals(FIVE_STAR_RATING_SCHEME, dataObj.get("ratingScheme"));
+        assertEquals(userOneRatingValue, dataObj.get("rating"));
+        assertEquals(userOneRatingValue, dataObj.get("averageRating"));
+        assertEquals(userOneRatingValue, dataObj.get("ratingsTotal"));
+        assertEquals(1, dataObj.get("ratingsCount"));
 
         // And a second rating
-        jsonString = new JSONStringer().object()
-            .key("rating").value(1)
-            .key("ratingScheme").value(LIKES_RATING_SCHEME)
-        .endObject()
-        .toString();
+        json = AlfrescoDefaultObjectMapper.createObjectNode();
+        json.put("rating", 1);
+        json.put("ratingScheme", LIKES_RATING_SCHEME);
         
-        sendRequest(new PostRequest(testNodeRatingUrl, jsonString, APPLICATION_JSON), 200);
+        sendRequest(new PostRequest(testNodeRatingUrl, json.toString(), APPLICATION_JSON), 200);
 
         
         // Now GET the ratings via that returned URL
         Response getRsp = sendRequest(new GetRequest(testNodeRatingUrl), 200);
         String getRspString = getRsp.getContentAsString();
 
-        jsonRsp = new JSONObject(new JSONTokener(getRspString));
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(getRspString);
         
-        dataObj = (JSONObject)jsonRsp.get(DATA);
+        dataObj = jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
         
         // There should be two ratings in there.
-        final JSONObject ratingsObject = dataObj.getJSONObject(RATINGS);
-        assertEquals(2, ratingsObject.length());
-        JSONObject recoveredRating = ratingsObject.getJSONObject(FIVE_STAR_RATING_SCHEME);
-        assertEquals(userOneRatingValue, (float)recoveredRating.getDouble("rating"));
+        final JsonNode ratingsObject = dataObj.get(RATINGS);
+        assertEquals(2, ratingsObject.size());
+        JsonNode recoveredRating = ratingsObject.get(FIVE_STAR_RATING_SCHEME);
+        assertEquals(userOneRatingValue, recoveredRating.get("rating"));
 
         // As well as the average, total ratings.
-        JSONObject statsObject = dataObj.getJSONObject(NODE_STATISTICS);
-        JSONObject fiveStarStats = statsObject.getJSONObject(FIVE_STAR_RATING_SCHEME);
-        assertEquals("Average rating was wrong.", userOneRatingValue, (float)fiveStarStats.getDouble(AVERAGE_RATING));
-        assertEquals("Ratings count rating was wrong.", 1, fiveStarStats.getInt(RATINGS_COUNT));
-        assertEquals("Ratings total was wrong.", userOneRatingValue, (float)fiveStarStats.getDouble(RATINGS_TOTAL));
+        JsonNode statsObject = dataObj.get(NODE_STATISTICS);
+        JsonNode fiveStarStats = statsObject.get(FIVE_STAR_RATING_SCHEME);
+        assertEquals("Average rating was wrong.", userOneRatingValue, fiveStarStats.get(AVERAGE_RATING));
+        assertEquals("Ratings count rating was wrong.", 1, fiveStarStats.get(RATINGS_COUNT));
+        assertEquals("Ratings total was wrong.", userOneRatingValue, fiveStarStats.get(RATINGS_TOTAL));
 
-        JSONObject likesStats = statsObject.getJSONObject(LIKES_RATING_SCHEME);
-        assertEquals("Average rating was wrong.", 1f, (float)likesStats.getDouble(AVERAGE_RATING));
-        assertEquals("Ratings count rating was wrong.", 1, likesStats.getInt(RATINGS_COUNT));
-        assertEquals("Ratings total was wrong.", 1f, (float)likesStats.getDouble(RATINGS_TOTAL));
+        JsonNode likesStats = statsObject.get(LIKES_RATING_SCHEME);
+        assertEquals("Average rating was wrong.", 1f, likesStats.get(AVERAGE_RATING));
+        assertEquals("Ratings count rating was wrong.", 1, likesStats.get(RATINGS_COUNT));
+        assertEquals("Ratings total was wrong.", 1f, likesStats.get(RATINGS_TOTAL));
         
 
         // Now POST a second new rating to the testNode - as User Two.
         AuthenticationUtil.setFullyAuthenticatedUser(USER_TWO);
 
         final float userTwoRatingValue = 3.5f;
-        jsonString = new JSONStringer().object()
-            .key("rating").value(userTwoRatingValue)
-            .key("ratingScheme").value(FIVE_STAR_RATING_SCHEME)
-        .endObject()
-        .toString();
-        
+        json = AlfrescoDefaultObjectMapper.createObjectNode();
+        json.put("rating", userTwoRatingValue);
+        json.put("ratingScheme", FIVE_STAR_RATING_SCHEME);
+
         postRsp = sendRequest(new PostRequest(testNodeRatingUrl,
-                                 jsonString, APPLICATION_JSON), 200);
+                                 json.toString(), APPLICATION_JSON), 200);
         postRspString = postRsp.getContentAsString();
         
         // Get the returned URL and validate
-        jsonRsp = new JSONObject(new JSONTokener(postRspString));
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(postRspString);
         
-        dataObj = (JSONObject)jsonRsp.get(DATA);
+        dataObj = jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
-        returnedUrl =  dataObj.getString("ratedNodeUrl");
+        returnedUrl =  dataObj.get("ratedNodeUrl").textValue();
 
-        assertEquals((userOneRatingValue + userTwoRatingValue) / 2, (float)dataObj.getDouble("averageRating"));
-        assertEquals(userOneRatingValue + userTwoRatingValue,       (float)dataObj.getDouble("ratingsTotal"));
-        assertEquals(2, dataObj.getInt("ratingsCount"));
+        assertEquals((userOneRatingValue + userTwoRatingValue) / 2, dataObj.get("averageRating"));
+        assertEquals(userOneRatingValue + userTwoRatingValue,       dataObj.get("ratingsTotal"));
+        assertEquals(2, dataObj.get("ratingsCount"));
 
         // Again GET the ratings via that returned URL
         getRsp = sendRequest(new GetRequest(returnedUrl), 200);
         getRspString = getRsp.getContentAsString();
 
-        jsonRsp = new JSONObject(new JSONTokener(getRspString));
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(getRspString);
         
-        dataObj = (JSONObject)jsonRsp.get(DATA);
+        dataObj = jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
 
         // There should still only be the one rating in the results - because we're running
         // as UserTwo and should not see UserOne's rating.
-        final JSONObject userTwoRatings = dataObj.getJSONObject(RATINGS);
-        assertEquals(1, userTwoRatings.length());
-        JSONObject secondRating = (JSONObject)userTwoRatings.getJSONObject(FIVE_STAR_RATING_SCHEME);
-        assertEquals(userTwoRatingValue, (float)secondRating.getDouble("rating"));
+        final JsonNode userTwoRatings = dataObj.get(RATINGS);
+        assertEquals(1, userTwoRatings.size());
+        JsonNode secondRating = userTwoRatings.get(FIVE_STAR_RATING_SCHEME);
+        assertEquals(userTwoRatingValue, secondRating.get("rating"));
 
         // Now the average should have changed.
-        statsObject = dataObj.getJSONObject(NODE_STATISTICS);
-        fiveStarStats = statsObject.getJSONObject(FIVE_STAR_RATING_SCHEME);
+        statsObject = dataObj.get(NODE_STATISTICS);
+        fiveStarStats = statsObject.get(FIVE_STAR_RATING_SCHEME);
         assertEquals("Average rating was wrong.", (userOneRatingValue + userTwoRatingValue) / 2.0,
-                                                  fiveStarStats.getDouble(AVERAGE_RATING));
-        assertEquals("Ratings count rating was wrong.", 2, fiveStarStats.getInt(RATINGS_COUNT));
+                                                  fiveStarStats.get(AVERAGE_RATING));
+        assertEquals("Ratings count rating was wrong.", 2, fiveStarStats.get(RATINGS_COUNT));
         assertEquals("Ratings total was wrong.", userOneRatingValue + userTwoRatingValue,
-                                                 (float)fiveStarStats.getDouble(RATINGS_TOTAL));
+                                                 fiveStarStats.get(RATINGS_TOTAL));
         
         
         // Now DELETE user two's rating.
@@ -340,22 +333,22 @@ public class RatingRestApiTest extends BaseWebScriptTest
         getRsp = sendRequest(new GetRequest(returnedUrl), 200);
         getRspString = getRsp.getContentAsString();
 
-        jsonRsp = new JSONObject(new JSONTokener(getRspString));
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(getRspString);
         
-        dataObj = (JSONObject)jsonRsp.get(DATA);
+        dataObj = jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
 
-        final JSONObject remainingRatings = dataObj.getJSONObject(RATINGS);
-        assertEquals(0, remainingRatings.length());
+        final JsonNode remainingRatings = dataObj.get(RATINGS);
+        assertEquals(0, remainingRatings.size());
 
         // Now the average should have changed.
-        statsObject = dataObj.getJSONObject(NODE_STATISTICS);
-        fiveStarStats = statsObject.getJSONObject(FIVE_STAR_RATING_SCHEME);
+        statsObject = dataObj.get(NODE_STATISTICS);
+        fiveStarStats = statsObject.get(FIVE_STAR_RATING_SCHEME);
         assertEquals("Average rating was wrong.", userOneRatingValue,
-                                                  (float)fiveStarStats.getDouble(AVERAGE_RATING));
-        assertEquals("Ratings count rating was wrong.", 1, fiveStarStats.getInt(RATINGS_COUNT));
+                                                  fiveStarStats.get(AVERAGE_RATING));
+        assertEquals("Ratings count rating was wrong.", 1, fiveStarStats.get(RATINGS_COUNT));
         assertEquals("Ratings total was wrong.", userOneRatingValue,
-                                                 (float)fiveStarStats.getDouble(RATINGS_TOTAL));
+                                                 fiveStarStats.get(RATINGS_TOTAL));
     }
     
     /**

@@ -26,9 +26,10 @@
 
 package org.alfresco.rest.api.tests.client.data;
 
-import static org.junit.Assert.assertTrue;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
-import org.json.simple.JSONObject;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Representation of a user info (initially for client tests for File Folder API)
@@ -95,9 +96,9 @@ public class UserInfo implements ExpectedComparison
         AssertUtil.assertEquals("displayName", displayName, other.getDisplayName());
     }
 
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject userInfoJson = new JSONObject();
+        ObjectNode userInfoJson = AlfrescoDefaultObjectMapper.createObjectNode();
         if (getId() != null)
         {
             userInfoJson.put("id", getId());

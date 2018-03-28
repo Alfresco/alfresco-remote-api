@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.rating;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -32,9 +33,7 @@ import java.util.Map;
 
 import org.alfresco.service.cmr.rating.RatingScheme;
 import org.alfresco.service.cmr.repository.NodeRef;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -62,11 +61,10 @@ public class RatingPost extends AbstractRatingWebScript
 
         NodeRef nodeRefToBeRated = parseRequestForNodeRef(req);
 
-        JSONObject json = null;
         try
         {
             // read request json
-            json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
             
             // Check mandatory parameters.
             if (json.has(RATING) == false)
@@ -79,7 +77,7 @@ public class RatingPost extends AbstractRatingWebScript
             }
             
             // Check that the scheme name actually exists
-            final String schemeName = json.getString(RATING_SCHEME);
+            final String schemeName = json.get(RATING_SCHEME).textValue();
             RatingScheme scheme = ratingService.getRatingScheme(schemeName);
             if (scheme == null)
             {
@@ -88,7 +86,7 @@ public class RatingPost extends AbstractRatingWebScript
             
             // Range checking of the rating score will be done within the RatingService.
             // So we can just apply the rating.
-            final float rating = (float)json.getDouble(RATING);
+            final float rating = json.get(RATING).floatValue();
             ratingService.applyRating(nodeRefToBeRated, rating, schemeName);
 
             // We'll return the URL to the ratings of the just-rated node.
@@ -105,10 +103,6 @@ public class RatingPost extends AbstractRatingWebScript
         catch (IOException iox)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from req.", iox);
-        }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from req.", je);
         }
 
         return model;

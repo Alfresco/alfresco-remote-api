@@ -25,13 +25,14 @@
  */
 package org.alfresco.repo.web.scripts.invitation;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.invitation.InvitationServiceImpl;
 import org.alfresco.repo.invitation.WorkflowModelNominatedInvitation;
@@ -52,9 +53,7 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.GUID;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
@@ -184,10 +183,10 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         this.createdInvitations.clear();
     }
 
-    private JSONObject createSite(String sitePreset, String shortName, String title, String description,
-                SiteVisibility visibility, int expectedStatus) throws Exception
+    private JsonNode createSite(String sitePreset, String shortName, String title, String description,
+                                SiteVisibility visibility, int expectedStatus) throws Exception
     {
-        JSONObject site = new JSONObject();
+        ObjectNode site = AlfrescoDefaultObjectMapper.createObjectNode();
         site.put("sitePreset", sitePreset);
         site.put("shortName", shortName);
         site.put("title", title);
@@ -195,7 +194,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         site.put("visibility", visibility.toString());
         Response response = sendRequest(new PostRequest(URL_SITES, site.toString(), "application/json"), expectedStatus);
         this.createdSites.add(shortName);
-        return new JSONObject(response.getContentAsString());
+        return AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     }
 
     /**
@@ -246,15 +245,15 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         // search by user - find USER_TWO's three invitations
         {
             Response response = sendRequest(new GetRequest(URL_INVITATIONS + "?inviteeUserName=" + userTwo), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             // System.out.println(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
+            ArrayNode data = (ArrayNode) top.get("data");
 
-            JSONObject moderatedAInv = getInvitation(moderatedIdAUSER_TWO, data);
+            JsonNode moderatedAInv = getInvitation(moderatedIdAUSER_TWO, data);
             assertNotNull("Moderated invitation to Site A not present!", moderatedAInv);
-            JSONObject moderatedBInv = getInvitation(moderatedIdBUSER_TWO, data);
+            JsonNode moderatedBInv = getInvitation(moderatedIdBUSER_TWO, data);
             assertNotNull("Moderated invitation to Site B not present!", moderatedBInv);
-            JSONObject nominatedInv = getInvitation(nominatedId, data);
+            JsonNode nominatedInv = getInvitation(nominatedId, data);
             if (requireAcceptance)
             {
                 assertNotNull("Nominated invitation to Site A not present!", nominatedInv);
@@ -267,19 +266,19 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         // search by type - should find three moderated invitations
         {
             Response response = sendRequest(new GetRequest(URL_INVITATIONS + "?invitationType=MODERATED"), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             // System.out.println(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
-            for (int i = 0; i < data.length(); i++)
+            ArrayNode data = (ArrayNode) top.get("data");
+            for (int i = 0; i < data.size(); i++)
             {
-                JSONObject obj = data.getJSONObject(i);
-                assertEquals("Wrong invitation type", "MODERATED", obj.getString("invitationType"));
+                JsonNode obj = data.get(i);
+                assertEquals("Wrong invitation type", "MODERATED", obj.get("invitationType"));
             }
-            JSONObject moderatedATwoInv = getInvitation(moderatedIdAUSER_TWO, data);
+            JsonNode moderatedATwoInv = getInvitation(moderatedIdAUSER_TWO, data);
             assertNotNull("first is null", moderatedATwoInv);
-            JSONObject moderatedBTwoInv = getInvitation(moderatedIdBUSER_TWO, data);
+            JsonNode moderatedBTwoInv = getInvitation(moderatedIdBUSER_TWO, data);
             assertNotNull("second is null", moderatedBTwoInv);
-            JSONObject moderatedBThreeInv = getInvitation(moderatedIdBUSER_THREE, data);
+            JsonNode moderatedBThreeInv = getInvitation(moderatedIdBUSER_THREE, data);
             assertNotNull("third is null", moderatedBThreeInv);
         }
 
@@ -287,9 +286,9 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         {
             Response response = sendRequest(new GetRequest(URL_INVITATIONS + "?invitationType=MODERATED&resourceName="
                         + shortNameSiteA + "&resourceType=WEB_SITE"), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
-            assertEquals("One moderated invitations not found", 1, data.length());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+            ArrayNode data = (ArrayNode) top.get("data");
+            assertEquals("One moderated invitations not found", 1, data.size());
         }
 
         // negative test - unknown resourceType
@@ -297,8 +296,8 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
             Response response = sendRequest(new GetRequest(URL_INVITATIONS + "?invitationType=MODERATED&resourceName="
                         + shortNameSiteA + "&resourceType=madeUpStuff"), 500);
             assertEquals(500, response.getStatus());
-            JSONObject top = new JSONObject(response.getContentAsString());
-            assertNotNull(top.getString("message"));
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+            assertNotNull(top.get("message"));
         }
     }
     
@@ -378,14 +377,14 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         {
             String allSiteAUrl = URL_SITES +"/" + shortNameSiteA + "/invitations";
             Response response = sendRequest(new GetRequest(allSiteAUrl), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             // System.out.println(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
-            assertEquals("Wrong number of invitations!", requireAcceptance ? 2 : 1, data.length());
+            ArrayNode data = (ArrayNode) top.get("data");
+            assertEquals("Wrong number of invitations!", requireAcceptance ? 2 : 1, data.size());
             
-            JSONObject moderatedAInv = getInvitation(moderatedIdAUSER_TWO, data);
+            JsonNode moderatedAInv = getInvitation(moderatedIdAUSER_TWO, data);
             assertNotNull("Moderated invitation to Site A not present!", moderatedAInv);
-            JSONObject nominatedInv = getInvitation(nominatedId, data);
+            JsonNode nominatedInv = getInvitation(nominatedId, data);
             if (requireAcceptance)
             {
                 assertNotNull("Nominated invitation to Site A not present!", nominatedInv);
@@ -397,14 +396,14 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         {
             String allSiteBUrl = URL_SITES +"/" + shortNameSiteB + "/invitations";
             Response response = sendRequest(new GetRequest(allSiteBUrl), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             // System.out.println(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
-            assertEquals("Wrong number of invitations!", 2, data.length());
+            ArrayNode data = (ArrayNode) top.get("data");
+            assertEquals("Wrong number of invitations!", 2, data.size());
             
-            JSONObject moderatedB2Inv = getInvitation(moderatedIdBUSER_TWO, data);
+            JsonNode moderatedB2Inv = getInvitation(moderatedIdBUSER_TWO, data);
             assertNotNull("Moderated invitation User 2 to Site B not present!", moderatedB2Inv);
-            JSONObject moderatedB3Inv = getInvitation(moderatedIdBUSER_THREE, data);
+            JsonNode moderatedB3Inv = getInvitation(moderatedIdBUSER_THREE, data);
             assertNotNull("Moderated invitation User 3 to Site B not present!", moderatedB3Inv);
             checkJSONInvitations(data);
         }
@@ -413,13 +412,13 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         {
             String siteAModeratedUrl = URL_SITES + "/" +shortNameSiteA + "/invitations?invitationType=MODERATED";
             Response response = sendRequest(new GetRequest(siteAModeratedUrl), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             // System.out.println(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
-            assertEquals(1, data.length());
-            JSONObject invitation = data.getJSONObject(0);
-            assertEquals("Wrong invitation type", "MODERATED", invitation.getString("invitationType"));
-            JSONObject moderatedATwoInv = getInvitation(moderatedIdAUSER_TWO, data);
+            ArrayNode data = (ArrayNode) top.get("data");
+            assertEquals(1, data.size());
+            JsonNode invitation = data.get(0);
+            assertEquals("Wrong invitation type", "MODERATED", invitation.get("invitationType"));
+            JsonNode moderatedATwoInv = getInvitation(moderatedIdAUSER_TWO, data);
             assertNotNull("first is null", moderatedATwoInv);
         }
         
@@ -427,13 +426,13 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         if (requireAcceptance) {
             String siteANominatedUrl = URL_SITES + "/" +shortNameSiteA + "/invitations?invitationType=NOMINATED";
             Response response = sendRequest(new GetRequest(siteANominatedUrl), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             // System.out.println(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
-            assertEquals(1, data.length());
-            JSONObject invitation = data.getJSONObject(0);
-            assertEquals("Wrong invitation type", "NOMINATED", invitation.getString("invitationType"));
-            JSONObject nominatedATwoInv = getInvitation(nominatedId, data);
+            ArrayNode data = (ArrayNode) top.get("data");
+            assertEquals(1, data.size());
+            JsonNode invitation = data.get(0);
+            assertEquals("Wrong invitation type", "NOMINATED", invitation.get("invitationType"));
+            JsonNode nominatedATwoInv = getInvitation(nominatedId, data);
             assertNotNull("first is null", nominatedATwoInv);
         }
         
@@ -441,13 +440,13 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         {
             String siteBUser2Url = URL_SITES + "/" +shortNameSiteB + "/invitations?inviteeUserName=" + userTwo;
             Response response = sendRequest(new GetRequest(siteBUser2Url), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             // System.out.println(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
-            assertEquals(1, data.length());
-            JSONObject invitation = data.getJSONObject(0);
-            assertEquals("Wrong invitation user", userTwo, invitation.getString("inviteeUserName"));
-            JSONObject moderatedBTwoInv = getInvitation(moderatedIdBUSER_TWO, data);
+            ArrayNode data = (ArrayNode) top.get("data");
+            assertEquals(1, data.size());
+            JsonNode invitation = data.get(0);
+            assertEquals("Wrong invitation user", userTwo, invitation.get("inviteeUserName"));
+            JsonNode moderatedBTwoInv = getInvitation(moderatedIdBUSER_TWO, data);
             assertNotNull("first is null", moderatedBTwoInv);
         }
         
@@ -455,13 +454,13 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         {
             String siteBUser2Url = URL_SITES + "/" +shortNameSiteB + "/invitations?inviteeUserName=" + userThree;
             Response response = sendRequest(new GetRequest(siteBUser2Url), 200);
-            JSONObject top = new JSONObject(response.getContentAsString());
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             // System.out.println(response.getContentAsString());
-            JSONArray data = top.getJSONArray("data");
-            assertEquals(1, data.length());
-            JSONObject invitation = data.getJSONObject(0);
-            assertEquals("Wrong invitation user", userThree, invitation.getString("inviteeUserName"));
-            JSONObject moderatedBThreeInv = getInvitation(moderatedIdBUSER_THREE, data);
+            ArrayNode data = (ArrayNode) top.get("data");
+            assertEquals(1, data.size());
+            JsonNode invitation = data.get(0);
+            assertEquals("Wrong invitation user", userThree, invitation.get("inviteeUserName"));
+            JsonNode moderatedBThreeInv = getInvitation(moderatedIdBUSER_THREE, data);
             assertNotNull("first is null", moderatedBThreeInv);
         }
 
@@ -470,8 +469,8 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
             Response response = sendRequest(new GetRequest(URL_INVITATIONS + "?invitationType=MODERATED&resourceName="
                         + shortNameSiteA + "&resourceType=madeUpStuff"), 500);
             assertEquals(500, response.getStatus());
-            JSONObject top = new JSONObject(response.getContentAsString());
-            assertNotNull(top.getString("message"));
+            JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+            assertNotNull(top.get("message"));
         }
     }
     
@@ -502,21 +501,21 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
                 WorkflowModelNominatedInvitation.WORKFLOW_DEFINITION_NAME_ACTIVITI_ADD_DIRECT);
     }
 
-    private void checkJSONInvitations(JSONArray data) throws JSONException
+    private void checkJSONInvitations(ArrayNode data)
     {
-        for (int i = 0; i < data.length(); i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            JSONObject invitation = data.getJSONObject(i);
-            String userId = invitation.getString("inviteeUserName");
+            JsonNode invitation = data.get(i);
+            String userId = invitation.get("inviteeUserName").textValue();
          
             // Check invitee info for Nominated invitation.
             Map<String, String> expectedProps = userProperties.get(userId);
-            JSONObject invitee = invitation.getJSONObject("invitee");
+            JsonNode invitee = invitation.get("invitee");
             assertNotNull(invitee);
-            assertEquals("User name is wrong for user: " + i, userId, invitee.getString("userName"));
-            assertEquals("Avatar URI is wrong for user: " + i, expectedProps.get("avatar"), invitee.getString("avatar"));
-            assertEquals("First name is wrong!", expectedProps.get("firstName"), invitee.getString("firstName"));
-            assertEquals("Last name is wrong!", expectedProps.get("lastName"), invitee.getString("lastName"));
+            assertEquals("User name is wrong for user: " + i, userId, invitee.get("userName"));
+            assertEquals("Avatar URI is wrong for user: " + i, expectedProps.get("avatar"), invitee.get("avatar"));
+            assertEquals("First name is wrong!", expectedProps.get("firstName"), invitee.get("firstName"));
+            assertEquals("Last name is wrong!", expectedProps.get("lastName"), invitee.get("lastName"));
         }
     }
 
@@ -537,7 +536,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         /*
          * Create a new nominated invitation
          */
-        JSONObject newInvitation = new JSONObject();
+        ObjectNode newInvitation = AlfrescoDefaultObjectMapper.createObjectNode();
 
         newInvitation.put("invitationType", "NOMINATED");
         newInvitation.put("inviteeRoleName", inviteeRoleName);
@@ -558,9 +557,9 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
 
         Response response = sendRequest(new PostRequest(URL_SITES + "/" + siteName + "/invitations", newInvitation
                     .toString(), "application/json"), 201);
-        JSONObject top = new JSONObject(response.getContentAsString());
-        JSONObject data = top.getJSONObject("data");
-        String inviteId = data.getString("inviteId");
+        JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        JsonNode data = top.get("data");
+        String inviteId = data.get("inviteId").textValue();
 
         createdInvitations.add(new Tracker(inviteId, siteName));
 
@@ -592,9 +591,9 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         }
         // search for all invitations to site A: one nominated should be found for user Buffy... Summers
         {
-            JSONArray data = queryCurrentInvitationList(shortNameSiteA);
-            assertEquals("Wrong number of invitations!", 1, data.length());
-            JSONObject nominatedInv = getInvitation(nominatedId, data);
+            ArrayNode data = queryCurrentInvitationList(shortNameSiteA);
+            assertEquals("Wrong number of invitations!", 1, data.size());
+            JsonNode nominatedInv = getInvitation(nominatedId, data);
             assertNotNull("Nominated invitation to Site A not present!", nominatedInv);
         }
 
@@ -603,20 +602,20 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
 
         // list the pending invitations and check that it is empty
         {
-            JSONArray data = queryCurrentInvitationList(shortNameSiteA);
-            assertEquals("Wrong number of invitations!", 0, data.length());
-            JSONObject nominatedInv = getInvitation(nominatedId, data);
+            ArrayNode data = queryCurrentInvitationList(shortNameSiteA);
+            assertEquals("Wrong number of invitations!", 0, data.size());
+            JsonNode nominatedInv = getInvitation(nominatedId, data);
             assertNull("Nominated invitation to Site A present!", nominatedInv);
         }
         // deleting the invitation was successful
     }
 
-    private JSONArray queryCurrentInvitationList(String shortNameSiteA) throws IOException, JSONException, UnsupportedEncodingException
+    private ArrayNode queryCurrentInvitationList(String shortNameSiteA) throws IOException
     {
         String allSiteAUrl = URL_SITES + "/" + shortNameSiteA + "/invitations";
         Response response = sendRequest(new GetRequest(allSiteAUrl), 200);
-        JSONObject top = new JSONObject(response.getContentAsString());
-        return top.getJSONArray("data");
+        JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        return (ArrayNode) top.get("data");
     }
 
     void deleteInvitation(String invitationID, String siteShortName, int expectedStatus) throws Exception
@@ -627,7 +626,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         assertFalse(siteShortName.isEmpty());
 
         Response response = sendRequest(new DeleteRequest(URL_SITES + "/" + siteShortName + "/invitations/" + invitationID), expectedStatus);
-        assertNotNull(new JSONObject(response.getContentAsString()));
+        assertNotNull(AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString()));
     }
 
     private String createModeratedInvitation(String siteName, String inviteeComments, String inviteeUserName,
@@ -636,7 +635,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         /*
          * Create a new moderated invitation
          */
-        JSONObject newInvitation = new JSONObject();
+        ObjectNode newInvitation = AlfrescoDefaultObjectMapper.createObjectNode();
 
         newInvitation.put("invitationType", "MODERATED");
         newInvitation.put("inviteeRoleName", inviteeRoleName);
@@ -644,21 +643,21 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
         newInvitation.put("inviteeUserName", inviteeUserName);
         Response response = sendRequest(new PostRequest(URL_SITES + "/" + siteName + "/invitations", newInvitation
                     .toString(), "application/json"), 201);
-        JSONObject top = new JSONObject(response.getContentAsString());
-        JSONObject data = top.getJSONObject("data");
-        String inviteId = data.getString("inviteId");
+        JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        JsonNode data = top.get("data");
+        String inviteId = data.get("inviteId").textValue();
 
         createdInvitations.add(new Tracker(inviteId, siteName));
 
         return inviteId;
     }
 
-    private JSONObject getInvitation(String inviteId, JSONArray data) throws Exception
+    private JsonNode getInvitation(String inviteId, ArrayNode data) throws Exception
     {
-        for (int i = 0; i < data.length(); i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            JSONObject obj = data.getJSONObject(i);
-            if (inviteId.equals(obj.getString("inviteId")))
+            JsonNode obj = data.get(i);
+            if (inviteId.equals(obj.get("inviteId").textValue()))
             {
                 return obj;
             }

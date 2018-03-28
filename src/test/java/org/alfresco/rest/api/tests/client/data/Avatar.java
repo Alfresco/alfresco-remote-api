@@ -25,8 +25,7 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import org.json.simple.JSONObject;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.Serializable;
 
 public class Avatar implements Serializable, ExpectedComparison
@@ -37,7 +36,7 @@ public class Avatar implements Serializable, ExpectedComparison
 
     }
 
-    public static Avatar parseAvatar(JSONObject entry)
+    public static Avatar parseAvatar(JsonNode entry)
     {
         return new Avatar();
     }

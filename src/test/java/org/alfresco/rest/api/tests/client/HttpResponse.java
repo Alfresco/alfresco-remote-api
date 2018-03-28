@@ -25,8 +25,11 @@
  */
 package org.alfresco.rest.api.tests.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 import java.util.Map;
 
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodBase;
@@ -39,9 +42,6 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.util.EncodingUtil;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 public class HttpResponse
 {
@@ -172,23 +172,19 @@ public class HttpResponse
 		return sb.toString();
 	}
 	
-	public JSONObject getJsonResponse()
+	public JsonNode getJsonResponse()
 	{
-        JSONObject result = null;
+        JsonNode result = null;
 
         try
         {
 			String response = getResponse();
             if (response != null)
             {
-                Object object = new JSONParser().parse(response);
-                if(object instanceof JSONObject)
-                {
-                   return (JSONObject) object;
-                }
+                JsonNode object = AlfrescoDefaultObjectMapper.getReader().readTree(response);
             }
         }
-        catch (ParseException error)
+        catch (IOException error)
         {
             // Ignore errors, returning null
         }

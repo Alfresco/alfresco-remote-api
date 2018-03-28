@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.metadata;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
@@ -41,9 +43,7 @@ import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.AccessStatus;
 import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.namespace.QName;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.surf.util.I18NUtil;
 import org.springframework.extensions.webscripts.AbstractWebScript;
@@ -81,9 +81,6 @@ public class BulkMetadataGet extends AbstractWebScript
     @Override
     public void execute(WebScriptRequest req, WebScriptResponse res) throws IOException
     {
-        JSONObject jsonIn;
-        JSONArray nodeRefsArray;
-
         try
         {
             Content c = req.getContent();
@@ -92,10 +89,10 @@ public class BulkMetadataGet extends AbstractWebScript
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Missing POST body.");
             }
 
-            jsonIn = new JSONObject(c.getContent());
+            JsonNode jsonIn = AlfrescoDefaultObjectMapper.getReader().readTree(c.getContent());
 
-            nodeRefsArray = jsonIn.getJSONArray("nodeRefs");
-            if(nodeRefsArray == null || nodeRefsArray.length() == 0)
+            ArrayNode nodeRefsArray = (ArrayNode) jsonIn.get("nodeRefs");
+            if(nodeRefsArray == null || nodeRefsArray.size() == 0)
             {
                 throw new WebScriptException(Status.STATUS_INTERNAL_SERVER_ERROR, "Must provide node refs");   
             }
@@ -111,9 +108,9 @@ public class BulkMetadataGet extends AbstractWebScript
                 {
                     jsonOut.startArray();
                     {
-                        for(int i = 0; i < nodeRefsArray.length(); i++)
+                        for(int i = 0; i < nodeRefsArray.size(); i++)
                         {
-                            NodeRef nodeRef = new NodeRef(nodeRefsArray.getString(i));
+                            NodeRef nodeRef = new NodeRef(nodeRefsArray.get(i).textValue());
 
                             if(nodeService.exists(nodeRef))
                             {
@@ -164,7 +161,7 @@ public class BulkMetadataGet extends AbstractWebScript
             }
             jsonOut.endObject();
         }
-        catch (JSONException jErr)
+        catch (IOException jErr)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST,
                     "Unable to parse JSON POST body: " + jErr.getMessage());

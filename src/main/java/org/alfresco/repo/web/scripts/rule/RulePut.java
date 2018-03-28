@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.rule;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +35,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.activiti.engine.impl.util.json.JSONException;
 import org.alfresco.repo.action.ActionConditionImpl;
 import org.alfresco.repo.action.ActionImpl;
 import org.alfresco.repo.action.CompositeActionImpl;
@@ -41,12 +44,9 @@ import org.alfresco.service.cmr.action.Action;
 import org.alfresco.service.cmr.action.ActionCondition;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.rule.Rule;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -92,12 +92,10 @@ public class RulePut extends RulePost
             throw new WebScriptException(HttpServletResponse.SC_NOT_FOUND, "Unable to find rule with id: " + ruleId);
         }
 
-        JSONObject json = null;
-
         try
         {
             // read request json
-            json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
 
             // parse request json
             updateRuleFromJSON(json, ruleToUpdate);
@@ -116,56 +114,52 @@ public class RulePut extends RulePost
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from req.", iox);
         }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from req.", je);
-        }
 
         return model;
     }
 
-    protected void updateRuleFromJSON(JSONObject jsonRule, Rule ruleToUpdate) throws JSONException
+    protected void updateRuleFromJSON(JsonNode jsonRule, Rule ruleToUpdate) throws JSONException
     {
         if (jsonRule.has("title"))
         {
-            ruleToUpdate.setTitle(jsonRule.getString("title"));
+            ruleToUpdate.setTitle(jsonRule.get("title").textValue());
         }
 
         if (jsonRule.has("description"))
         {
-            ruleToUpdate.setDescription(jsonRule.getString("description"));
+            ruleToUpdate.setDescription(jsonRule.get("description").textValue());
         }
 
         if (jsonRule.has("ruleType"))
         {
-            JSONArray jsonTypes = jsonRule.getJSONArray("ruleType");
+            ArrayNode jsonTypes = (ArrayNode) jsonRule.get("ruleType");
             List<String> types = new ArrayList<String>();
 
-            for (int i = 0; i < jsonTypes.length(); i++)
+            for (int i = 0; i < jsonTypes.size(); i++)
             {
-                types.add(jsonTypes.getString(i));
+                types.add(jsonTypes.get(i).textValue());
             }
             ruleToUpdate.setRuleTypes(types);
         }
 
         if (jsonRule.has("applyToChildren"))
         {
-            ruleToUpdate.applyToChildren(jsonRule.getBoolean("applyToChildren"));
+            ruleToUpdate.applyToChildren(jsonRule.get("applyToChildren").booleanValue());
         }
 
         if (jsonRule.has("executeAsynchronously"))
         {
-            ruleToUpdate.setExecuteAsynchronously(jsonRule.getBoolean("executeAsynchronously"));
+            ruleToUpdate.setExecuteAsynchronously(jsonRule.get("executeAsynchronously").booleanValue());
         }
 
         if (jsonRule.has("disabled"))
         {
-            ruleToUpdate.setRuleDisabled(jsonRule.getBoolean("disabled"));
+            ruleToUpdate.setRuleDisabled(jsonRule.get("disabled").booleanValue());
         }
 
         if (jsonRule.has("action"))
         {
-            JSONObject jsonAction = jsonRule.getJSONObject("action");
+            JsonNode jsonAction = jsonRule.get("action");
 
             // update rule action 
             Action action = updateActionFromJson(jsonAction, (ActionImpl) ruleToUpdate.getAction());
@@ -174,7 +168,7 @@ public class RulePut extends RulePost
         }
     }
 
-    protected Action updateActionFromJson(JSONObject jsonAction, ActionImpl actionToUpdate) throws JSONException
+    protected Action updateActionFromJson(JsonNode jsonAction, ActionImpl actionToUpdate) throws JSONException
     {
         ActionImpl result = null;
 
@@ -192,34 +186,34 @@ public class RulePut extends RulePost
 
         if (jsonAction.has("description"))
         {
-            result.setDescription(jsonAction.getString("description"));
+            result.setDescription(jsonAction.get("description").textValue());
         }
 
         if (jsonAction.has("title"))
         {
-            result.setTitle(jsonAction.getString("title"));
+            result.setTitle(jsonAction.get("title").textValue());
         }
 
         if (jsonAction.has("parameterValues"))
         {
-            JSONObject jsonParameterValues = jsonAction.getJSONObject("parameterValues");
+            JsonNode jsonParameterValues = jsonAction.get("parameterValues");
             result.setParameterValues(parseJsonParameterValues(jsonParameterValues, result.getActionDefinitionName(), true));
         }
 
         if (jsonAction.has("executeAsync"))
         {
-            result.setExecuteAsynchronously(jsonAction.getBoolean("executeAsync"));
+            result.setExecuteAsynchronously(jsonAction.get("executeAsync").booleanValue());
         }
 
         if (jsonAction.has("runAsUser"))
         {
-            result.setRunAsUser(jsonAction.getString("runAsUser"));
+            result.setRunAsUser(jsonAction.get("runAsUser").textValue());
         }
 
         if (jsonAction.has("actions"))
         {
-            JSONArray jsonActions = jsonAction.getJSONArray("actions");
-            if (jsonActions.length() == 0)
+            ArrayNode jsonActions = (ArrayNode) jsonAction.get("actions");
+            if (jsonActions.size() == 0)
             {
                 // empty array was sent -> clear list
                 ((CompositeActionImpl) result).getActions().clear();
@@ -229,14 +223,14 @@ public class RulePut extends RulePost
                 List<Action> existingActions = ((CompositeActionImpl) result).getActions();
                 List<Action> newActions = new ArrayList<Action>();
 
-                for (int i = 0; i < jsonActions.length(); i++)
+                for (int i = 0; i < jsonActions.size(); i++)
                 {
-                    JSONObject innerJsonAction = jsonActions.getJSONObject(i);
+                    JsonNode innerJsonAction = jsonActions.get(i);
 
                     if (innerJsonAction.has("id"))
                     {
                         // update existing object
-                        String actionId = innerJsonAction.getString("id");
+                        String actionId = innerJsonAction.get("id").textValue();
 
                         Action existingAction = getAction(existingActions, actionId);
                         existingActions.remove(existingAction);
@@ -261,9 +255,9 @@ public class RulePut extends RulePost
 
         if (jsonAction.has("conditions"))
         {
-            JSONArray jsonConditions = jsonAction.getJSONArray("conditions");
+            ArrayNode jsonConditions = (ArrayNode) jsonAction.get("conditions");
 
-            if (jsonConditions.length() == 0)
+            if (jsonConditions.size() == 0)
             {
                 // empty array was sent -> clear list
                 result.getActionConditions().clear();
@@ -273,14 +267,14 @@ public class RulePut extends RulePost
                 List<ActionCondition> existingConditions = result.getActionConditions();
                 List<ActionCondition> newConditions = new ArrayList<ActionCondition>();
 
-                for (int i = 0; i < jsonConditions.length(); i++)
+                for (int i = 0; i < jsonConditions.size(); i++)
                 {
-                    JSONObject jsonCondition = jsonConditions.getJSONObject(i);
+                    JsonNode jsonCondition = jsonConditions.get(i);
 
                     if (jsonCondition.has("id"))
                     {
                         // update existing object
-                        String conditionId = jsonCondition.getString("id");
+                        String conditionId = jsonCondition.get("id").textValue();
 
                         ActionCondition existingCondition = getCondition(existingConditions, conditionId);
                         existingConditions.remove(existingCondition);
@@ -306,7 +300,7 @@ public class RulePut extends RulePost
 
         if (jsonAction.has("compensatingAction"))
         {
-            JSONObject jsonCompensatingAction = jsonAction.getJSONObject("compensatingAction");
+            JsonNode jsonCompensatingAction = jsonAction.get("compensatingAction");
             Action compensatingAction = updateActionFromJson(jsonCompensatingAction, (ActionImpl) actionToUpdate.getCompensatingAction());
 
             actionToUpdate.setCompensatingAction(compensatingAction);
@@ -314,7 +308,7 @@ public class RulePut extends RulePost
         return result;
     }
 
-    protected ActionCondition updateActionConditionFromJson(JSONObject jsonCondition, ActionConditionImpl conditionToUpdate) throws JSONException
+    protected ActionCondition updateActionConditionFromJson(JsonNode jsonCondition, ActionConditionImpl conditionToUpdate) throws JSONException
     {
         ActionConditionImpl result = null;
 
@@ -332,12 +326,12 @@ public class RulePut extends RulePost
 
         if (jsonCondition.has("invertCondition"))
         {
-            result.setInvertCondition(jsonCondition.getBoolean("invertCondition"));
+            result.setInvertCondition(jsonCondition.get("invertCondition").booleanValue());
         }
 
         if (jsonCondition.has("parameterValues"))
         {
-            JSONObject jsonParameterValues = jsonCondition.getJSONObject("parameterValues");
+            JsonNode jsonParameterValues = jsonCondition.get("parameterValues");
             result.setParameterValues(parseJsonParameterValues(jsonParameterValues, result.getActionConditionDefinitionName(), false));
         }
 

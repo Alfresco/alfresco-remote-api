@@ -25,13 +25,13 @@
  */
 package org.alfresco.repo.web.scripts.bean;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -57,12 +57,11 @@ public class LoginPost extends AbstractLoginBean
         // TODO accept xml type.
         
         // extract username and password from JSON object
-        JSONObject json;
         try
         {
-            json = new JSONObject(c.getContent());
-            String username = json.getString("username");
-            String password = json.getString("password");
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(c.getContent());
+            String username = json.get("username").textValue();
+            String password = json.get("password").textValue();
 
             if (username == null || username.length() == 0)
             {
@@ -85,11 +84,6 @@ public class LoginPost extends AbstractLoginBean
                 status.setRedirect(true);
                 return null;
             }
-        } 
-        catch (JSONException jErr)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST,
-                    "Unable to parse JSON POST body: " + jErr.getMessage());
         }
         catch (IOException ioErr)
         {

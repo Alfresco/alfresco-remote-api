@@ -25,21 +25,19 @@
  */
 package org.alfresco.repo.web.scripts.subscriptions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 import org.springframework.extensions.webscripts.WebScriptResponse;
 
 public class SubscriptionServiceFollowPost extends AbstractSubscriptionServiceWebScript
 {
-    public JSONObject executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException,
-            ParseException
+    public JsonNode executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException
     {
-        JSONArray jsonUsers = (JSONArray) JSONValue.parseWithException(req.getContent().getContent());
+        ArrayNode jsonUsers = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
 
         for (Object o : jsonUsers)
         {

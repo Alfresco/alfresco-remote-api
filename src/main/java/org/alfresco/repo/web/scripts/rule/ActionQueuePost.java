@@ -25,17 +25,17 @@
  */
 package org.alfresco.repo.web.scripts.rule;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.alfresco.repo.action.ActionImpl;
 import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -63,21 +63,18 @@ public class ActionQueuePost extends AbstractRuleWebScript
         // get request parameters
         boolean async = Boolean.parseBoolean(req.getParameter("async"));
 
-        ActionImpl action = null;
-        JSONObject json = null;
-
         try
         {
             // read request json
-            json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
 
             // parse request json
-            action = parseJsonAction(json);
+            ActionImpl action = parseJsonAction(json);
             NodeRef actionedUponNode = action.getNodeRef();
 
             // clear nodeRef for action
             action.setNodeRef(null);
-            json.remove("actionedUponNode");
+            ((ObjectNode) json).remove("actionedUponNode");
 
             if (async)
             {
@@ -98,10 +95,6 @@ public class ActionQueuePost extends AbstractRuleWebScript
         catch (IOException iox)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from req.", iox);
-        }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from req.", je);
         }
 
         return model;

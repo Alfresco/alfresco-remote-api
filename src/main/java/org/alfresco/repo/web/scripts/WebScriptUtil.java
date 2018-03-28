@@ -26,6 +26,7 @@
 
 package org.alfresco.repo.web.scripts;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -43,7 +44,6 @@ import org.alfresco.repo.nodelocator.SitesHomeNodeLocator;
 import org.alfresco.repo.nodelocator.UserHomeNodeLocator;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.util.ISO8601DateFormat;
-import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 
@@ -90,7 +90,7 @@ public class WebScriptUtil
         return model;
     }
     
-    public static Calendar getCalendar(JSONObject json) throws ParseException
+    public static Calendar getCalendar(JsonNode json) throws ParseException
     {
         Date date = getDate(json);
         if(date == null)
@@ -98,7 +98,7 @@ public class WebScriptUtil
             return null;
         }
         Calendar calendar = Calendar.getInstance();
-        String timeZone = json.optString(TIME_ZONE);
+        String timeZone = json.get(TIME_ZONE).textValue();
         if(timeZone != null)
         {
             TimeZone zone = TimeZone.getTimeZone(timeZone);
@@ -108,18 +108,18 @@ public class WebScriptUtil
         return calendar;
     }
     
-    public static Date getDate(JSONObject json) throws ParseException
+    public static Date getDate(JsonNode json) throws ParseException
     {
         if(json == null)
         {
             return null;
         }
-        String dateTime = json.optString(DATE_TIME);
+        String dateTime = json.get(DATE_TIME).textValue();
         if(dateTime == null)
         {
             return null;
         }
-        String format = json.optString(FORMAT);
+        String format = json.get(FORMAT).textValue();
         if(format!= null && ISO8601.equals(format) == false)
         {
             SimpleDateFormat dateFormat = new SimpleDateFormat(format);

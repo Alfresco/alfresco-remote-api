@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.blogs.posts;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,8 +40,6 @@ import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.tagging.TaggingService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -64,7 +64,7 @@ public class BlogPostsPost extends AbstractBlogWebScript
     
     @Override
     protected Map<String, Object> executeImpl(SiteInfo site, NodeRef nodeRef,
-         BlogPostInfo blog, WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+        BlogPostInfo blog, WebScriptRequest req, JsonNode json, Status status, Cache cache)
     {
         Map<String, Object> model = new HashMap<String, Object>();
         
@@ -96,18 +96,18 @@ public class BlogPostsPost extends AbstractBlogWebScript
         return model;
     }
     
-    private JsonParams parsePostParams(JSONObject json)
+    private JsonParams parsePostParams(JsonNode json)
     {
        JsonParams result = new JsonParams();
-       if (json.containsKey(TITLE))
+       if (json.has(TITLE))
        {
-          result.setTitle((String)json.get(TITLE));
+          result.setTitle(json.get(TITLE).textValue());
        }
-       if (json.containsKey(CONTENT))
+       if (json.has(CONTENT))
        {
-          result.setContent((String)json.get(CONTENT));
+          result.setContent(json.get(CONTENT).textValue());
        }
-       if (json.containsKey(DRAFT))
+       if (json.has(DRAFT))
        {
           Object draft = json.get(DRAFT);
           if (draft instanceof Boolean)
@@ -122,35 +122,35 @@ public class BlogPostsPost extends AbstractBlogWebScript
        
        // If there are no tags, this is a java.lang.String "".
        // If there are any tags, it's a JSONArray of strings. One or more.
-       if (json.containsKey(TAGS))
+       if (json.has(TAGS))
        {
-          Object tagsObj = json.get(TAGS);
+          JsonNode tagsObj = json.get(TAGS);
           List<String> tags = new ArrayList<String>();
-          if (tagsObj instanceof JSONArray)
+          if (tagsObj instanceof ArrayNode)
           {
-             JSONArray tagsJsonArray = (JSONArray)tagsObj;
+             ArrayNode tagsJsonArray = (ArrayNode) tagsObj;
              for (int i = 0; i < tagsJsonArray.size(); i++)
              {
-                tags.add( (String)tagsJsonArray.get(i) );
+                tags.add( tagsJsonArray.get(i).textValue() );
              }
           }
           else
           {
-             tags.add(tagsObj.toString());
+             tags.add("");
           }
           result.setTags(tags);
        }
-       if (json.containsKey(SITE))
+       if (json.has(SITE))
        {
-          result.setSite((String)json.get(SITE));
+          result.setSite(json.get(SITE).textValue());
        }
-       if (json.containsKey(PAGE))
+       if (json.has(PAGE))
        {
-          result.setPage((String)json.get(PAGE));
+          result.setPage(json.get(PAGE).textValue());
        }
-       if (json.containsKey(CONTAINER))
+       if (json.has(CONTAINER))
        {
-          result.setContainer((String)json.get(CONTAINER));
+          result.setContainer(json.get(CONTAINER).textValue());
        }
 
        return result;

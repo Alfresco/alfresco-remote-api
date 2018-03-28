@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -254,8 +255,8 @@ public class TestSiteMembershipRequests extends EnterpriseTestApi
 		this.siteMembershipRequestsProxy = publicApiClient.siteMembershipRequests();
 	}
 
-	private SiteMembershipRequest getSiteMembershipRequest(String networkId, String runAsUserId, String personId) throws PublicApiException, ParseException
-	{
+	private SiteMembershipRequest getSiteMembershipRequest(String networkId, String runAsUserId, String personId) throws PublicApiException, ParseException, IOException
+    {
 		publicApiClient.setRequestContext(new RequestContext(networkId, runAsUserId));
 
 		int skipCount = 0;
@@ -1932,7 +1933,7 @@ public class TestSiteMembershipRequests extends EnterpriseTestApi
         return siteMembershipRequestsProxy.getSiteMembershipRequests(createParams(paging, otherParams), "Failed to get site membership requests", HttpServletResponse.SC_OK);
     }
 
-    private SiteMembershipRequest createSiteMembershipRequest(String siteId, String personId) throws ParseException, PublicApiException
+    private SiteMembershipRequest createSiteMembershipRequest(String siteId, String personId) throws ParseException, PublicApiException, IOException
     {
         SiteMembershipRequest siteMembershipRequest = new SiteMembershipRequest();
         siteMembershipRequest.setId(siteId);

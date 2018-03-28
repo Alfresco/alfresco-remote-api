@@ -25,6 +25,11 @@
  */
 package org.alfresco.repo.web.scripts.action;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.transaction.UserTransaction;
@@ -50,8 +55,7 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.GUID;
 import org.alfresco.util.ISO8601DateFormat;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
@@ -131,10 +135,10 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONArray results = json.getJSONArray("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        ArrayNode results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(0, results.length());
+        assertEquals(0, results.size());
 
         
         // Add a running action, it should show up
@@ -149,28 +153,29 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
-        JSONObject jsonRD = (JSONObject)results.get(0);
+        JsonNode jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals(id, jsonRD.get("actionId"));
         assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
         assertEquals(instance, jsonRD.get("actionInstance"));
         assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
         assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(false, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
               id + "=" + instance, jsonRD.get("details"));
         
         
         // Ensure we didn't get any unexpected data back,
         //  only the keys we should have done
-        JSONArray keys = jsonRD.names();
-        for(int i=0; i<keys.length(); i++) {
-           String key = keys.getString(0);
+        Iterator<String> keys = jsonRD.fieldNames();
+        while(keys.hasNext())
+        {
+           String key = keys.next();
            if(key.equals("actionId") || key.equals("actionType") ||
                key.equals("actionInstance") || key.equals("actionNodeRef") ||
                key.equals("startedAt") || key.equals("cancelRequested") ||
@@ -189,19 +194,19 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals(id, jsonRD.get("actionId"));
         assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
         assertEquals(instance, jsonRD.get("actionInstance"));
         assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
         assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(true, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(true, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
               id + "=" + instance, jsonRD.get("details"));
         
@@ -229,13 +234,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(3, results.length());
+        assertEquals(3, results.size());
         
         for(int i=0; i<3; i++) {
-           jsonRD = (JSONObject)results.get(i);
+           jsonRD = results.get(i);
            if(jsonRD.get("actionId").equals(id)) {
               has1 = true;
            }
@@ -264,13 +269,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(2, results.length());
+        assertEquals(2, results.size());
         
         for(int i=0; i<2; i++) {
-           jsonRD = (JSONObject)results.get(i);
+           jsonRD = results.get(i);
            if(jsonRD.get("actionId").equals(id)) {
               has1 = true;
            }
@@ -294,19 +299,19 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals(id, jsonRD.get("actionId"));
         assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
         assertEquals(instance, jsonRD.get("actionInstance"));
         assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
         assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(true, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(true, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
               id + "=" + instance, jsonRD.get("details"));
         
@@ -319,19 +324,19 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals(id2, jsonRD.get("actionId"));
         assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
         assertEquals(instance2, jsonRD.get("actionInstance"));
         assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
         assertEquals(startedAt2, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(false, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
               id2 + "=" + instance2, jsonRD.get("details"));
 
@@ -348,59 +353,59 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         response = sendRequest(new GetRequest(URL_RUNNING_ACTIONS), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(4, results.length());
+        assertEquals(4, results.size());
         
         // 2 replication actions
         response = sendRequest(new GetRequest(URL_RUNNING_ACTIONS +
               "?type=replicationActionExecutor"), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(2, results.length());
+        assertEquals(2, results.size());
         
         // 0 if doesn't exist
         response = sendRequest(new GetRequest(URL_RUNNING_ACTIONS +
               "?type=MadeUp4"), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(0, results.length());
+        assertEquals(0, results.size());
         
         // 1 each of the made up ones
         response = sendRequest(new GetRequest(URL_RUNNING_ACTIONS +
               "?type=MadeUp1"), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
         response = sendRequest(new GetRequest(URL_RUNNING_ACTIONS +
               "?type=MadeUp2"), 200);
         assertEquals(Status.STATUS_OK, response.getStatus());
         jsonStr = response.getContentAsString();
-        json = new JSONObject(jsonStr);
-        results = json.getJSONArray("data");
+        json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        results = (ArrayNode) json.get("data");
         assertNotNull(results);
-        assertEquals(1, results.length());
+        assertEquals(1, results.size());
         
         // Check the details of one of these
-        jsonRD = (JSONObject)results.get(0);
+        jsonRD = results.get(0);
         assertNotNull(jsonRD);
         assertEquals("54321", jsonRD.get("actionId"));
         assertEquals("MadeUp2", jsonRD.get("actionType"));
         assertEquals(instanceAlt2, jsonRD.get("actionInstance"));
-        assertEquals(JSONObject.NULL, jsonRD.get("actionNodeRef"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("actionNodeRef"));
         assertEquals(startAtAlt2, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(false, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + "MadeUp2=54321=" +
               instanceAlt2, jsonRD.get("details"));
     }
@@ -427,10 +432,10 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        String jsonStr = response.getContentAsString();
-       JSONObject json = new JSONObject(jsonStr);
-       JSONArray results = json.getJSONArray("data");
+       JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+       ArrayNode results = (ArrayNode) json.get("data");
        assertNotNull(results);
-       assertEquals(0, results.length());
+       assertEquals(0, results.size());
 
        
        // Add a running action, it should show up
@@ -445,28 +450,29 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr);
-       results = json.getJSONArray("data");
+       json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+       results = (ArrayNode) json.get("data");
        assertNotNull(results);
-       assertEquals(1, results.length());
+       assertEquals(1, results.size());
        
-       JSONObject jsonRD = (JSONObject)results.get(0);
+       JsonNode jsonRD = results.get(0);
        assertNotNull(jsonRD);
        assertEquals(id, jsonRD.get("actionId"));
        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
        assertEquals(instance, jsonRD.get("actionInstance"));
        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
        assertEquals(startedAt, jsonRD.get("startedAt"));
-       assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+       assertEquals(false, jsonRD.get("cancelRequested"));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
              id + "=" + instance, jsonRD.get("details"));
        
        
        // Ensure we didn't get any unexpected data back,
        //  only the keys we should have done
-       JSONArray keys = jsonRD.names();
-       for(int i=0; i<keys.length(); i++) {
-          String key = keys.getString(0);
+       Iterator<String> keys = jsonRD.fieldNames();
+       while(keys.hasNext())
+       {
+          String key = keys.next();
           if(key.equals("actionId") || key.equals("actionType") ||
               key.equals("actionInstance") || key.equals("actionNodeRef") ||
               key.equals("startedAt") || key.equals("cancelRequested") ||
@@ -485,19 +491,19 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr);
-       results = json.getJSONArray("data");
+       json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+       results = (ArrayNode) json.get("data");
        assertNotNull(results);
-       assertEquals(1, results.length());
+       assertEquals(1, results.size());
        
-       jsonRD = (JSONObject)results.get(0);
+       jsonRD = results.get(0);
        assertNotNull(jsonRD);
        assertEquals(id, jsonRD.get("actionId"));
        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
        assertEquals(instance, jsonRD.get("actionInstance"));
        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
        assertEquals(startedAt, jsonRD.get("startedAt"));
-       assertEquals(true, jsonRD.getBoolean("cancelRequested"));
+       assertEquals(true, jsonRD.get("cancelRequested"));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
              id + "=" + instance, jsonRD.get("details"));
        
@@ -527,13 +533,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr);
-       results = json.getJSONArray("data");
+       json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+       results = (ArrayNode) json.get("data");
        assertNotNull(results);
-       assertEquals(3, results.length());
+       assertEquals(3, results.size());
        
        for(int i=0; i<3; i++) {
-          jsonRD = (JSONObject)results.get(i);
+          jsonRD = results.get(i);
           if(jsonRD.get("actionId").equals(id)) {
              has1 = true;
           }
@@ -562,13 +568,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr);
-       results = json.getJSONArray("data");
+       json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+       results = (ArrayNode) json.get("data");
        assertNotNull(results);
-       assertEquals(2, results.length());
+       assertEquals(2, results.size());
        
        for(int i=0; i<2; i++) {
-          jsonRD = (JSONObject)results.get(i);
+          jsonRD = results.get(i);
           if(jsonRD.get("actionId").equals(id)) {
              has1 = true;
           }
@@ -591,19 +597,19 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        assertEquals(Status.STATUS_OK, response.getStatus());
        
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr);
-       results = json.getJSONArray("data");
+       json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+       results = (ArrayNode) json.get("data");
        assertNotNull(results);
-       assertEquals(1, results.length());
+       assertEquals(1, results.size());
        
-       jsonRD = (JSONObject)results.get(0);
+       jsonRD = results.get(0);
        assertNotNull(jsonRD);
        assertEquals(id, jsonRD.get("actionId"));
        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
        assertEquals(instance, jsonRD.get("actionInstance"));
        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
        assertEquals(startedAt, jsonRD.get("startedAt"));
-       assertEquals(true, jsonRD.getBoolean("cancelRequested"));
+       assertEquals(true, jsonRD.get("cancelRequested"));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
              id + "=" + instance, jsonRD.get("details"));
        
@@ -622,10 +628,10 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        response = sendRequest(new GetRequest(URL_RUNNING_REPLICATION_ACTIONS), 200);
        assertEquals(Status.STATUS_OK, response.getStatus());
        jsonStr = response.getContentAsString();
-       json = new JSONObject(jsonStr);
-       results = json.getJSONArray("data");
+       json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+       results = (ArrayNode) json.get("data");
        assertNotNull(results);
-       assertEquals(2, results.length());
+       assertEquals(2, results.size());
     }
     
     
@@ -665,22 +671,23 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         String jsonStr = response.getContentAsString();
-        JSONObject jsonRD = new JSONObject(jsonStr).getJSONObject("data");
+        JsonNode jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(jsonRD);
         assertEquals(id, jsonRD.get("actionId"));
         assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
         assertEquals(instance, jsonRD.get("actionInstance"));
         assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
         assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(false, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + key1, jsonRD.get("details"));
         
         
         // Ensure we didn't get any unexpected data back,
         //  only the keys we should have done
-        JSONArray keys = jsonRD.names();
-        for(int i=0; i<keys.length(); i++) {
-           String key = keys.getString(0);
+        Iterator<String> keys = jsonRD.fieldNames();
+        while(keys.hasNext())
+        {
+           String key = keys.next();
            if(key.equals("actionId") || key.equals("actionType") ||
                key.equals("actionInstance") || key.equals("actionNodeRef") ||
                key.equals("startedAt") || key.equals("cancelRequested") ||
@@ -707,14 +714,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        jsonRD = new JSONObject(jsonStr).getJSONObject("data");
+        jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(jsonRD);
         assertEquals(id2, jsonRD.get("actionId"));
         assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
         assertEquals(instance2, jsonRD.get("actionInstance"));
         assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
         assertEquals(startedAt2, jsonRD.get("startedAt"));
-        assertEquals(true, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(true, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + key2, jsonRD.get("details"));
         
         
@@ -724,14 +731,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         
         rd = replicationService.loadReplicationDefinition("Test1");
         jsonStr = response.getContentAsString();
-        jsonRD = new JSONObject(jsonStr).getJSONObject("data");
+        jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(jsonRD);
         assertEquals(id, jsonRD.get("actionId"));
         assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
         assertEquals(instance, jsonRD.get("actionInstance"));
         assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
         assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(false, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + key1, jsonRD.get("details"));
         
         
@@ -747,14 +754,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         assertEquals(Status.STATUS_OK, response.getStatus());
         
         jsonStr = response.getContentAsString();
-        jsonRD = new JSONObject(jsonStr).getJSONObject("data");
+        jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(jsonRD);
         assertEquals(id3, jsonRD.get("actionId"));
         assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
         assertEquals(instance3, jsonRD.get("actionInstance"));
         assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-        assertEquals(JSONObject.NULL, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+        assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
+        assertEquals(false, jsonRD.get("cancelRequested"));
         assertEquals("/" + URL_RUNNING_ACTION + key3, jsonRD.get("details"));
     }
     
@@ -871,7 +878,7 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        // Ask for it to be started
        // (It should start but fail due to missing definition parts)
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("nodeRef", rd.getNodeRef().toString());
 
        response = sendRequest(new PostRequest(URL_RUNNING_ACTIONS, json.toString(), JSON), Status.STATUS_OK);
@@ -879,13 +886,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        // Check we got back some details on it
        String jsonStr = response.getContentAsString();
-       JSONObject jsonRD = new JSONObject(jsonStr).getJSONObject("data");
+       JsonNode jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(jsonRD);
        
        assertEquals(id, jsonRD.get("actionId"));
        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-       assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+       assertEquals(false, jsonRD.get("cancelRequested"));
        
        // Should be pending 
        // Wait for it to fail (we didn't
@@ -919,7 +926,7 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        
        // Ensure you can't start with an invalid nodeRef
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("nodeRef", "XX"+rd.getNodeRef().toString()+"ZZ");
 
        response = sendRequest(new PostRequest(URL_RUNNING_ACTIONS, json.toString(), JSON), Status.STATUS_NOT_FOUND);
@@ -960,7 +967,7 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        // Ask for it to be started
        // (It should start but fail due to missing definition parts)
-       JSONObject json = new JSONObject();
+        ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("name", "Test1");
 
        response = sendRequest(new PostRequest(URL_RUNNING_REPLICATION_ACTIONS, json.toString(), JSON), Status.STATUS_OK);
@@ -968,13 +975,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        // Check we got back some details on it
        String jsonStr = response.getContentAsString();
-       JSONObject jsonRD = new JSONObject(jsonStr).getJSONObject("data");
+       JsonNode jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(jsonRD);
        
        assertEquals(id, jsonRD.get("actionId"));
        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-       assertEquals(false, jsonRD.getBoolean("cancelRequested"));
+       assertEquals(false, jsonRD.get("cancelRequested"));
        
        // Should be pending 
        // Wait for it to fail (we didn't
@@ -1006,7 +1013,7 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        
        // Ensure you can't start with an invalid name
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("name", "MadeUpName");
 
        response = sendRequest(new PostRequest(URL_RUNNING_REPLICATION_ACTIONS, json.toString(), JSON), Status.STATUS_NOT_FOUND);

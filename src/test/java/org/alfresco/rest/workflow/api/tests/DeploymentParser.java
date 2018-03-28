@@ -25,19 +25,19 @@
  */
 package org.alfresco.rest.workflow.api.tests;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.alfresco.rest.workflow.api.model.Deployment;
-import org.json.simple.JSONObject;
 
 public class DeploymentParser extends ListParser<Deployment>
 {
     public static DeploymentParser INSTANCE = new DeploymentParser();
 
     @Override
-    public Deployment parseEntry(JSONObject entry)
+    public Deployment parseEntry(JsonNode entry)
     {
         Deployment deployment = new Deployment();
-        deployment.setId((String) entry.get("id"));
-        deployment.setName((String) entry.get("name"));
+        deployment.setId(entry.get("id").textValue());
+        deployment.setName(entry.get("name").textValue());
         deployment.setDeployedAt(WorkflowApiClient.parseDate(entry, "deployedAt"));
         return deployment;
     }

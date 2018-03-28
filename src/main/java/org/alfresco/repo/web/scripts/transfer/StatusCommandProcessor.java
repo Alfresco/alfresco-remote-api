@@ -26,6 +26,7 @@
 
 package org.alfresco.repo.web.scripts.transfer;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import javax.servlet.http.HttpServletRequest;
 
 import org.alfresco.service.cmr.transfer.TransferException;
@@ -33,9 +34,9 @@ import org.alfresco.service.cmr.transfer.TransferProgress;
 import org.alfresco.service.cmr.transfer.TransferReceiver;
 import org.alfresco.util.json.ExceptionJsonSerializer;
 import org.alfresco.util.json.JsonSerializer;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 import org.springframework.extensions.webscripts.WebScriptResponse;
@@ -54,7 +55,7 @@ public class StatusCommandProcessor implements CommandProcessor
     private static final String MSG_CAUGHT_UNEXPECTED_EXCEPTION = "transfer_service.receiver.caught_unexpected_exception";
 
     private TransferReceiver receiver;
-    private JsonSerializer<Throwable, JSONObject> errorSerializer = new ExceptionJsonSerializer();
+    private JsonSerializer<Throwable, String> errorSerializer = new ExceptionJsonSerializer();
 
     private final static Log logger = LogFactory.getLog(StatusCommandProcessor.class);
 
@@ -106,15 +107,15 @@ public class StatusCommandProcessor implements CommandProcessor
                 logger.debug(progress);
             }
             
-            JSONObject progressObject = new JSONObject();
+            ObjectNode progressObject = AlfrescoDefaultObjectMapper.createObjectNode();
             progressObject.put("transferId", transferId);
             progressObject.put("status", progress.getStatus().toString());
             progressObject.put("currentPosition", progress.getCurrentPosition());
             progressObject.put("endPosition", progress.getEndPosition());
             if (progress.getError() != null)
             {
-                JSONObject errorObject = errorSerializer.serialize(progress.getError());
-                progressObject.put("error", errorObject);
+                String error = errorSerializer.serialize(progress.getError());
+                progressObject.put("error", error);
             }
             String response = progressObject.toString();
 
@@ -147,7 +148,7 @@ public class StatusCommandProcessor implements CommandProcessor
         this.receiver = receiver;
     }
 
-    public void setErrorSerializer(JsonSerializer<Throwable, JSONObject> errorSerializer)
+    public void setErrorSerializer(JsonSerializer<Throwable, String> errorSerializer)
     {
         this.errorSerializer = errorSerializer;
     }

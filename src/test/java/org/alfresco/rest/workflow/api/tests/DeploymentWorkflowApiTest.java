@@ -29,6 +29,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +47,6 @@ import org.alfresco.rest.api.tests.client.RequestContext;
 import org.alfresco.rest.workflow.api.model.Deployment;
 import org.alfresco.rest.workflow.api.tests.WorkflowApiClient.DeploymentsClient;
 import org.alfresco.util.testing.category.LuceneTests;
-import org.json.simple.JSONObject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.http.HttpStatus;
@@ -134,9 +134,9 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         Map<String, String> params = new HashMap<String, String>();
         params.put("maxItems", "2");
-        JSONObject deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
+        JsonNode deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
-        JSONObject paginationJSON = (JSONObject) deploymentsListObject.get("pagination");
+        JsonNode paginationJSON = deploymentsListObject.get("pagination");
         assertEquals(2l, paginationJSON.get("count"));
         assertEquals(5l, paginationJSON.get("totalItems"));
         assertEquals(0l, paginationJSON.get("skipCount"));
@@ -145,7 +145,7 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         params = new HashMap<String, String>();
         deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
-        paginationJSON = (JSONObject) deploymentsListObject.get("pagination");
+        paginationJSON = deploymentsListObject.get("pagination");
         assertEquals(5l, paginationJSON.get("count"));
         assertEquals(5l, paginationJSON.get("totalItems"));
         assertEquals(0l, paginationJSON.get("skipCount"));
@@ -156,7 +156,7 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         params.put("maxItems", "2");
         deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
-        paginationJSON = (JSONObject) deploymentsListObject.get("pagination");
+        paginationJSON = deploymentsListObject.get("pagination");
         assertEquals(2l, paginationJSON.get("count"));
         assertEquals(5l, paginationJSON.get("totalItems"));
         assertEquals(2l, paginationJSON.get("skipCount"));
@@ -167,7 +167,7 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         params.put("maxItems", "5");
         deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
-        paginationJSON = (JSONObject) deploymentsListObject.get("pagination");
+        paginationJSON = deploymentsListObject.get("pagination");
         assertEquals(3l, paginationJSON.get("count"));
         assertEquals(5l, paginationJSON.get("totalItems"));
         assertEquals(2l, paginationJSON.get("skipCount"));
@@ -178,7 +178,7 @@ public class DeploymentWorkflowApiTest extends EnterpriseWorkflowTestApi
         params.put("maxItems", "7");
         deploymentsListObject = deploymentsClient.getDeploymentsWithRawResponse(params);
         assertNotNull(deploymentsListObject);
-        paginationJSON = (JSONObject) deploymentsListObject.get("pagination");
+        paginationJSON = deploymentsListObject.get("pagination");
         assertEquals(5l, paginationJSON.get("count"));
         assertEquals(5l, paginationJSON.get("totalItems"));
         assertEquals(0l, paginationJSON.get("skipCount"));

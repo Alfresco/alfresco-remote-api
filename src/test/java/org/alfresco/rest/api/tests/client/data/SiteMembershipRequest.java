@@ -29,6 +29,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.text.Collator;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -38,8 +42,7 @@ import java.util.List;
 import org.alfresco.rest.api.tests.PublicApiDateFormat;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class SiteMembershipRequest implements ExpectedComparison, Comparable<SiteMembershipRequest>
 {
@@ -126,22 +129,22 @@ public class SiteMembershipRequest implements ExpectedComparison, Comparable<Sit
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject siteMembershipRequestJson = new JSONObject();
+        ObjectNode siteMembershipRequestJson = AlfrescoDefaultObjectMapper.createObjectNode();
 		siteMembershipRequestJson.put("id", getId());
 		siteMembershipRequestJson.put("message", getMessage());
 		return siteMembershipRequestJson;
 	}
 
-	public static SiteMembershipRequest parseSiteMembershipRequest(JSONObject jsonObject) throws ParseException
-	{
-		String id = (String)jsonObject.get("id");
-		String createdAt = (String)jsonObject.get("createdAt");
-		String message = (String)jsonObject.get("message");
-		String modifiedAt = (String)jsonObject.get("modifiedAt");
-		JSONObject siteJSON = (JSONObject)jsonObject.get("site");
-		JSONObject personJSON = (JSONObject)jsonObject.get("person");
+	public static SiteMembershipRequest parseSiteMembershipRequest(JsonNode jsonObject) throws ParseException, IOException
+    {
+		String id = jsonObject.get("id").textValue();
+		String createdAt = jsonObject.get("createdAt").textValue();
+		String message = jsonObject.get("message").textValue();
+		String modifiedAt = jsonObject.get("modifiedAt").textValue();
+		JsonNode siteJSON = jsonObject.get("site");
+		JsonNode personJSON = jsonObject.get("person");
 		
 		SiteMembershipRequest siteMembershipRequest = new SiteMembershipRequest();
 		siteMembershipRequest.setId(id);
@@ -165,20 +168,20 @@ public class SiteMembershipRequest implements ExpectedComparison, Comparable<Sit
 		return siteMembershipRequest;
 	}
 
-	public static ListResponse<SiteMembershipRequest> parseSiteMembershipRequests(JSONObject jsonObject) throws ParseException
-	{
+	public static ListResponse<SiteMembershipRequest> parseSiteMembershipRequests(JsonNode jsonObject) throws ParseException, IOException
+    {
 		List<SiteMembershipRequest> siteMembershipRequests = new ArrayList<SiteMembershipRequest>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+			JsonNode jsonEntry = jsonEntries.get(i);
+			JsonNode entry = jsonEntry.get("entry");
 			siteMembershipRequests.add(SiteMembershipRequest.parseSiteMembershipRequest(entry));
 		}
 

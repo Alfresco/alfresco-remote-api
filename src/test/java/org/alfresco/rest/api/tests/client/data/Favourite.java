@@ -29,6 +29,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -39,8 +42,7 @@ import org.alfresco.rest.api.tests.PublicApiDateFormat;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
 import org.alfresco.service.cmr.favourites.FavouritesService.Type;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class Favourite implements Serializable, ExpectedComparison, Comparable<Favourite>
 {
@@ -141,37 +143,37 @@ public class Favourite implements Serializable, ExpectedComparison, Comparable<F
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject favouriteJson = new JSONObject();
+		ObjectNode favouriteJson = AlfrescoDefaultObjectMapper.createObjectNode();
 		if(target != null)
 		{
-			favouriteJson.put("target", target.toJSON());
+			favouriteJson.set("target", target.toJSON());
 		}
 		return favouriteJson;
 	}
 
-	public static FavouritesTarget parseTarget(JSONObject jsonObject) throws ParseException
+	public static FavouritesTarget parseTarget(JsonNode jsonObject) throws ParseException
 	{
 		FavouritesTarget ret = null;
 
-		if(jsonObject.containsKey("site"))
+		if(jsonObject.has("site"))
 		{
-			JSONObject siteJSON = (JSONObject)jsonObject.get("site");
+			JsonNode siteJSON = jsonObject.get("site");
 			Site site = SiteImpl.parseSite(siteJSON);
 			ret = new SiteFavouriteTarget(site);
 			
 		}
-		else if(jsonObject.containsKey("file"))
+		else if(jsonObject.has("file"))
 		{
-			JSONObject documentJSON = (JSONObject)jsonObject.get("file");
+			JsonNode documentJSON = jsonObject.get("file");
 			FavouriteDocument document = FavouriteDocument.parseDocument(documentJSON);
 			ret = new FileFavouriteTarget(document);
 			
 		}
-		else if(jsonObject.containsKey("folder"))
+		else if(jsonObject.has("folder"))
 		{
-			JSONObject folderJSON = (JSONObject)jsonObject.get("folder");
+			JsonNode folderJSON = jsonObject.get("folder");
 			FavouriteFolder folder = FavouriteFolder.parseFolder(folderJSON);
 			ret = new FolderFavouriteTarget(folder);
 		}
@@ -179,30 +181,30 @@ public class Favourite implements Serializable, ExpectedComparison, Comparable<F
 		return ret;
 	}
 
-	public static Favourite parseFavourite(JSONObject jsonObject) throws ParseException
+	public static Favourite parseFavourite(JsonNode jsonObject) throws ParseException
 	{
-		String createdAt = (String)jsonObject.get("createdAt");
-		String modifiedAt = (String)jsonObject.get("modifiedAt");
-		JSONObject jsonTarget = (JSONObject)jsonObject.get("target");
+		String createdAt = jsonObject.get("createdAt").textValue();
+		String modifiedAt = jsonObject.get("modifiedAt").textValue();
+		JsonNode jsonTarget = jsonObject.get("target");
 		FavouritesTarget target = parseTarget(jsonTarget);
 		Favourite favourite = new Favourite(createdAt, modifiedAt, target);
 		return favourite;
 	}
 
-	public static ListResponse<Favourite> parseFavourites(JSONObject jsonObject) throws ParseException
+	public static ListResponse<Favourite> parseFavourites(JsonNode jsonObject) throws ParseException
 	{
 		List<Favourite> favourites = new ArrayList<Favourite>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode)jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+			JsonNode jsonEntry = jsonEntries.get(i);
+			JsonNode entry = jsonEntry.get("entry");
 			favourites.add(Favourite.parseFavourite(entry));
 		}
 

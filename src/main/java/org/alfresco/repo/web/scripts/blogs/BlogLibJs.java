@@ -25,13 +25,15 @@
  */
 package org.alfresco.repo.web.scripts.blogs;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.alfresco.model.BlogIntegrationModel;
 import org.alfresco.service.namespace.QName;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.JsonUtil;
 
 /**
  * This class is a port of a previous JavaScript library.
@@ -46,7 +48,7 @@ public class BlogLibJs
      * Fetches the blog properties from the json object and adds them to an array
      * using the correct property names as indexes.
      */
-    public static Map<QName, Serializable> getBlogPropertiesArray(JSONObject json)
+    public static Map<QName, Serializable> getBlogPropertiesArray(JsonNode json)
     {
         Map<QName, Serializable> arr = new HashMap<QName, Serializable>();
         
@@ -60,12 +62,12 @@ public class BlogLibJs
         return arr;
     }
 
-    private static void putJSONEntryInMap(JSONObject json,
+    private static void putJSONEntryInMap(JsonNode json,
             Map<QName, Serializable> arr, String jsonKey, QName mapKey)
     {
-         if (json.containsKey(jsonKey))
+         if (json.has(jsonKey))
          {
-             arr.put(mapKey, (Serializable)json.get(jsonKey));
+             arr.put(mapKey, (Serializable) JsonUtil.convertJSONValue((ValueNode) json.get(jsonKey)));
          }
     }
 }

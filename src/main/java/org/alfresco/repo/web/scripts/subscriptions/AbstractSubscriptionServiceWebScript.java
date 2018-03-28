@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.subscriptions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -42,9 +45,7 @@ import org.alfresco.service.cmr.subscriptions.PrivateSubscriptionListException;
 import org.alfresco.service.cmr.subscriptions.SubscriptionService;
 import org.alfresco.service.cmr.subscriptions.SubscriptionsDisabledException;
 import org.alfresco.util.ISO8601DateFormat;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.AbstractWebScript;
 import org.springframework.extensions.webscripts.Format;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -83,21 +84,15 @@ public abstract class AbstractSubscriptionServiceWebScript extends AbstractWebSc
         try
         {
             String userId = req.getServiceMatch().getTemplateVars().get("userid");
-            Object obj = executeImpl(userId, req, res);
+            JsonNode obj = executeImpl(userId, req, res);
 
-            if (obj instanceof JSONObject || obj instanceof JSONArray)
+            if (obj instanceof ObjectNode || obj instanceof ArrayNode)
             {
                 res.setContentEncoding(Charset.defaultCharset().displayName());
                 res.setContentType(Format.JSON.mimetype() + ";charset=UTF-8");
 
                 Writer writer = res.getWriter();
-                if (obj instanceof JSONObject)
-                {
-                    ((JSONObject) obj).writeJSONString(writer);
-                } else
-                {
-                    ((JSONArray) obj).writeJSONString(writer);
-                }
+                AlfrescoDefaultObjectMapper.getWriter().writeValue(writer, obj);
                 writer.flush();
             } else
             {
@@ -112,9 +107,6 @@ public abstract class AbstractSubscriptionServiceWebScript extends AbstractWebSc
         } catch (PrivateSubscriptionListException psle)
         {
             throw new WebScriptException(403, "Subscription list is private!", psle);
-        } catch (ParseException pe)
-        {
-            throw new WebScriptException(400, "Unable to parse JSON!", pe);
         } catch (ClassCastException cce)
         {
             throw new WebScriptException(400, "Unable to parse JSON!", cce);
@@ -124,8 +116,7 @@ public abstract class AbstractSubscriptionServiceWebScript extends AbstractWebSc
         }
     }
 
-    public abstract Object executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException,
-            ParseException;
+    public abstract JsonNode executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException;
 
     protected int parseNumber(String name, String number, int def)
     {
@@ -157,16 +148,24 @@ public abstract class AbstractSubscriptionServiceWebScript extends AbstractWebSc
     }
 
     @SuppressWarnings("unchecked")
-    protected JSONObject getUserDetails(String username)
+    protected ObjectNode getUserDetails(String username)
     {
         NodeRef node = personService.getPerson(username);
 
-        JSONObject result = new JSONObject();
+        ObjectNode result = AlfrescoDefaultObjectMapper.createObjectNode();
         result.put("userName", username);
-        result.put("firstName", nodeService.getProperty(node, ContentModel.PROP_FIRSTNAME));
-        result.put("lastName", nodeService.getProperty(node, ContentModel.PROP_LASTNAME));
-        result.put("jobtitle", nodeService.getProperty(node, ContentModel.PROP_JOBTITLE));
-        result.put("organization", nodeService.getProperty(node, ContentModel.PROP_ORGANIZATION));
+        result.set("firstName",
+                AlfrescoDefaultObjectMapper.convertValue(
+                        nodeService.getProperty(node, ContentModel.PROP_FIRSTNAME), JsonNode.class));
+        result.set("lastName",
+                AlfrescoDefaultObjectMapper.convertValue(
+                        nodeService.getProperty(node, ContentModel.PROP_LASTNAME), JsonNode.class));
+        result.set("jobtitle",
+                AlfrescoDefaultObjectMapper.convertValue(
+                        nodeService.getProperty(node, ContentModel.PROP_JOBTITLE), JsonNode.class));
+        result.set("organization",
+                AlfrescoDefaultObjectMapper.convertValue(
+                        nodeService.getProperty(node, ContentModel.PROP_ORGANIZATION), JsonNode.class));
 
         String status = (String) nodeService.getProperty(node, ContentModel.PROP_USER_STATUS);
         if (status != null)
@@ -177,7 +176,7 @@ public abstract class AbstractSubscriptionServiceWebScript extends AbstractWebSc
         Date statusTime = (Date) nodeService.getProperty(node, ContentModel.PROP_USER_STATUS_TIME);
         if (statusTime != null)
         {
-            JSONObject statusTimeJson = new JSONObject();
+            ObjectNode statusTimeJson = AlfrescoDefaultObjectMapper.createObjectNode();
             statusTimeJson.put("iso8601", ISO8601DateFormat.format(statusTime));
             result.put("userStatusTime", statusTimeJson);
         }
@@ -198,9 +197,9 @@ public abstract class AbstractSubscriptionServiceWebScript extends AbstractWebSc
     }
 
     @SuppressWarnings("unchecked")
-    protected JSONArray getUserArray(List<String> usernames)
+    protected ArrayNode getUserArray(List<String> usernames)
     {
-        JSONArray result = new JSONArray();
+        ArrayNode result = AlfrescoDefaultObjectMapper.createArrayNode();
 
         if (usernames != null)
         {

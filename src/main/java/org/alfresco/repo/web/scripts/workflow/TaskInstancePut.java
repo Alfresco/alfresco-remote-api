@@ -25,10 +25,15 @@
  */
 package org.alfresco.repo.web.scripts.workflow;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -41,10 +46,7 @@ import org.alfresco.service.cmr.repository.datatype.TypeConversionException;
 import org.alfresco.service.cmr.workflow.WorkflowException;
 import org.alfresco.service.cmr.workflow.WorkflowTask;
 import org.alfresco.service.namespace.QName;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -65,7 +67,7 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
         // getting task id from request parameters
         String taskId = params.get("task_instance_id");
         
-        JSONObject json = null;
+        JsonNode json = null;
         
         try
         {
@@ -73,7 +75,7 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
             String currentUser = authenticationService.getCurrentUserName();
 
             // read request json            
-            json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+            json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
                 
             // update task properties
             workflowTask = workflowService.updateTask(taskId, parseTaskProperties(json, workflowTask), null, null);
@@ -94,10 +96,6 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from request.", iox);
         }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from request.", je);
-        }
         catch (AccessDeniedException ade)
         {
             throw new WebScriptException(HttpServletResponse.SC_UNAUTHORIZED, "Failed to update workflow task with id: " + taskId, ade);
@@ -107,28 +105,29 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
             throw new WebScriptException(HttpServletResponse.SC_UNAUTHORIZED, "Failed to update workflow task with id: " + taskId, we);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
-    private Map<QName, Serializable> parseTaskProperties(JSONObject json, WorkflowTask workflowTask) throws JSONException
+    private Map<QName, Serializable> parseTaskProperties(JsonNode json, WorkflowTask workflowTask)
     {
         Map<QName, Serializable> props = new HashMap<QName, Serializable>();
         
         // gets the array of properties names
-        String[] names = JSONObject.getNames(json);
+        Iterator<String> names = json.fieldNames();
         
         if (names != null)
         {
             // array is not empty
-            for (String name : names)
+            while (names.hasNext())
             {
+                String name = names.next();
                 // build the qname of property
                 QName key = QName.createQName(name.replaceFirst("_", ":"), namespaceService);
-                Object jsonValue = json.get(name);
+                JsonNode jsonValue = json.get(name);
                 
                 Serializable value = null;
                 
                 // process null values 
-                if (jsonValue.equals(JSONObject.NULL))
+                if (jsonValue instanceof NullNode)
                 {
                     props.put(key, null);
                 }
@@ -139,13 +138,15 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
                     
                     if (prop != null)
                     {
-                        if (prop.isMultiValued() && jsonValue instanceof JSONArray)
+                        if (prop.isMultiValued() && jsonValue instanceof ArrayNode)
                         {
                             value = new ArrayList<Serializable>();
                             
-                            for (int i = 0; i < ((JSONArray)jsonValue).length(); i++)
+                            for (int i = 0; i < jsonValue.size(); i++)
                             {
-                                ((List<Serializable>)value).add((Serializable) DefaultTypeConverter.INSTANCE.convert(prop.getDataType(),((JSONArray)jsonValue).get(i)));
+                                ((List<Serializable>)value).add(
+                                        (Serializable) DefaultTypeConverter.INSTANCE
+                                                .convert(prop.getDataType(), jsonValue.toString()));
                             }
                         }
                         else
@@ -157,20 +158,20 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
                     else
                     {
                         // property definition was not found in dictionary
-                        if (jsonValue instanceof JSONArray)
+                        if (jsonValue instanceof ArrayNode)
                         {
                             value = new ArrayList<String>();
                             
-                            for (int i = 0; i < ((JSONArray)jsonValue).length(); i++)
+                            for (int i = 0; i < jsonValue.size(); i++)
                             {
-                                ((List<String>)value).add(((JSONArray)jsonValue).getString(i));
+                                ((List<String>)value).add((jsonValue).get(i).textValue());
                             }
                         }
                         else
                         {
                             // If the JSON returns an Object which is not a String, we use that type.
                             // Otherwise, we try to convert the string
-                            if (jsonValue instanceof String)
+                            if (jsonValue instanceof TextNode)
                             {
                                 // Check if the task already has the property, use that type.
                                 Serializable existingValue = workflowTask.getProperties().get(key);
@@ -178,7 +179,7 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
                                 {
                                     try
                                     {
-                                        value = DefaultTypeConverter.INSTANCE.convert(existingValue.getClass(), jsonValue);
+                                        value = DefaultTypeConverter.INSTANCE.convert(existingValue.getClass(), jsonValue.textValue());
                                     }
                                     catch(TypeConversionException tce)
                                     {
@@ -189,13 +190,13 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
                                 else
                                 {
                                     // Revert to using string-value
-                                    value = (String) jsonValue;
+                                    value = jsonValue.toString();
                                 }
                             }
                             else
                             {
                                 // Use the value provided by JSON
-                                value = (Serializable) jsonValue;
+                                value = jsonValue.toString();
                             }
                         }
                     }

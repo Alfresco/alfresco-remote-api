@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.solr;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,11 +35,9 @@ import java.util.Map;
 
 import org.alfresco.repo.solr.Acl;
 import org.alfresco.repo.solr.SOLRTrackingComponent;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -75,13 +75,9 @@ public class AclsGet extends DeclarativeWebScript
         {
             throw new WebScriptException("IO exception parsing request", e);
         }
-        catch(JSONException e)
-        {
-            throw new WebScriptException("Invalid JSON", e);
-        }
     }
     
-    private Map<String, Object> buildModel(WebScriptRequest req) throws JSONException, IOException
+    private Map<String, Object> buildModel(WebScriptRequest req) throws IOException
     {
         List<Long> aclChangeSetIds = null;
         
@@ -90,24 +86,24 @@ public class AclsGet extends DeclarativeWebScript
         {
             throw new WebScriptException("Request content is empty");
         }
-        JSONObject o = new JSONObject(content.getContent());
-        JSONArray aclChangeSetIdsJSON = o.has("aclChangeSetIds") ? o.getJSONArray("aclChangeSetIds") : null;
+        JsonNode o = AlfrescoDefaultObjectMapper.getReader().readTree(content.getContent());
+        ArrayNode aclChangeSetIdsJSON = o.has("aclChangeSetIds") ? (ArrayNode) o.get("aclChangeSetIds") : null;
         if (aclChangeSetIdsJSON == null)
         {
             throw new WebScriptException(
                     Status.STATUS_BAD_REQUEST,
                     "Parameter 'aclChangeSetIds' not provided in request content.");
         }
-        else if (aclChangeSetIdsJSON.length() == 0)
+        else if (aclChangeSetIdsJSON.size() == 0)
         {
             throw new WebScriptException(
                     Status.STATUS_BAD_REQUEST,
                     "Parameter 'aclChangeSetIds' must hold from 1 or more IDs.");
         }
-        aclChangeSetIds = new ArrayList<Long>(aclChangeSetIdsJSON.length());
-        for (int i = 0; i < aclChangeSetIdsJSON.length(); i++)
+        aclChangeSetIds = new ArrayList<Long>(aclChangeSetIdsJSON.size());
+        for (int i = 0; i < aclChangeSetIdsJSON.size(); i++)
         {
-            aclChangeSetIds.add(aclChangeSetIdsJSON.getLong(i));
+            aclChangeSetIds.add(aclChangeSetIdsJSON.get(i).longValue());
         }
 
         String fromIdParam = req.getParameter("fromId");

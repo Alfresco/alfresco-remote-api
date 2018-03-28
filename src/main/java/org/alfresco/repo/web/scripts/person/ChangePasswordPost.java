@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.person;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,8 +33,7 @@ import java.util.Map;
 import org.alfresco.repo.security.authentication.AuthenticationException;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -85,10 +85,9 @@ public class ChangePasswordPost extends DeclarativeWebScript
         {
             throw new WebScriptException(Status.STATUS_INTERNAL_SERVER_ERROR, "Missing POST body.");
         }
-        JSONObject json;
         try
         {
-            json = new JSONObject(c.getContent());
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(c.getContent());
             
             String oldPassword = null;
             String newPassword;
@@ -97,19 +96,19 @@ public class ChangePasswordPost extends DeclarativeWebScript
             boolean isAdmin = authorityService.hasAdminAuthority();
             if (!isAdmin || (userName.equalsIgnoreCase(authenticationService.getCurrentUserName())))
             {
-                if (!json.has(PARAM_OLDPW) || json.getString(PARAM_OLDPW).length() == 0)
+                if (!json.has(PARAM_OLDPW) || json.get(PARAM_OLDPW).textValue().length() == 0)
                 {
                     throw new WebScriptException(Status.STATUS_BAD_REQUEST,
                         "Old password 'oldpw' is a required POST parameter.");
                 }
-                oldPassword = json.getString(PARAM_OLDPW);
+                oldPassword = json.get(PARAM_OLDPW).textValue();
             }
-            if (!json.has(PARAM_NEWPW) || json.getString(PARAM_NEWPW).length() == 0)
+            if (!json.has(PARAM_NEWPW) || json.get(PARAM_NEWPW).textValue().length() == 0)
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST,
                     "New password 'newpw' is a required POST parameter.");
             }
-            newPassword = json.getString(PARAM_NEWPW);
+            newPassword = json.get(PARAM_NEWPW).textValue();
             
             // update the password
             // an Admin user can update without knowing the original pass - but must know their own!
@@ -126,11 +125,6 @@ public class ChangePasswordPost extends DeclarativeWebScript
         {
             throw new WebScriptException(Status.STATUS_UNAUTHORIZED,
                     "Do not have appropriate auth or wrong auth details provided.");
-        }
-        catch (JSONException jErr)
-        {
-            throw new WebScriptException(Status.STATUS_INTERNAL_SERVER_ERROR,
-                    "Unable to parse JSON POST body: " + jErr.getMessage());
         }
         catch (IOException ioErr)
         {

@@ -28,6 +28,9 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +38,7 @@ import java.util.List;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class SiteImpl implements Serializable, Site, Comparable<SiteImpl>, ExpectedComparison
 {
@@ -306,19 +308,19 @@ public class SiteImpl implements Serializable, Site, Comparable<SiteImpl>, Expec
         this.type = type;
     }
 
-    public static Site parseSite(JSONObject jsonObject)
+    public static Site parseSite(JsonNode jsonObject)
     {
         if (jsonObject == null)
         {
             return null;
         }
 
-        String id = (String)jsonObject.get("id");
-        String guid = (String)jsonObject.get("guid");
-        String title = (String)jsonObject.get("title");
-        String description = (String)jsonObject.get("description");
-        String visibility = (String)jsonObject.get("visibility");
-        String roleStr = (String)jsonObject.get("role");
+        String id = jsonObject.get("id").textValue();
+        String guid = jsonObject.get("guid").textValue();
+        String title = jsonObject.get("title").textValue();
+        String description = jsonObject.get("description").textValue();
+        String visibility = jsonObject.get("visibility").textValue();
+        String roleStr = jsonObject.get("role").textValue();
         SiteRole role = null;
         if(roleStr != null)
         {
@@ -328,20 +330,20 @@ public class SiteImpl implements Serializable, Site, Comparable<SiteImpl>, Expec
         return site;
     }
 
-    public static ListResponse<Site> parseSites(JSONObject jsonObject)
+    public static ListResponse<Site> parseSites(JsonNode jsonObject)
     {
         List<Site> sites = new ArrayList<Site>();
 
-        JSONObject jsonList = (JSONObject)jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
 
-        JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
         assertNotNull(jsonEntries);
 
         for(int i = 0; i < jsonEntries.size(); i++)
         {
-            JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-            JSONObject entry = (JSONObject)jsonEntry.get("entry");
+            JsonNode jsonEntry = jsonEntries.get(i);
+            JsonNode entry = jsonEntry.get("entry");
             sites.add(parseSite(entry));
         }
 
@@ -372,9 +374,9 @@ public class SiteImpl implements Serializable, Site, Comparable<SiteImpl>, Expec
     }
 
     @SuppressWarnings("unchecked")
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject siteJson = new JSONObject();
+        ObjectNode siteJson = AlfrescoDefaultObjectMapper.createObjectNode();
         if (getSiteId() != null)
         {
             siteJson.put("id", getSiteId());

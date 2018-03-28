@@ -28,17 +28,22 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.Collator;
 import java.util.*;
 
+import java.util.stream.Collectors;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.rest.api.tests.QueriesPeopleApiTest;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
 import org.alfresco.service.cmr.repository.NodeRef;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.JsonUtil;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class Person
     extends org.alfresco.rest.api.model.Person
@@ -147,9 +152,9 @@ public class Person
     }
 
     @SuppressWarnings("unchecked")
-    public JSONObject toJSON(boolean fullVisibility)
+    public ObjectNode toJSON(boolean fullVisibility)
     {
-        JSONObject personJson = new JSONObject();
+        ObjectNode personJson = AlfrescoDefaultObjectMapper.createObjectNode();
 
         if (getUserName() != null)
         {
@@ -176,39 +181,39 @@ public class Person
             personJson.put("userStatus", getUserStatus());
             personJson.put("enabled", isEnabled());
             personJson.put("emailNotificationsEnabled", isEmailNotificationsEnabled());
-            personJson.put("properties", getProperties());
-            personJson.put("aspectNames", getAspectNames());
-            personJson.put("capabilities", getCapabilities());
+            personJson.set("properties", AlfrescoDefaultObjectMapper.convertValue(getProperties(), ObjectNode.class));
+            personJson.set("aspectNames", AlfrescoDefaultObjectMapper.convertValue(getAspectNames(), ArrayNode.class));
+            personJson.set("capabilities", AlfrescoDefaultObjectMapper.convertValue(getCapabilities(), ObjectNode.class));
         }
         return personJson;
     }
     
-    public static Person parsePerson(JSONObject jsonObject)
+    public static Person parsePerson(JsonNode jsonObject) throws IOException
     {
-        String userId = (String)jsonObject.get("id");
-        String firstName = (String)jsonObject.get("firstName");
-        String lastName = (String)jsonObject.get("lastName");
+        String userId = jsonObject.get("id").textValue();
+        String firstName = jsonObject.get("firstName").textValue();
+        String lastName = jsonObject.get("lastName").textValue();
 
-        String description = (String)jsonObject.get("description");
-        String email = (String) jsonObject.get("email");
-        String skypeId = (String)jsonObject.get("skypeId");
-        String googleId = (String)jsonObject.get("googleId");
-        String instantMessageId = (String)jsonObject.get("instantMessageId");
-        String jobTitle = (String) jsonObject.get("jobTitle");
-        String location = (String)jsonObject.get("location");
+        String description = jsonObject.get("description").textValue();
+        String email = jsonObject.get("email").textValue();
+        String skypeId = jsonObject.get("skypeId").textValue();
+        String googleId = jsonObject.get("googleId").textValue();
+        String instantMessageId = jsonObject.get("instantMessageId").textValue();
+        String jobTitle = jsonObject.get("jobTitle").textValue();
+        String location = jsonObject.get("location").textValue();
 
         Company company = null;
-        JSONObject companyJSON = (JSONObject)jsonObject.get("company");
+        JsonNode companyJSON = jsonObject.get("company");
         if(companyJSON != null)
         {
-            String organization = (String)companyJSON.get("organization");
-            String address1 = (String)companyJSON.get("address1");
-            String address2 = (String)companyJSON.get("address2");
-            String address3 = (String)companyJSON.get("address3");
-            String postcode = (String)companyJSON.get("postcode");
-            String companyTelephone = (String)companyJSON.get("telephone");
-            String fax = (String)companyJSON.get("fax");
-            String companyEmail = (String)companyJSON.get("email");
+            String organization = companyJSON.get("organization").textValue();
+            String address1 = companyJSON.get("address1").textValue();
+            String address2 = companyJSON.get("address2").textValue();
+            String address3 = companyJSON.get("address3").textValue();
+            String postcode = companyJSON.get("postcode").textValue();
+            String companyTelephone = companyJSON.get("telephone").textValue();
+            String fax = companyJSON.get("fax").textValue();
+            String companyEmail = companyJSON.get("email").textValue();
             if (organization != null ||
                     address2 != null ||
                     address3 != null ||
@@ -225,14 +230,18 @@ public class Person
             }
         }
 
-        String mobile = (String)jsonObject.get("mobile");
-        String telephone = (String)jsonObject.get("telephone");
-        String userStatus = (String) jsonObject.get("userStatus");
-        Boolean enabled = (Boolean)jsonObject.get("enabled");
-        Boolean emailNotificationsEnabled = (Boolean) jsonObject.get("emailNotificationsEnabled");
-        List<String> aspectNames = (List<String>) jsonObject.get("aspectNames");
-        Map<String, Object> properties = (Map<String, Object>) jsonObject.get("properties");
-        Map<String, Boolean> capabilities = (Map<String, Boolean>) jsonObject.get("capabilities");
+        String mobile = jsonObject.get("mobile").textValue();
+        String telephone = jsonObject.get("telephone").textValue();
+        String userStatus = jsonObject.get("userStatus").textValue();
+        Boolean enabled = jsonObject.get("enabled").booleanValue();
+        Boolean emailNotificationsEnabled = jsonObject.get("emailNotificationsEnabled").booleanValue();
+        List<String> aspectNames = JsonUtil
+                .convertJSONArrayToList((ArrayNode) jsonObject.get("aspectNames"))
+                .stream().map(aspectName -> ((String) aspectName)).collect(Collectors.toList());
+        Map<String, Object> properties = JsonUtil.convertJSONObjectToMap((ObjectNode) jsonObject.get("properties"));
+        Map<String, Boolean> capabilities = JsonUtil
+                .convertJSONObjectToMap((ObjectNode) jsonObject.get("capabilities"))
+                .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> (Boolean) e.getValue()));
         
         Person person = new Person(
                 userId,
@@ -369,20 +378,20 @@ public class Person
         return ret;
     }
 
-    public static ListResponse<Person> parsePeople(JSONObject jsonObject)
+    public static ListResponse<Person> parsePeople(JsonNode jsonObject) throws IOException
     {
         List<Person> people = new ArrayList<Person>();
 
-        JSONObject jsonList = (JSONObject)jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
 
-        JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
         assertNotNull(jsonEntries);
 
         for(int i = 0; i < jsonEntries.size(); i++)
         {
-            JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-            JSONObject entry = (JSONObject)jsonEntry.get("entry");
+            JsonNode jsonEntry = jsonEntries.get(i);
+            JsonNode entry = jsonEntry.get("entry");
             people.add(parsePerson(entry));
         }
 

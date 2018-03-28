@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -55,7 +56,6 @@ import org.alfresco.rest.api.tests.client.data.SiteRole;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
 import org.apache.commons.httpclient.HttpStatus;
-import org.json.simple.JSONObject;
 import org.junit.Test;
 
 public class TestSiteMembers extends EnterpriseTestApi
@@ -121,7 +121,7 @@ public class TestSiteMembers extends EnterpriseTestApi
 
 				HttpResponse response = sitesProxy.getAll("sites", testSite.getSiteId(), "members", null, createParams(paging,Collections.singletonMap("includeSource", "true")), "Failed to get all site members");
 				checkList(expectedSiteMembers.subList(skipCount, skipCount + paging.getExpectedPaging().getCount()), paging.getExpectedPaging(), SiteMember.parseSiteMembers(testSite.getSiteId(), response.getJsonResponse()));
-				JSONObject source = sitesProxy.parseListSource(response.getJsonResponse());
+				JsonNode source = sitesProxy.parseListSource(response.getJsonResponse());
 				Site sourceSite = SiteImpl.parseSite(source);
 				assertNotNull(sourceSite);
 				testSite.expected(sourceSite);

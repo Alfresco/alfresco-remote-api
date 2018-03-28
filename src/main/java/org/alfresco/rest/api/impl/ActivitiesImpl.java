@@ -25,6 +25,7 @@
  */
 package org.alfresco.rest.api.impl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +47,6 @@ import org.alfresco.rest.framework.resource.parameters.Paging;
 import org.alfresco.rest.framework.resource.parameters.Parameters;
 import org.alfresco.service.cmr.activities.ActivityService;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.JSONException;
 
 /**
  * Centralises access to activities services and maps between representations.
@@ -89,7 +89,7 @@ public class ActivitiesImpl implements Activities
 		this.activitySummaryParser = activitySummaryParser;
 	}
 
-	public Map<String, Object> getActivitySummary(ActivityFeedEntity entity) throws JSONException
+	public Map<String, Object> getActivitySummary(ActivityFeedEntity entity) throws IOException
 	{
 		Map<String, Object> activitySummary = activitySummaryParser.parse(entity.getActivityType(), entity.getActivitySummary());
 		return activitySummary;
@@ -174,7 +174,7 @@ public class ActivitiesImpl implements Activities
 
             return CollectionWithPagingInfo.asPaged(paging, ret, activities.hasMoreItems(), activities.getTotalResultCount().getFirst());
     	}
-    	catch(JSONException e)
+    	catch(IOException e)
     	{
     		throw new AlfrescoRuntimeException("", e);
     	}

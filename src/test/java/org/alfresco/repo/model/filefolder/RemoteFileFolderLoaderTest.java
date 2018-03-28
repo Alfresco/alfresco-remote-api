@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.model.filefolder;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -43,7 +44,7 @@ import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.transaction.TransactionService;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
@@ -129,7 +130,7 @@ public class RemoteFileFolderLoaderTest  extends BaseWebScriptTest
      */
     public void testLoad_noFolderPath() throws Exception
     {
-        JSONObject body = new JSONObject();
+        ObjectNode body = AlfrescoDefaultObjectMapper.createObjectNode();
         
         sendRequest(
                 new PostRequest(URL,  body.toString(), "application/json"),
@@ -143,7 +144,7 @@ public class RemoteFileFolderLoaderTest  extends BaseWebScriptTest
     @SuppressWarnings("unchecked")
     public void testLoad_default_default() throws Exception
     {
-        JSONObject body = new JSONObject();
+        ObjectNode body = AlfrescoDefaultObjectMapper.createObjectNode();
         body.put(FileFolderLoaderPost.KEY_FOLDER_PATH, loadHomePath);
         
         Response response = sendRequest(
@@ -162,7 +163,7 @@ public class RemoteFileFolderLoaderTest  extends BaseWebScriptTest
     @SuppressWarnings("unchecked")
     public void testLoad_15_default() throws Exception
     {
-        JSONObject body = new JSONObject();
+        ObjectNode body = AlfrescoDefaultObjectMapper.createObjectNode();
         body.put(FileFolderLoaderPost.KEY_FOLDER_PATH, loadHomePath);
         body.put(FileFolderLoaderPost.KEY_FILE_COUNT, 15);
         body.put(FileFolderLoaderPost.KEY_FILES_PER_TXN, 10);
@@ -212,7 +213,7 @@ public class RemoteFileFolderLoaderTest  extends BaseWebScriptTest
     @SuppressWarnings("unchecked")
     public void testLoad_15_16bytes() throws Exception
     {
-        JSONObject body = new JSONObject();
+        ObjectNode body = AlfrescoDefaultObjectMapper.createObjectNode();
         body.put(FileFolderLoaderPost.KEY_FOLDER_PATH, loadHomePath);
         body.put(FileFolderLoaderPost.KEY_MIN_FILE_SIZE, 16L);
         body.put(FileFolderLoaderPost.KEY_MAX_FILE_SIZE, 16L);

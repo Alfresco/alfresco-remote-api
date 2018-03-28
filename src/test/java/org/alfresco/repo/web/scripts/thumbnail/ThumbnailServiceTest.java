@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.thumbnail;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
 
 import org.alfresco.error.AlfrescoRuntimeException;
@@ -45,9 +48,8 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.test_category.OwnJVMTestsCategory;
 import org.alfresco.util.GUID;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.junit.experimental.categories.Category;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PutRequest;
@@ -137,7 +139,7 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
         {
             String url = "/api/node/" + pdfNode.getStoreRef().getProtocol() + "/" + pdfNode.getStoreRef().getIdentifier() + "/" + pdfNode.getId() + "/content/thumbnails";
             
-            JSONObject tn = new JSONObject();
+            ObjectNode tn = AlfrescoDefaultObjectMapper.createObjectNode();
             tn.put("thumbnailName", "webpreview");
             
             Response response = sendRequest(new PostRequest(url, tn.toString(), "application/json"), 200);
@@ -147,28 +149,28 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
         
         // Check getAll whilst we are here 
         Response getAllResp = sendRequest(new GetRequest(getThumbnailsURL(jpgNode)), 200);
-        JSONArray getArr = new JSONArray(getAllResp.getContentAsString());
+        ArrayNode getArr = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(getAllResp.getContentAsString());
         assertNotNull(getArr);
-        assertEquals(0, getArr.length());
+        assertEquals(0, getArr.size());
         
         // Do a image transformation (medium)
         String url = "/api/node/" + jpgNode.getStoreRef().getProtocol() + "/" + jpgNode.getStoreRef().getIdentifier() + "/" + jpgNode.getId() + "/content/thumbnails";
-        JSONObject tn = new JSONObject();
+        ObjectNode tn = AlfrescoDefaultObjectMapper.createObjectNode();
         tn.put("thumbnailName", "medium");
         Response response = sendRequest(new PostRequest(url, tn.toString(), "application/json"), 200);
         System.out.println(response.getContentAsString());
-        JSONObject result = new JSONObject(response.getContentAsString());
-        String thumbnailUrl = result.getString("url").substring(17);
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        String thumbnailUrl = result.get("url").textValue().substring(17);
         
         System.out.println(thumbnailUrl);
         response = sendRequest(new GetRequest(thumbnailUrl), 200);
         
         // Check getAll whilst we are here 
         getAllResp = sendRequest(new GetRequest(getThumbnailsURL(jpgNode)), 200);
-        getArr = new JSONArray(getAllResp.getContentAsString());
+        getArr = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(getAllResp.getContentAsString());
         assertNotNull(getArr);
-        assertEquals(1, getArr.length());
-        assertEquals("medium", getArr.getJSONObject(0).get("thumbnailName"));
+        assertEquals(1, getArr.size());
+        assertEquals("medium", getArr.get(0).get("thumbnailName"));
         
     }
     
@@ -206,7 +208,7 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
             // in share creation of thumbnail for webpreview is forced
             String url = "/api/node/" + pdfNode.getStoreRef().getProtocol() + "/" + pdfNode.getStoreRef().getIdentifier() + "/" + pdfNode.getId() + "/content/thumbnails/webpreview?c=force";
             
-            JSONObject tn = new JSONObject();
+            ObjectNode tn = AlfrescoDefaultObjectMapper.createObjectNode();
             tn.put("thumbnailName", "webpreview");
             
             sendRequest(new GetRequest(url), 200, USER_ALFRESCO);
@@ -216,26 +218,26 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
         
         // Check getAll whilst we are here 
         Response getAllResp = sendRequest(new GetRequest(getThumbnailsURL(jpgNode)), 200);
-        JSONArray getArr = new JSONArray(getAllResp.getContentAsString());
+        ArrayNode getArr = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(getAllResp.getContentAsString());
         assertNotNull(getArr);
-        assertEquals(0, getArr.length());
+        assertEquals(0, getArr.size());
     }
     
     public void testUpdateThumbnail() throws Exception
     {
         // Do a image transformation
         String url = "/api/node/" + jpgNode.getStoreRef().getProtocol() + "/" + jpgNode.getStoreRef().getIdentifier() + "/" + jpgNode.getId() + "/content/thumbnails";
-        JSONObject tn = new JSONObject();
+        ObjectNode tn = AlfrescoDefaultObjectMapper.createObjectNode();
         tn.put("thumbnailName", "doclib");
         Response response = sendRequest(new PostRequest(url, tn.toString(), "application/json"), 200);
         System.out.println(response.getContentAsString());
         
         // Check getAll whilst we are here 
         Response getAllResp = sendRequest(new GetRequest(getThumbnailsURL(jpgNode)), 200);
-        JSONArray getArr = new JSONArray(getAllResp.getContentAsString());
+        ArrayNode getArr = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(getAllResp.getContentAsString());
         assertNotNull(getArr);
-        assertEquals(1, getArr.length());
-        assertEquals("doclib", getArr.getJSONObject(0).get("thumbnailName"));
+        assertEquals(1, getArr.size());
+        assertEquals("doclib", getArr.get(0).get("thumbnailName"));
         //Now we know that thumbnail was created
         
         
@@ -254,18 +256,18 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
             String url = "/api/node/" + pdfNode.getStoreRef().getProtocol() + "/" + pdfNode.getStoreRef().getIdentifier() + "/" + pdfNode.getId() + "/content/thumbnaildefinitions";
             Response response = sendRequest(new GetRequest(url), 200);
             
-            JSONArray array = new JSONArray(response.getContentAsString());
+            ArrayNode array = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             assertNotNull(array);
-            assertFalse(array.length() == 0);
+            assertFalse(array.size() == 0);
             boolean hasMedium = false;
             boolean hasWebPreview = false;
-            for (int i = 0; i < array.length(); i++)
+            for (int i = 0; i < array.size(); i++)
             {
-                if (array.getString(i).equals("medium") == true)
+                if (array.get(i).textValue().equals("medium") == true)
                 {
                     hasMedium = true;
                 }
-                else if (array.getString(i).equals("webpreview") == true)
+                else if (array.get(i).textValue().equals("webpreview") == true)
                 {
                     hasWebPreview = true;
                 }
@@ -277,18 +279,18 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
         String url = "/api/node/" + jpgNode.getStoreRef().getProtocol() + "/" + jpgNode.getStoreRef().getIdentifier() + "/" + jpgNode.getId() + "/content/thumbnaildefinitions";
         Response response = sendRequest(new GetRequest(url), 200);
         
-        JSONArray array = new JSONArray(response.getContentAsString());
+        ArrayNode array = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertNotNull(array);
-        assertFalse(array.length() == 0);
+        assertFalse(array.size() == 0);
         boolean hasMedium = false;
         boolean hasWebPreview = false;
-        for (int i = 0; i < array.length(); i++)
+        for (int i = 0; i < array.size(); i++)
         {
-            if (array.getString(i).equals("medium") == true)
+            if (array.get(i).textValue().equals("medium") == true)
             {
                 hasMedium = true;
             }
-            else if (array.getString(i).equals("webpreview") == true)
+            else if (array.get(i).textValue().equals("webpreview") == true)
             {
                 hasWebPreview = true;
             }
@@ -304,7 +306,7 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
         {
             String url = "/api/node/" + pdfNode.getStoreRef().getProtocol() + "/" + pdfNode.getStoreRef().getIdentifier() + "/" + pdfNode.getId() + "/content/thumbnails?as=true";
             
-            JSONObject tn = new JSONObject();
+            ObjectNode tn = AlfrescoDefaultObjectMapper.createObjectNode();
             tn.put("thumbnailName", "webpreview");
             
             Response response = sendRequest(new PostRequest(url, tn.toString(), "application/json"), 200);
@@ -314,7 +316,7 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
         
         // Do a image transformation (medium)
         String url = "/api/node/" + jpgNode.getStoreRef().getProtocol() + "/" + jpgNode.getStoreRef().getIdentifier() + "/" + jpgNode.getId() + "/content/thumbnails?as=true";
-        JSONObject tn = new JSONObject();
+        ObjectNode tn = AlfrescoDefaultObjectMapper.createObjectNode();
         tn.put("thumbnailName", "medium");
         Response response = sendRequest(new PostRequest(url, tn.toString(), "application/json"), 200);
 

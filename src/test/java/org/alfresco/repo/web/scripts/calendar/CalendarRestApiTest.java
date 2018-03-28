@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.calendar;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -48,10 +51,9 @@ import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
@@ -198,14 +200,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     
     // Test helper methods
     
-    private JSONObject validateAndParseJSON(String json) throws Exception
+    private JsonNode validateAndParseJSON(String json) throws Exception
     {
        // TODO Do full validation, rather than just the basic bits
-       //  that the JSONObject constructor provides
-       return new JSONObject(json);
+       //  that the JsonNode constructor provides
+       return AlfrescoDefaultObjectMapper.getReader().readTree(json);
     }
     
-    private JSONObject getEntries(String username, String from) throws Exception
+    private JsonNode getEntries(String username, String from) throws Exception
     {
        String url = URL_EVENTS_LIST + "?site=" + SITE_SHORT_NAME_CALENDAR;
        if (username != null)
@@ -226,16 +228,16 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        }
        
        Response response = sendRequest(new GetRequest(url), 200);
-       JSONObject result = validateAndParseJSON(response.getContentAsString());
+       JsonNode result = validateAndParseJSON(response.getContentAsString());
        return result;
     }
     
-    private JSONObject getEntry(String name, int expectedStatus) throws Exception
+    private JsonNode getEntry(String name, int expectedStatus) throws Exception
     {
        Response response = sendRequest(new GetRequest(URL_EVENT_BASE + name), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = validateAndParseJSON(response.getContentAsString());
+          JsonNode result = validateAndParseJSON(response.getContentAsString());
           return result;
        }
        else
@@ -247,7 +249,7 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     /**
      * Creates a 1 hour, non-all day event on the 29th of June
      */
-    private JSONObject createEntry(String name, String where, String description, 
+    private JsonNode createEntry(String name, String where, String description, 
           int expectedStatus) throws Exception
     {
        String date = "2011-06-29"; // A wednesday
@@ -260,7 +262,7 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        //   "start": "12:00",
        //   "end":   "13:00",
        
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("startAt", date + "T" + start + ":00+01:00");
        json.put("endAt",   date + "T" + end + ":00+01:00");
        
@@ -270,14 +272,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     /**
      * Creates an all day event for the 29th in a +1hr time zone
      */
-    private JSONObject createAllDayEntryDifferentTimeZone(String name, String where, String description, 
+    private JsonNode createAllDayEntryDifferentTimeZone(String name, String where, String description, 
           int expectedStatus) throws Exception
     {
        String date = "2011-06-29"; // A wednesday
        String start = "00:00";
        String end = "00:00";
        
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("startAt", date + "T" + start + ":00+04:00");
        json.put("endAt",   date + "T" + end + ":00+04:00");
        json.put("allday", Boolean.TRUE);
@@ -287,14 +289,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     /**
      * Creates an all day event for the 29th
      */
-    private JSONObject createAllDayEntry(String name, String where, String description, 
+    private JsonNode createAllDayEntry(String name, String where, String description, 
           int expectedStatus) throws Exception
     {
        String date = "2011-06-29"; // A wednesday
        String start = "00:00";
        String end = "00:00";
        
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("startAt", date + "T" + start + ":00+01:00");
        json.put("endAt",   date + "T" + end + ":00+01:00");
        json.put("allday", Boolean.TRUE);
@@ -304,14 +306,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     /**
      * Creates an all day event that starts on the 27th and ends on the 29th
      */
-    private JSONObject createMultiAllDayEntry(String name, String where, String description, 
+    private JsonNode createMultiAllDayEntry(String name, String where, String description, 
           int expectedStatus) throws Exception
     {
        String startDate = "2011-06-27"; // A wednesday
        String endDate = "2011-06-29"; 
        String time = "00:00";
        
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("startAt", startDate + "T" + time + ":00+00:00");
        json.put("endAt",   endDate + "T" + time + ":00+00:00");
        json.put("allday", Boolean.TRUE);
@@ -321,10 +323,10 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     /**
      * Creates an event, with the date properties manually set
      */
-    private JSONObject createEntry(String name, String where, String description, 
-          JSONObject datesJSON, int expectedStatus) throws Exception
+    private JsonNode createEntry(String name, String where, String description, 
+          JsonNode datesJSON, int expectedStatus) throws Exception
     {
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        
        json.put("site", SITE_SHORT_NAME_CALENDAR);
        json.put("what", name);
@@ -343,10 +345,10 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        Response response = sendRequest(new PostRequest(URL_EVENT_CREATE, json.toString(), "application/json"), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = validateAndParseJSON(response.getContentAsString());
+          JsonNode result = validateAndParseJSON(response.getContentAsString());
           if (result.has("event"))
           {
-             return result.getJSONObject("event");
+             return result.get("event");
           }
           return result;
        }
@@ -359,14 +361,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     /**
      * Updates the event to be a 2 hour, non-all day event on the 28th of June
      */
-    private JSONObject updateEntry(String name, String what, String where, String description, 
+    private JsonNode updateEntry(String name, String what, String where, String description, 
           boolean withRecurrence, int expectedStatus) throws Exception
     {
        String date = "2011/06/28"; // A Tuesday
        String start = "11:30";
        String end = "13:30";
        
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("what", what);
        json.put("where", where);
        json.put("desc", description);
@@ -389,14 +391,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        Response response = sendRequest(new PutRequest(URL_EVENT_BASE + name, json.toString(), "application/json"), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = validateAndParseJSON(response.getContentAsString());
+          JsonNode result = validateAndParseJSON(response.getContentAsString());
           if (result.has("event"))
           {
-             return result.getJSONObject("event");
+             return result.get("event");
           }
           if (result.has("data"))
           {
-             return result.getJSONObject("data");
+             return result.get("data");
           }
           return result;
        }
@@ -409,14 +411,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     /**
      * Gets the event name (ics timestamp based) from an entry
      */
-    private String getNameFromEntry(JSONObject entry) throws Exception
+    private String getNameFromEntry(JsonNode entry) throws Exception
     {
        if (! entry.has("uri"))
        {
           throw new IllegalArgumentException("No uri in " + entry.toString());
        }
     
-       String uri = entry.getString("uri");
+       String uri = entry.get("uri").textValue();
        String name = uri.substring( 
              uri.indexOf(SITE_SHORT_NAME_CALENDAR) + SITE_SHORT_NAME_CALENDAR.length() + 1);
        
@@ -439,12 +441,12 @@ public class CalendarRestApiTest extends BaseWebScriptTest
     /**
      * Returns the Keys of a JSON Object, optionally sorted
      */
-    private String[] getKeys(JSONObject json, boolean sorted)
+    private String[] getKeys(JsonNode json, boolean sorted)
     {
        @SuppressWarnings("unchecked")
-       Iterator<String> ki = json.keys();
+       Iterator<String> ki = json.fieldNames();
        
-       List<String> keys = new ArrayList<String>(json.length());
+       List<String> keys = new ArrayList<String>(json.size());
        while (ki.hasNext())
        {
           keys.add(ki.next());
@@ -463,7 +465,7 @@ public class CalendarRestApiTest extends BaseWebScriptTest
      */
     public void testCreateEditDeleteEntry() throws Exception
     {
-       JSONObject entry;
+       JsonNode entry;
        String name;
        
        
@@ -476,14 +478,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", Status.STATUS_OK);
        name = getNameFromEntry(entry);
        
-       assertEquals(EVENT_TITLE_ONE, entry.getString("name"));
-       assertEquals("Where", entry.getString("where"));
-       assertEquals("Thing", entry.getString("desc"));
-       assertEquals("2011-06-29", entry.getJSONObject("startAt").getString("legacyDate")); // Different format!
-       assertEquals("2011-06-29", entry.getJSONObject("endAt").getString("legacyDate")); // Different format!
-       assertEquals("12:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("13:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("name"));
+       assertEquals("Where", entry.get("where"));
+       assertEquals("Thing", entry.get("desc"));
+       assertEquals("2011-06-29", entry.get("startAt").get("legacyDate")); // Different format!
+       assertEquals("2011-06-29", entry.get("endAt").get("legacyDate")); // Different format!
+       assertEquals("12:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("13:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        // No isoutlook on create/edit
        
        
@@ -491,31 +493,31 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("Where", entry.getString("location")); // Not where...
-       assertEquals("Thing", entry.getString("description")); // Not desc...
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("Where", entry.get("location")); // Not where...
+       assertEquals("Thing", entry.get("description")); // Not desc...
        
-       assertEquals("false", entry.getString("isoutlook"));
-       assertEquals("6/29/2011", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("6/29/2011", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("12:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("13:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("false", entry.get("isoutlook"));
+       assertEquals("6/29/2011", entry.get("startAt").get("legacyDate"));
+       assertEquals("6/29/2011", entry.get("endAt").get("legacyDate"));
+       assertEquals("12:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("13:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        
        // Check the new style dates too
-       assertEquals("2011-06-29T12:00:00.000+01:00", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("6/29/2011", entry.getJSONObject("startAt").get("legacyDate"));
-       assertEquals("12:00", entry.getJSONObject("startAt").get("legacyTime"));
-       assertEquals("2011-06-29T13:00:00.000+01:00", entry.getJSONObject("endAt").get("iso8601"));
-       assertEquals("6/29/2011", entry.getJSONObject("endAt").get("legacyDate"));
-       assertEquals("13:00", entry.getJSONObject("endAt").get("legacyTime"));
+       assertEquals("2011-06-29T12:00:00.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("6/29/2011", entry.get("startAt").get("legacyDate"));
+       assertEquals("12:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("2011-06-29T13:00:00.000+01:00", entry.get("endAt").get("iso8601"));
+       assertEquals("6/29/2011", entry.get("endAt").get("legacyDate"));
+       assertEquals("13:00", entry.get("endAt").get("legacyTime"));
        
        // Check the permissions on it
        assertEquals(true, entry.has("permissions"));
-       JSONObject permissions = entry.getJSONObject("permissions");
-       assertEquals(true, permissions.getBoolean("edit"));
-       assertEquals(true, permissions.getBoolean("delete"));
+       JsonNode permissions = entry.get("permissions");
+       assertEquals(true, permissions.get("edit").booleanValue());
+       assertEquals(true, permissions.get("delete").booleanValue());
        
        
        // Switch users to consumer, check we can still see it
@@ -523,21 +525,21 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
        
-       assertEquals("2011-06-29T12:00:00.000+01:00", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("6/29/2011", entry.getJSONObject("startAt").get("legacyDate"));
-       assertEquals("12:00", entry.getJSONObject("startAt").get("legacyTime"));
-       assertEquals("2011-06-29T13:00:00.000+01:00", entry.getJSONObject("endAt").get("iso8601"));
-       assertEquals("6/29/2011", entry.getJSONObject("endAt").get("legacyDate"));
-       assertEquals("13:00", entry.getJSONObject("endAt").get("legacyTime"));
+       assertEquals("2011-06-29T12:00:00.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("6/29/2011", entry.get("startAt").get("legacyDate"));
+       assertEquals("12:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("2011-06-29T13:00:00.000+01:00", entry.get("endAt").get("iso8601"));
+       assertEquals("6/29/2011", entry.get("endAt").get("legacyDate"));
+       assertEquals("13:00", entry.get("endAt").get("legacyTime"));
        
        // Check the other user sees different permissions
        assertEquals(true, entry.has("permissions"));
-       permissions = entry.getJSONObject("permissions");
-       assertEquals(false, permissions.getBoolean("edit"));
-       assertEquals(false, permissions.getBoolean("delete"));
+       permissions = entry.get("permissions");
+       assertEquals(false, permissions.get("edit"));
+       assertEquals(false, permissions.get("delete"));
        
        // Back to the main user for more tests
        this.authenticationComponent.setCurrentUser(USER_ONE);
@@ -546,14 +548,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        // Edit
        entry = updateEntry(name, EVENT_TITLE_ONE, "More Where", "More Thing", false, Status.STATUS_OK);
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("summary"));
-       assertEquals("More Where", entry.getString("location"));
-       assertEquals("More Thing", entry.getString("description"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("summary"));
+       assertEquals("More Where", entry.get("location"));
+       assertEquals("More Thing", entry.get("description"));
        
        // Now uses new style dates
-       assertEquals("2011-06-28T11:30", entry.getJSONObject("startAt").getString("legacyDateTime"));
-       assertEquals("2011-06-28T13:30", entry.getJSONObject("endAt").getString("legacyDateTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("2011-06-28T11:30", entry.get("startAt").get("legacyDateTime"));
+       assertEquals("2011-06-28T13:30", entry.get("endAt").get("legacyDateTime"));
+       assertEquals("false", entry.get("allday"));
        // No isoutlook on create/edit
        
        
@@ -561,17 +563,17 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("More Where", entry.getString("location")); // Not where...
-       assertEquals("More Thing", entry.getString("description"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("More Where", entry.get("location")); // Not where...
+       assertEquals("More Thing", entry.get("description"));
        
-       assertEquals("false", entry.getString("isoutlook"));
-       assertEquals("6/28/2011", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("6/28/2011", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("11:30", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("13:30", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("false", entry.get("isoutlook"));
+       assertEquals("6/28/2011", entry.get("startAt").get("legacyDate"));
+       assertEquals("6/28/2011", entry.get("endAt").get("legacyDate"));
+       assertEquals("11:30", entry.get("startAt").get("legacyTime"));
+       assertEquals("13:30", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
 
        
        // TODO Make it a whole day event and check that
@@ -584,21 +586,21 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("More Where", entry.getString("location")); // Not where...
-       assertEquals("More Thing", entry.getString("description"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("More Where", entry.get("location")); // Not where...
+       assertEquals("More Thing", entry.get("description"));
        
-       assertEquals("false", entry.getString("isoutlook"));
-       assertEquals("6/28/2011", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("6/28/2011", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("11:30", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("13:30", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("false", entry.get("isoutlook"));
+       assertEquals("6/28/2011", entry.get("startAt").get("legacyDate"));
+       assertEquals("6/28/2011", entry.get("endAt").get("legacyDate"));
+       assertEquals("11:30", entry.get("startAt").get("legacyTime"));
+       assertEquals("13:30", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        assertEquals(
              "Occurs every 2 weeks on Wednesday, Friday, effective " +
              "28-Jun-2011 until 11-Sep-2011 from 11:30 to 13:30 (BST)", 
-             entry.getString("recurrence"));
+             entry.get("recurrence"));
        
        // Delete
        sendRequest(new DeleteRequest(URL_EVENT_BASE + name), Status.STATUS_NO_CONTENT);
@@ -623,7 +625,7 @@ public class CalendarRestApiTest extends BaseWebScriptTest
      */
     public void testCreateAllDayEntry() throws Exception
     {
-       JSONObject entry;
+       JsonNode entry;
        String name;
        
        
@@ -636,14 +638,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = createAllDayEntry(EVENT_TITLE_ONE, "Where", "Thing", Status.STATUS_OK);
        name = getNameFromEntry(entry);
        
-       assertEquals(EVENT_TITLE_ONE, entry.getString("name"));
-       assertEquals("Where", entry.getString("where"));
-       assertEquals("Thing", entry.getString("desc"));
-       assertEquals("2011-06-29", entry.getJSONObject("startAt").getString("legacyDate")); // Different format!
-       assertEquals("2011-06-29", entry.getJSONObject("endAt").getString("legacyDate")); // Different format!
-       assertEquals("00:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("00:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("true", entry.getString("allday"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("name"));
+       assertEquals("Where", entry.get("where"));
+       assertEquals("Thing", entry.get("desc"));
+       assertEquals("2011-06-29", entry.get("startAt").get("legacyDate")); // Different format!
+       assertEquals("2011-06-29", entry.get("endAt").get("legacyDate")); // Different format!
+       assertEquals("00:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("00:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("true", entry.get("allday"));
        // No isoutlook on create/edit
        
        
@@ -651,21 +653,21 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("Where", entry.getString("location")); // Not where...
-       assertEquals("Thing", entry.getString("description")); // Not desc...
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("Where", entry.get("location")); // Not where...
+       assertEquals("Thing", entry.get("description")); // Not desc...
        
-       assertEquals("false", entry.getString("isoutlook"));
-       assertEquals("6/29/2011", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("6/29/2011", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("00:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("00:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("true", entry.getString("allday"));
+       assertEquals("false", entry.get("isoutlook"));
+       assertEquals("6/29/2011", entry.get("startAt").get("legacyDate"));
+       assertEquals("6/29/2011", entry.get("endAt").get("legacyDate"));
+       assertEquals("00:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("00:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("true", entry.get("allday"));
        
        // Check the new style dates too,
-       assertEquals("2011-06-29T00:00:00.000", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("2011-06-29T00:00:00.000", entry.getJSONObject("endAt").get("iso8601"));
+       assertEquals("2011-06-29T00:00:00.000", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-29T00:00:00.000", entry.get("endAt").get("iso8601"));
 
        
        
@@ -674,14 +676,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = createAllDayEntryDifferentTimeZone(EVENT_TITLE_ONE, "Where", "Thing", Status.STATUS_OK);
        name = getNameFromEntry(entry);
        
-       assertEquals(EVENT_TITLE_ONE, entry.getString("name"));
-       assertEquals("Where", entry.getString("where"));
-       assertEquals("Thing", entry.getString("desc"));
-       assertEquals("2011-06-29", entry.getJSONObject("startAt").getString("legacyDate")); // Different format!
-       assertEquals("2011-06-29", entry.getJSONObject("endAt").getString("legacyDate")); // Different format!
-       assertEquals("00:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("00:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("true", entry.getString("allday"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("name"));
+       assertEquals("Where", entry.get("where"));
+       assertEquals("Thing", entry.get("desc"));
+       assertEquals("2011-06-29", entry.get("startAt").get("legacyDate")); // Different format!
+       assertEquals("2011-06-29", entry.get("endAt").get("legacyDate")); // Different format!
+       assertEquals("00:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("00:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("true", entry.get("allday"));
        // No isoutlook on create/edit
        
        
@@ -689,21 +691,21 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("Where", entry.getString("location")); // Not where...
-       assertEquals("Thing", entry.getString("description")); // Not desc...
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("Where", entry.get("location")); // Not where...
+       assertEquals("Thing", entry.get("description")); // Not desc...
        
-       assertEquals("false", entry.getString("isoutlook"));
-       assertEquals("6/29/2011", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("6/29/2011", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("00:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("00:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("true", entry.getString("allday"));
+       assertEquals("false", entry.get("isoutlook"));
+       assertEquals("6/29/2011", entry.get("startAt").get("legacyDate"));
+       assertEquals("6/29/2011", entry.get("endAt").get("legacyDate"));
+       assertEquals("00:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("00:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("true", entry.get("allday"));
        
        // Check the new style dates too
-       assertEquals("2011-06-29T00:00:00.000", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("2011-06-29T00:00:00.000", entry.getJSONObject("endAt").get("iso8601"));
+       assertEquals("2011-06-29T00:00:00.000", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-29T00:00:00.000", entry.get("endAt").get("iso8601"));
 
        
        
@@ -711,14 +713,14 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = createMultiAllDayEntry(EVENT_TITLE_ONE, "Where", "Thing", Status.STATUS_OK);
        name = getNameFromEntry(entry);
        
-       assertEquals(EVENT_TITLE_ONE, entry.getString("name"));
-       assertEquals("Where", entry.getString("where"));
-       assertEquals("Thing", entry.getString("desc"));
-       assertEquals("2011-06-27", entry.getJSONObject("startAt").getString("legacyDate")); // Different format!
-       assertEquals("2011-06-29", entry.getJSONObject("endAt").getString("legacyDate")); // Different format!
-       assertEquals("00:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("00:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("true", entry.getString("allday"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("name"));
+       assertEquals("Where", entry.get("where"));
+       assertEquals("Thing", entry.get("desc"));
+       assertEquals("2011-06-27", entry.get("startAt").get("legacyDate")); // Different format!
+       assertEquals("2011-06-29", entry.get("endAt").get("legacyDate")); // Different format!
+       assertEquals("00:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("00:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("true", entry.get("allday"));
        // No isoutlook on create/edit
        
        
@@ -726,21 +728,21 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("Where", entry.getString("location")); // Not where...
-       assertEquals("Thing", entry.getString("description")); // Not desc...
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("Where", entry.get("location")); // Not where...
+       assertEquals("Thing", entry.get("description")); // Not desc...
        
-       assertEquals("false", entry.getString("isoutlook"));
-       assertEquals("6/27/2011", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("6/29/2011", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("00:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("00:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("true", entry.getString("allday"));
+       assertEquals("false", entry.get("isoutlook"));
+       assertEquals("6/27/2011", entry.get("startAt").get("legacyDate"));
+       assertEquals("6/29/2011", entry.get("endAt").get("legacyDate"));
+       assertEquals("00:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("00:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("true", entry.get("allday"));
        
        // Check the new style dates too
-       assertEquals("2011-06-27T00:00:00.000", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("2011-06-29T00:00:00.000", entry.getJSONObject("endAt").get("iso8601"));
+       assertEquals("2011-06-27T00:00:00.000", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-29T00:00:00.000", entry.get("endAt").get("iso8601"));
        
     }
     
@@ -752,8 +754,8 @@ public class CalendarRestApiTest extends BaseWebScriptTest
      */
     public void testPermissions() throws Exception
     {
-       JSONObject entry;
-       JSONObject permissions;
+       JsonNode entry;
+       JsonNode permissions;
        String name;
        
        
@@ -811,16 +813,16 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("2011-06-29T12:00:00.000+01:00", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("2011-06-29T13:00:00.000+01:00", entry.getJSONObject("endAt").get("iso8601"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("2011-06-29T12:00:00.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-29T13:00:00.000+01:00", entry.get("endAt").get("iso8601"));
        
        // Check the permissions on it
        assertEquals(true, entry.has("permissions"));
-       permissions = entry.getJSONObject("permissions");
-       assertEquals(true, permissions.getBoolean("edit"));
-       assertEquals(true, permissions.getBoolean("delete"));
+       permissions = entry.get("permissions");
+       assertEquals(true, permissions.get("edit"));
+       assertEquals(true, permissions.get("delete"));
        
        
        // Different User, also Collaborator, allowed to Edit but not Delete
@@ -828,16 +830,16 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("2011-06-29T12:00:00.000+01:00", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("2011-06-29T13:00:00.000+01:00", entry.getJSONObject("endAt").get("iso8601"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("2011-06-29T12:00:00.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-29T13:00:00.000+01:00", entry.get("endAt").get("iso8601"));
        
        // Check the other user sees different permissions
        assertEquals(true, entry.has("permissions"));
-       permissions = entry.getJSONObject("permissions");
-       assertEquals(true, permissions.getBoolean("edit"));
-       assertEquals(false, permissions.getBoolean("delete"));
+       permissions = entry.get("permissions");
+       assertEquals(true, permissions.get("edit"));
+       assertEquals(false, permissions.get("delete"));
        
        
        // Switch from Collaborator to Contributor, loose delete
@@ -845,16 +847,16 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("2011-06-29T12:00:00.000+01:00", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("2011-06-29T13:00:00.000+01:00", entry.getJSONObject("endAt").get("iso8601"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("2011-06-29T12:00:00.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-29T13:00:00.000+01:00", entry.get("endAt").get("iso8601"));
        
        // Check the other user sees different permissions
        assertEquals(true, entry.has("permissions"));
-       permissions = entry.getJSONObject("permissions");
-       assertEquals(false, permissions.getBoolean("edit"));
-       assertEquals(false, permissions.getBoolean("delete"));
+       permissions = entry.get("permissions");
+       assertEquals(false, permissions.get("edit"));
+       assertEquals(false, permissions.get("delete"));
        
        
        // Switch users to consumer, still see but not edit
@@ -862,16 +864,16 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = getEntry(name, Status.STATUS_OK);
        
        assertEquals("Error found " + entry.toString(), false, entry.has("error"));
-       assertEquals(EVENT_TITLE_ONE, entry.getString("what"));
-       assertEquals(name, entry.getString("name"));
-       assertEquals("2011-06-29T12:00:00.000+01:00", entry.getJSONObject("startAt").get("iso8601"));
-       assertEquals("2011-06-29T13:00:00.000+01:00", entry.getJSONObject("endAt").get("iso8601"));
+       assertEquals(EVENT_TITLE_ONE, entry.get("what"));
+       assertEquals(name, entry.get("name"));
+       assertEquals("2011-06-29T12:00:00.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-29T13:00:00.000+01:00", entry.get("endAt").get("iso8601"));
        
        // Check the other user sees different permissions
        assertEquals(true, entry.has("permissions"));
-       permissions = entry.getJSONObject("permissions");
-       assertEquals(false, permissions.getBoolean("edit"));
-       assertEquals(false, permissions.getBoolean("delete"));
+       permissions = entry.get("permissions");
+       assertEquals(false, permissions.get("edit"));
+       assertEquals(false, permissions.get("delete"));
        
        
        // Note - create permissions not checked here, done via 
@@ -888,85 +890,85 @@ public class CalendarRestApiTest extends BaseWebScriptTest
      */
     public void testDifferentDateStyles() throws Exception
     {
-       JSONObject json;
-       JSONObject entry;
-       JSONObject startAt;
-       JSONObject endAt;
+       ObjectNode json;
+       JsonNode entry;
+       ObjectNode startAt;
+       ObjectNode endAt;
        
        
        // From+Start, To+End with slashes
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("from", "2011/06/21");
        json.put("to",   "2011/06/21");
        json.put("start", "11:00");
        json.put("end",   "12:00");
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", json, Status.STATUS_OK);
        
-       assertEquals("2011-06-21", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("2011-06-21", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("11:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("12:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("2011-06-21", entry.get("startAt").get("legacyDate"));
+       assertEquals("2011-06-21", entry.get("endAt").get("legacyDate"));
+       assertEquals("11:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("12:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        // Can't check iso8601 form as we don't know the TZ
        
        
        // From+Start, To+End with dashes
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("from", "2011-06-22");
        json.put("to",   "2011-06-22");
        json.put("start", "10:00");
        json.put("end",   "12:00");
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", json, Status.STATUS_OK);
        
-       assertEquals("2011-06-22", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("2011-06-22", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("10:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("12:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("2011-06-22", entry.get("startAt").get("legacyDate"));
+       assertEquals("2011-06-22", entry.get("endAt").get("legacyDate"));
+       assertEquals("10:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("12:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        // Can't check iso8601 form as we don't know the TZ
        
        
        // ISO8601 with offset
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("startAt", "2011-06-21T11:30:05+01:00");
        json.put("endAt",   "2011-06-21T12:45:25+01:00");
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", json, Status.STATUS_OK);
        
        // Check old style dates and times
-       assertEquals("2011-06-21", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("2011-06-21", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("11:30", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("12:45", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("2011-06-21", entry.get("startAt").get("legacyDate"));
+       assertEquals("2011-06-21", entry.get("endAt").get("legacyDate"));
+       assertEquals("11:30", entry.get("startAt").get("legacyTime"));
+       assertEquals("12:45", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        
        // Check new style dates and times
-       assertEquals("2011-06-21T11:30:05.000+01:00", entry.getJSONObject("startAt").getString("iso8601"));
-       assertEquals("2011-06-21T12:45:25.000+01:00", entry.getJSONObject("endAt").getString("iso8601"));
+       assertEquals("2011-06-21T11:30:05.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-21T12:45:25.000+01:00", entry.get("endAt").get("iso8601"));
        
        
        // ISO8601 with timezone
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("startAt", "2011-06-22T11:30:05");
        json.put("endAt",   "2011-06-22T12:45:25");
        json.put("timeZone", "Europe/London");
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", json, Status.STATUS_OK);
        
        // Check old style dates and times
-       assertEquals("2011-06-22", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("2011-06-22", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("11:30", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("12:45", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("2011-06-22", entry.get("startAt").get("legacyDate"));
+       assertEquals("2011-06-22", entry.get("endAt").get("legacyDate"));
+       assertEquals("11:30", entry.get("startAt").get("legacyTime"));
+       assertEquals("12:45", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        
        // Check new style dates and times
-       assertEquals("2011-06-22T11:30:05.000+01:00", entry.getJSONObject("startAt").getString("iso8601"));
-       assertEquals("2011-06-22T12:45:25.000+01:00", entry.getJSONObject("endAt").getString("iso8601"));
+       assertEquals("2011-06-22T11:30:05.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-22T12:45:25.000+01:00", entry.get("endAt").get("iso8601"));
        
        
        // ISO8601 in get style, with offset
-       json = new JSONObject();
-       startAt = new JSONObject();
-       endAt = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
+       startAt = AlfrescoDefaultObjectMapper.createObjectNode();
+       endAt = AlfrescoDefaultObjectMapper.createObjectNode();
        startAt.put("iso8601",  "2011-06-20T09:35:05+01:00");
        endAt.put("iso8601",  "2011-06-20T10:35:25+01:00");
        json.put("startAt", startAt);
@@ -974,21 +976,21 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", json, Status.STATUS_OK);
        
        // Check old style dates and times
-       assertEquals("2011-06-20", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("2011-06-20", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("09:35", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("10:35", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("2011-06-20", entry.get("startAt").get("legacyDate"));
+       assertEquals("2011-06-20", entry.get("endAt").get("legacyDate"));
+       assertEquals("09:35", entry.get("startAt").get("legacyTime"));
+       assertEquals("10:35", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        
        // Check new style dates and times
-       assertEquals("2011-06-20T09:35:05.000+01:00", entry.getJSONObject("startAt").getString("iso8601"));
-       assertEquals("2011-06-20T10:35:25.000+01:00", entry.getJSONObject("endAt").getString("iso8601"));
+       assertEquals("2011-06-20T09:35:05.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-20T10:35:25.000+01:00", entry.get("endAt").get("iso8601"));
        
        
        // ISO8601 in get style, with timezone
-       json = new JSONObject();
-       startAt = new JSONObject();
-       endAt = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
+       startAt = AlfrescoDefaultObjectMapper.createObjectNode();
+       endAt = AlfrescoDefaultObjectMapper.createObjectNode();
        startAt.put("iso8601",  "2011-06-24T09:30:05");
        startAt.put("timeZone", "Europe/London");
        endAt.put("iso8601",  "2011-06-24T10:45:25");
@@ -998,41 +1000,41 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", json, Status.STATUS_OK);
        
        // Check old style dates and times
-       assertEquals("2011-06-24", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("2011-06-24", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("09:30", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("10:45", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("false", entry.getString("allday"));
+       assertEquals("2011-06-24", entry.get("startAt").get("legacyDate"));
+       assertEquals("2011-06-24", entry.get("endAt").get("legacyDate"));
+       assertEquals("09:30", entry.get("startAt").get("legacyTime"));
+       assertEquals("10:45", entry.get("endAt").get("legacyTime"));
+       assertEquals("false", entry.get("allday"));
        
        // Check new style dates and times
-       assertEquals("2011-06-24T09:30:05.000+01:00", entry.getJSONObject("startAt").getString("iso8601"));
-       assertEquals("2011-06-24T10:45:25.000+01:00", entry.getJSONObject("endAt").getString("iso8601"));
+       assertEquals("2011-06-24T09:30:05.000+01:00", entry.get("startAt").get("iso8601"));
+       assertEquals("2011-06-24T10:45:25.000+01:00", entry.get("endAt").get("iso8601"));
        
        
        // All-day old-style
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("from", "2011/06/21");
        json.put("to",   "2011/06/21");
        json.put("allday", Boolean.TRUE);
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", json, Status.STATUS_OK);
 
-       assertEquals("2011-06-21", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("2011-06-21", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("00:00", entry.getJSONObject("startAt").getString("legacyTime"));
-       assertEquals("00:00", entry.getJSONObject("endAt").getString("legacyTime"));
-       assertEquals("true", entry.getString("allday"));
+       assertEquals("2011-06-21", entry.get("startAt").get("legacyDate"));
+       assertEquals("2011-06-21", entry.get("endAt").get("legacyDate"));
+       assertEquals("00:00", entry.get("startAt").get("legacyTime"));
+       assertEquals("00:00", entry.get("endAt").get("legacyTime"));
+       assertEquals("true", entry.get("allday"));
        
        // All-day ISO8601 with timezone
-       json = new JSONObject();
+       json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("startAt", "2011-06-22T00:00:00");
        json.put("endAt",   "2011-06-22T00:00:00");
        json.put("timeZone", "Europe/London");
        json.put("allday", Boolean.TRUE);
        entry = createEntry(EVENT_TITLE_ONE, "Where", "Thing", json, Status.STATUS_OK);
        
-       assertEquals("2011-06-22", entry.getJSONObject("startAt").getString("legacyDate"));
-       assertEquals("2011-06-22", entry.getJSONObject("endAt").getString("legacyDate"));
-       assertEquals("true", entry.getString("allday"));
+       assertEquals("2011-06-22", entry.get("startAt").get("legacyDate"));
+       assertEquals("2011-06-22", entry.get("endAt").get("legacyDate"));
+       assertEquals("true", entry.get("allday"));
     }
     
     /**
@@ -1040,12 +1042,12 @@ public class CalendarRestApiTest extends BaseWebScriptTest
      */
     public void testOverallListing() throws Exception
     {
-       JSONObject dates;
-       JSONArray entries;
+       JsonNode dates;
+       ArrayNode entries;
        
        // Initially, there are no events
        dates = getEntries(null, null);
-       assertEquals(0, dates.length());
+       assertEquals(0, dates.size());
        
        
        // Add two events in the past
@@ -1056,38 +1058,38 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        dates = getEntries(null, null);
        
        // Should have two entries on the one day
-       assertEquals(1, dates.length());
-       assertEquals("6/29/2011", dates.names().getString(0));
+       assertEquals(1, dates.size());
+       assertEquals("6/29/2011", dates.get(0));
      
-       entries = dates.getJSONArray("6/29/2011");
-       assertEquals(2, entries.length());
-       assertEquals(EVENT_TITLE_ONE, entries.getJSONObject(0).getString("name"));
-       assertEquals(EVENT_TITLE_TWO, entries.getJSONObject(1).getString("name"));
+       entries = (ArrayNode) dates.get("6/29/2011");
+       assertEquals(2, entries.size());
+       assertEquals(EVENT_TITLE_ONE, entries.get(0).get("name"));
+       assertEquals(EVENT_TITLE_TWO, entries.get(1).get("name"));
        
        //Check the dates
-       assertEquals("2011-06-29T12:00:00.000+01:00", entries.getJSONObject(0).getJSONObject("startAt").getString("iso8601"));
-       assertEquals("2011-06-29T13:00:00.000+01:00", entries.getJSONObject(0).getJSONObject("endAt").getString("iso8601"));
+       assertEquals("2011-06-29T12:00:00.000+01:00", entries.get(0).get("startAt").get("iso8601"));
+       assertEquals("2011-06-29T13:00:00.000+01:00", entries.get(0).get("endAt").get("iso8601"));
        
        // Add a third, on the next day
-       JSONObject entry = createEntry(EVENT_TITLE_THREE, "Where3", "Thing 3", Status.STATUS_OK);
+       JsonNode entry = createEntry(EVENT_TITLE_THREE, "Where3", "Thing 3", Status.STATUS_OK);
        String name3 = getNameFromEntry(entry);
        updateEntry(name3, EVENT_TITLE_THREE, "More Where 3", "More Thing 3", false, Status.STATUS_OK);
        
        
        // Check now, should have two days
        dates = getEntries(null, null);
-       assertEquals(2, dates.length());
-       assertEquals("6/29/2011", dates.names().getString(0));
-       assertEquals("6/28/2011", dates.names().getString(1));
+       assertEquals(2, dates.size());
+       assertEquals("6/29/2011", dates.get(0));
+       assertEquals("6/28/2011", dates.get(1));
        
-       entries = dates.getJSONArray("6/29/2011");
-       assertEquals(2, entries.length());
-       assertEquals(EVENT_TITLE_ONE, entries.getJSONObject(0).getString("name"));
-       assertEquals(EVENT_TITLE_TWO, entries.getJSONObject(1).getString("name"));
+       entries = (ArrayNode) dates.get("6/29/2011");
+       assertEquals(2, entries.size());
+       assertEquals(EVENT_TITLE_ONE, entries.get(0).get("name"));
+       assertEquals(EVENT_TITLE_TWO, entries.get(1).get("name"));
        
-       entries = dates.getJSONArray("6/28/2011");
-       assertEquals(1, entries.length());
-       assertEquals(EVENT_TITLE_THREE, entries.getJSONObject(0).getString("name"));
+       entries = (ArrayNode) dates.get("6/28/2011");
+       assertEquals(1, entries.size());
+       assertEquals(EVENT_TITLE_THREE, entries.get(0).get("name"));
        
        
        // Now check the ICS
@@ -1108,16 +1110,16 @@ public class CalendarRestApiTest extends BaseWebScriptTest
      */
     public void testUserListing() throws Exception
     {
-       JSONObject result;
-       JSONArray events;
+       JsonNode result;
+       ArrayNode events;
        
        // Initially, there are no events
        result = getEntries(null, null);
-       assertEquals(0, result.length());
+       assertEquals(0, result.size());
        
        result = getEntries("admin", null);
-       events = result.getJSONArray("events");
-       assertEquals(0, events.length());
+       events = (ArrayNode) result.get("events");
+       assertEquals(0, events.size());
        
        // Add two events in the past
        createEntry(EVENT_TITLE_ONE, "Somewhere", "Thing 1", Status.STATUS_OK);
@@ -1125,56 +1127,56 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        
        // Check again
        result = getEntries(null, null);
-       assertEquals(1, result.length());
+       assertEquals(1, result.size());
        
        result = getEntries("admin", "2000/01/01"); // With a from date
-       events = result.getJSONArray("events");
-       assertEquals(2, events.length());
-       assertEquals(EVENT_TITLE_ONE, events.getJSONObject(0).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(1).getString("title"));
+       events = (ArrayNode) result.get("events");
+       assertEquals(2, events.size());
+       assertEquals(EVENT_TITLE_ONE, events.get(0).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(1).get("title"));
        
        result = getEntries("admin", null); // Without a from date
-       events = result.getJSONArray("events");
-       assertEquals(2, events.length());
-       assertEquals(EVENT_TITLE_ONE, events.getJSONObject(0).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(1).getString("title"));
+       events = (ArrayNode) result.get("events");
+       assertEquals(2, events.size());
+       assertEquals(EVENT_TITLE_ONE, events.get(0).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(1).get("title"));
        
        
        // Add a third, on the next day
-       JSONObject entry = createEntry(EVENT_TITLE_THREE, "Where3", "Thing 3", Status.STATUS_OK);
+       JsonNode entry = createEntry(EVENT_TITLE_THREE, "Where3", "Thing 3", Status.STATUS_OK);
        String name3 = getNameFromEntry(entry);
        updateEntry(name3, EVENT_TITLE_THREE, "More Where 3", "More Thing 3", false, Status.STATUS_OK);
        
        
        // Check getting all of them
        result = getEntries("admin", null);
-       events = result.getJSONArray("events");
-       assertEquals(3, events.length());
-       assertEquals(EVENT_TITLE_THREE, events.getJSONObject(0).getString("title"));
-       assertEquals(EVENT_TITLE_ONE, events.getJSONObject(1).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(2).getString("title"));
-       assertEquals(SITE_SHORT_NAME_CALENDAR, events.getJSONObject(0).getString("site"));
-       assertEquals(SITE_SHORT_NAME_CALENDAR, events.getJSONObject(1).getString("site"));
-       assertEquals(SITE_SHORT_NAME_CALENDAR, events.getJSONObject(2).getString("site"));
+       events = (ArrayNode) result.get("events");
+       assertEquals(3, events.size());
+       assertEquals(EVENT_TITLE_THREE, events.get(0).get("title"));
+       assertEquals(EVENT_TITLE_ONE, events.get(1).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(2).get("title"));
+       assertEquals(SITE_SHORT_NAME_CALENDAR, events.get(0).get("site"));
+       assertEquals(SITE_SHORT_NAME_CALENDAR, events.get(1).get("site"));
+       assertEquals(SITE_SHORT_NAME_CALENDAR, events.get(2).get("site"));
        
 
        // Now set a date filter to constrain
        result = getEntries("admin", "2011/06/29");
-       events = result.getJSONArray("events");
-       assertEquals(2, events.length());
-       assertEquals(EVENT_TITLE_ONE, events.getJSONObject(0).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(1).getString("title"));
+       events = (ArrayNode) result.get("events");
+       assertEquals(2, events.size());
+       assertEquals(EVENT_TITLE_ONE, events.get(0).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(1).get("title"));
        
        result = getEntries("admin", "2011/07/01");
-       events = result.getJSONArray("events");
-       assertEquals(0, events.length());
+       events = (ArrayNode) result.get("events");
+       assertEquals(0, events.size());
        
        
        // Make it not site specific
        Response response = sendRequest(new GetRequest(URL_USER_EVENTS_LIST + "?from=2000/01/01"), 200);
-       result = new JSONObject(response.getContentAsString());
-       events = result.getJSONArray("events");
-       assertEquals(3, events.length());
+       result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+       events = (ArrayNode) result.get("events");
+       assertEquals(3, events.size());
        
        
        // Now hide the site, and remove the user from it, events will go
@@ -1186,9 +1188,9 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        this.authenticationComponent.setCurrentUser(USER_ONE);
        
        response = sendRequest(new GetRequest(URL_USER_EVENTS_LIST + "?from=2000/01/01"), 200);
-       result = new JSONObject(response.getContentAsString());
-       events = result.getJSONArray("events");
-       assertEquals(0, events.length());
+       result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+       events = (ArrayNode) result.get("events");
+       assertEquals(0, events.size());
     }
     
     /**
@@ -1211,20 +1213,20 @@ public class CalendarRestApiTest extends BaseWebScriptTest
      */
     public void testRepeatingEventsInListings() throws Exception 
     {
-       JSONObject result;
-       JSONArray events;
+       JsonNode result;
+       ArrayNode events;
        
        // Initially, there are no events
        result = getEntries(null, null);
-       assertEquals(0, result.length());
+       assertEquals(0, result.size());
        
        result = getEntries("admin", null);
-       events = result.getJSONArray("events");
-       assertEquals(0, events.length());
+       events = (ArrayNode) result.get("events");
+       assertEquals(0, events.size());
        
        // Add two events in the past, one of which repeats 
-       JSONObject entry1 = createEntry(EVENT_TITLE_ONE, "Somewhere", "Thing 1", Status.STATUS_OK);
-       JSONObject entry2 = createEntry(EVENT_TITLE_TWO, "Somewhere", "Thing 2", Status.STATUS_OK);
+       JsonNode entry1 = createEntry(EVENT_TITLE_ONE, "Somewhere", "Thing 1", Status.STATUS_OK);
+       JsonNode entry2 = createEntry(EVENT_TITLE_TWO, "Somewhere", "Thing 2", Status.STATUS_OK);
        String entryName1 = getNameFromEntry(entry1); 
        String entryName2 = getNameFromEntry(entry2);
        // Have it repeat on wednesdays and fridays every two weeks
@@ -1236,27 +1238,27 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        
        // For the user
        result = getEntries("admin", "2011-06-27&repeating=first");
-       events = result.getJSONArray("events");
-       assertEquals(2, events.length());
-       assertEquals(entryName2, events.getJSONObject(0).getString("name"));
-       assertEquals(entryName1, events.getJSONObject(1).getString("name"));
-       assertEquals(EVENT_TITLE_TWO + " (Repeating)", events.getJSONObject(0).getString("title"));
-       assertEquals(EVENT_TITLE_ONE, events.getJSONObject(1).getString("title"));
+       events = (ArrayNode) result.get("events");
+       assertEquals(2, events.size());
+       assertEquals(entryName2, events.get(0).get("name"));
+       assertEquals(entryName1, events.get(1).get("name"));
+       assertEquals(EVENT_TITLE_TWO + " (Repeating)", events.get(0).get("title"));
+       assertEquals(EVENT_TITLE_ONE, events.get(1).get("title"));
        
        
        // For the site (JSON format is different)
        result = getEntries(null, "2011-06-27&repeating=first");
-       assertEquals(2, result.length());
+       assertEquals(2, result.size());
        assertEquals("6/28/2011", getKeys(result, true)[0]);
        assertEquals("6/29/2011", getKeys(result, true)[1]);
        
-       events = result.getJSONArray("6/28/2011");
-       assertEquals(1, events.length());
-       assertEquals(EVENT_TITLE_TWO + " (Repeating)", events.getJSONObject(0).getString("name"));
+       events = (ArrayNode) result.get("6/28/2011");
+       assertEquals(1, events.size());
+       assertEquals(EVENT_TITLE_TWO + " (Repeating)", events.get(0).get("name"));
        
-       events = result.getJSONArray("6/29/2011");
-       assertEquals(1, events.length());
-       assertEquals(EVENT_TITLE_ONE, events.getJSONObject(0).getString("name"));
+       events = (ArrayNode) result.get("6/29/2011");
+       assertEquals(1, events.size());
+       assertEquals(EVENT_TITLE_ONE, events.get(0).get("name"));
        
        
        // Get all the entries, with repeats expanded
@@ -1264,77 +1266,77 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        
        // For the user
        result = getEntries("admin", "2011/06/27");
-       events = result.getJSONArray("events");
-       assertEquals(7, Math.min(events.length(),7)); // At least
-       assertEquals(entryName2, events.getJSONObject(0).getString("name"));
-       assertEquals(entryName2, events.getJSONObject(1).getString("name")); // 11:30 ->
-       assertEquals(entryName1, events.getJSONObject(2).getString("name")); // 12:00 ->
-       assertEquals(entryName2, events.getJSONObject(3).getString("name"));
-       assertEquals(entryName2, events.getJSONObject(4).getString("name"));
-       assertEquals(entryName2, events.getJSONObject(5).getString("name"));
-       assertEquals(entryName2, events.getJSONObject(6).getString("name"));
-       assertEquals(entryName2, events.getJSONObject(7).getString("name"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(0).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(1).getString("title"));
-       assertEquals(EVENT_TITLE_ONE, events.getJSONObject(2).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(3).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(4).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(5).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(6).getString("title"));
-       assertEquals(EVENT_TITLE_TWO, events.getJSONObject(7).getString("title"));
+       events = (ArrayNode) result.get("events");
+       assertEquals(7, Math.min(events.size(),7)); // At least
+       assertEquals(entryName2, events.get(0).get("name"));
+       assertEquals(entryName2, events.get(1).get("name")); // 11:30 ->
+       assertEquals(entryName1, events.get(2).get("name")); // 12:00 ->
+       assertEquals(entryName2, events.get(3).get("name"));
+       assertEquals(entryName2, events.get(4).get("name"));
+       assertEquals(entryName2, events.get(5).get("name"));
+       assertEquals(entryName2, events.get(6).get("name"));
+       assertEquals(entryName2, events.get(7).get("name"));
+       assertEquals(EVENT_TITLE_TWO, events.get(0).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(1).get("title"));
+       assertEquals(EVENT_TITLE_ONE, events.get(2).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(3).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(4).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(5).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(6).get("title"));
+       assertEquals(EVENT_TITLE_TWO, events.get(7).get("title"));
        
        // Check the dates on these:
        // Repeating original
-       assertEquals("2011-06-28T", events.getJSONObject(0).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-06-28T", events.get(0).get("startAt").get("iso8601").textValue().substring(0,11));
        // 1st repeat Wednesday
-       assertEquals("2011-06-29T", events.getJSONObject(1).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-06-29T", events.get(1).get("startAt").get("iso8601").textValue().substring(0,11));
        // Non-repeating original
-       assertEquals("2011-06-29T", events.getJSONObject(2).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-06-29T", events.get(2).get("startAt").get("iso8601").textValue().substring(0,11));
        // 1st repeat Friday
-       assertEquals("2011-07-01T", events.getJSONObject(3).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-07-01T", events.get(3).get("startAt").get("iso8601").textValue().substring(0,11));
        // 2nd repeat Wednesday
-       assertEquals("2011-07-13T", events.getJSONObject(4).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-07-13T", events.get(4).get("startAt").get("iso8601").textValue().substring(0,11));
        // 2nd repeat Friday
-       assertEquals("2011-07-15T", events.getJSONObject(5).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-07-15T", events.get(5).get("startAt").get("iso8601").textValue().substring(0,11));
        // 3rd repeat Wednesday
-       assertEquals("2011-07-27T", events.getJSONObject(6).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-07-27T", events.get(6).get("startAt").get("iso8601").textValue().substring(0,11));
        // 3rd repeat Friday
-       assertEquals("2011-07-29T", events.getJSONObject(7).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-07-29T", events.get(7).get("startAt").get("iso8601").textValue().substring(0,11));
 
        
        // For the site
        result = getEntries(null, "2011-06-28&repeating=all");
-       assertEquals(7, Math.min(result.length(),7)); // At least
+       assertEquals(7, Math.min(result.size(),7)); // At least
        
        // Repeating original
        assertEquals("6/28/2011", getKeys(result, true)[0]);
-       assertEquals(1, result.getJSONArray("6/28/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("6/28/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("6/28/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("6/28/2011").get(0).get("name"));
        // 1st repeat Wednesday, then Non-repeating original
        assertEquals("6/29/2011", getKeys(result, true)[1]);
-       assertEquals(2, result.getJSONArray("6/29/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("6/29/2011").getJSONObject(0).get("name"));
-       assertEquals(EVENT_TITLE_ONE, result.getJSONArray("6/29/2011").getJSONObject(1).get("name"));
+       assertEquals(2, result.get("6/29/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("6/29/2011").get(0).get("name"));
+       assertEquals(EVENT_TITLE_ONE, result.get("6/29/2011").get(1).get("name"));
        // 1st repeat Friday
        assertEquals("7/1/2011", getKeys(result, true)[2]);
-       assertEquals(1, result.getJSONArray("7/1/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("7/1/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("7/1/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("7/1/2011").get(0).get("name"));
        // 2nd repeat Wednesday
        assertEquals("7/13/2011", getKeys(result, true)[3]);
-       assertEquals(1, result.getJSONArray("7/13/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("7/13/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("7/13/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("7/13/2011").get(0).get("name"));
        // 2nd repeat Friday
        assertEquals("7/15/2011", getKeys(result, true)[4]);
-       assertEquals(1, result.getJSONArray("7/15/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("7/15/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("7/15/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("7/15/2011").get(0).get("name"));
        // 3rd repeat Wednesday
        assertEquals("7/27/2011", getKeys(result, true)[5]);
-       assertEquals(1, result.getJSONArray("7/27/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("7/27/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("7/27/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("7/27/2011").get(0).get("name"));
        // 3rd repeat Friday
        assertEquals("7/29/2011", getKeys(result, true)[6]);
-       assertEquals(1, result.getJSONArray("7/29/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("7/29/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("7/29/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("7/29/2011").get(0).get("name"));
 
        
        
@@ -1342,43 +1344,43 @@ public class CalendarRestApiTest extends BaseWebScriptTest
        // We shouldn't get either of the original events, but we 
        //  should get the repeating instances of the 2nd one
        result = getEntries("admin", "2011/08/20");
-       events = result.getJSONArray("events");
-       assertEquals(4, events.length());
+       events = (ArrayNode) result.get("events");
+       assertEquals(4, events.size());
        
        // The repeating event runs until 2011-09-11, a Sunday
-       assertEquals(entryName2, events.getJSONObject(0).getString("name"));
-       assertEquals(entryName2, events.getJSONObject(1).getString("name"));
-       assertEquals(entryName2, events.getJSONObject(2).getString("name"));
-       assertEquals(entryName2, events.getJSONObject(3).getString("name"));
+       assertEquals(entryName2, events.get(0).get("name"));
+       assertEquals(entryName2, events.get(1).get("name"));
+       assertEquals(entryName2, events.get(2).get("name"));
+       assertEquals(entryName2, events.get(3).get("name"));
        
        // First Wednesday after the start date
-       assertEquals("2011-08-24T", events.getJSONObject(0).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-08-24T", events.get(0).get("startAt").get("iso8601").textValue().substring(0,11));
        // Friday
-       assertEquals("2011-08-26T", events.getJSONObject(1).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-08-26T", events.get(1).get("startAt").get("iso8601").textValue().substring(0,11));
        // Wednesday, 2 weeks later
-       assertEquals("2011-09-07T", events.getJSONObject(2).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-09-07T", events.get(2).get("startAt").get("iso8601").textValue().substring(0,11));
        // Friday, final repeating instance date
-       assertEquals("2011-09-09T", events.getJSONObject(3).getJSONObject("startAt").getString("iso8601").substring(0,11));
+       assertEquals("2011-09-09T", events.get(3).get("startAt").get("iso8601").textValue().substring(0,11));
        
        
        // Check by site, should see the same
        result = getEntries(null, "2011-08-20&repeating=all");
-       assertEquals(4, result.length());
+       assertEquals(4, result.size());
        
        assertEquals("8/24/2011", getKeys(result, true)[0]);
-       assertEquals(1, result.getJSONArray("8/24/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("8/24/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("8/24/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("8/24/2011").get(0).get("name"));
        
        assertEquals("8/26/2011", getKeys(result, true)[1]);
-       assertEquals(1, result.getJSONArray("8/26/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("8/26/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("8/26/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("8/26/2011").get(0).get("name"));
        
        assertEquals("9/7/2011", getKeys(result, true)[2]);
-       assertEquals(1, result.getJSONArray("9/7/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("9/7/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("9/7/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("9/7/2011").get(0).get("name"));
        
        assertEquals("9/9/2011", getKeys(result, true)[3]);
-       assertEquals(1, result.getJSONArray("9/9/2011").length());
-       assertEquals(EVENT_TITLE_TWO, result.getJSONArray("9/9/2011").getJSONObject(0).get("name"));
+       assertEquals(1, result.get("9/9/2011").size());
+       assertEquals(EVENT_TITLE_TWO, result.get("9/9/2011").get(0).get("name"));
     }
 }

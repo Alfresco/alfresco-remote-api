@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.discussion;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,6 @@ import org.alfresco.service.cmr.discussion.PostInfo;
 import org.alfresco.service.cmr.discussion.TopicInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -48,7 +48,7 @@ public class ForumPostPut extends AbstractDiscussionWebScript
 {
    @Override
    protected Map<String, Object> executeImpl(SiteInfo site, NodeRef nodeRef,
-         TopicInfo topic, PostInfo post, WebScriptRequest req, JSONObject json,
+         TopicInfo topic, PostInfo post, WebScriptRequest req, JsonNode json,
          Status status, Cache cache) 
    {
       // Build the common model parts
@@ -94,15 +94,15 @@ public class ForumPostPut extends AbstractDiscussionWebScript
    }
    
    private void doUpdatePost(PostInfo post, TopicInfo topic, WebScriptRequest req, 
-         JSONObject json)
+         JsonNode json)
    {
        boolean updateTopic = false;
       // Fetch the details from the JSON
 
        // Update the titles on the post and it's topic
-      if (json.containsKey("title"))
+      if (json.has("title"))
       {
-         String title = (String)json.get("title");
+         String title = json.get("title").textValue();
          post.setTitle(title);
          if (title.length() > 0)
          {
@@ -112,13 +112,13 @@ public class ForumPostPut extends AbstractDiscussionWebScript
       }
       
       // Contents is on the post
-      if (json.containsKey("content"))
+      if (json.has("content"))
       {
-         post.setContents((String)json.get("content"));
+         post.setContents(json.get("content").textValue());
       }
       
       // Tags are on the topic
-      if (json.containsKey("tags"))
+      if (json.has("tags"))
       {
          topic.getTags().clear();
          

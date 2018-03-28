@@ -25,12 +25,12 @@
  */
 package org.alfresco.repo.web.scripts.links;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.alfresco.service.cmr.links.LinkInfo;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -46,7 +46,7 @@ public class LinkGet extends AbstractLinksWebScript
 {
    @Override
    protected Map<String, Object> executeImpl(SiteInfo site, String linkName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+      WebScriptRequest req, JsonNode json, Status status, Cache cache)
    {
       Map<String, Object> model = new HashMap<String, Object>();
       

@@ -27,6 +27,9 @@ package org.alfresco.rest.api.tests.client.data;
 
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -36,8 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.alfresco.rest.api.tests.PublicApiDateFormat;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class NetworkImpl implements Network, Serializable, ExpectedComparison
 {
@@ -124,19 +126,19 @@ public class NetworkImpl implements Network, Serializable, ExpectedComparison
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static NetworkImpl parseNetwork(JSONObject jsonObject)
+	public static NetworkImpl parseNetwork(JsonNode jsonObject)
 	{
-		String id = (String)jsonObject.get("id");
-		Boolean isEnabled = (Boolean)jsonObject.get("isEnabled");
-		Boolean paidNetwork = (Boolean)jsonObject.get("paidNetwork");
-		String createdAt = (String)jsonObject.get("createdAt");
-		String subscriptionLevel = (String)jsonObject.get("subscriptionLevel");
-		JSONArray quotasJSON = (JSONArray)jsonObject.get("quotas");
+		String id = jsonObject.get("id").textValue();
+		Boolean isEnabled = jsonObject.get("isEnabled").booleanValue();
+		Boolean paidNetwork = jsonObject.get("paidNetwork").booleanValue();
+		String createdAt = jsonObject.get("createdAt").textValue();
+		String subscriptionLevel = jsonObject.get("subscriptionLevel").textValue();
+		ArrayNode quotasJSON = (ArrayNode) jsonObject.get("quotas");
 		List<org.alfresco.rest.api.tests.client.data.Quota> quotas = new ArrayList<org.alfresco.rest.api.tests.client.data.Quota>(quotasJSON.size());
-		Iterator it = quotasJSON.iterator();
+		Iterator<JsonNode> it = quotasJSON.iterator();
 		while(it.hasNext())
 		{
-			JSONObject quotaJSON = (JSONObject)it.next();
+			JsonNode quotaJSON = it.next();
 			org.alfresco.rest.api.tests.client.data.Quota quota = org.alfresco.rest.api.tests.client.data.Quota.parseQuota(quotaJSON);
 			quotas.add(quota);
 		}
@@ -165,9 +167,9 @@ public class NetworkImpl implements Network, Serializable, ExpectedComparison
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject networkJson = new JSONObject();
+		ObjectNode networkJson = AlfrescoDefaultObjectMapper.createObjectNode();
 		networkJson.put("id", getId());
 		networkJson.put("isEnabled", getIsEnabled());
 		

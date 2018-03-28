@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.blogs;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,13 +52,11 @@ import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.testing.category.LuceneTests;
 import org.alfresco.util.testing.category.RedundantTests;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONStringer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.context.ApplicationContext;
@@ -205,10 +206,9 @@ public class BlogServiceTest extends BaseWebScriptTest
     
     // Test helper methods 
     
-    private JSONObject getRequestObject(String title, String content, String[] tags, boolean isDraft)
-    throws Exception
+    private ObjectNode getRequestObject(String title, String content, String[] tags, boolean isDraft)
     {
-        JSONObject post = new JSONObject();
+        ObjectNode post = AlfrescoDefaultObjectMapper.createObjectNode();
         if (title != null)
         {
             post.put("title", title);
@@ -219,10 +219,10 @@ public class BlogServiceTest extends BaseWebScriptTest
         }
         if (tags != null)
         {
-            JSONArray arr = new JSONArray();
+            ArrayNode arr = AlfrescoDefaultObjectMapper.createArrayNode();
             for (String s : tags)
             {
-                arr.put(s);
+                arr.add(s);
             }
             post.put("tags", arr);
         }
@@ -230,10 +230,10 @@ public class BlogServiceTest extends BaseWebScriptTest
         return post;
     }
     
-    private JSONObject createPost(String title, String content, String[] tags, boolean isDraft, int expectedStatus)
+    private JsonNode createPost(String title, String content, String[] tags, boolean isDraft, int expectedStatus)
     throws Exception
     {
-        JSONObject post = getRequestObject(title, content, tags, isDraft);
+        JsonNode post = getRequestObject(title, content, tags, isDraft);
         Response response = sendRequest(new PostRequest(URL_BLOG_POSTS, post.toString(), "application/json"), expectedStatus);
 
         if (expectedStatus != 200)
@@ -242,23 +242,23 @@ public class BlogServiceTest extends BaseWebScriptTest
         }
         
         //logger.debug(response.getContentAsString());
-        JSONObject result = new JSONObject(response.getContentAsString());
-        JSONObject item = result.getJSONObject("item");
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        JsonNode item = result.get("item");
         if (isDraft)
         {
-            this.drafts.add(item.getString("name"));
+            this.drafts.add(item.get("name").textValue());
         }
         else
         {
-            this.posts.add(item.getString("name"));
+            this.posts.add(item.get("name").textValue());
         }
         return item;
     }
     
-    private JSONObject updatePost(String name, String title, String content, String[] tags, boolean isDraft, int expectedStatus)
+    private JsonNode updatePost(String name, String title, String content, String[] tags, boolean isDraft, int expectedStatus)
     throws Exception
     {
-        JSONObject post = getRequestObject(title, content, tags, isDraft);
+        JsonNode post = getRequestObject(title, content, tags, isDraft);
         Response response = sendRequest(new PutRequest(URL_BLOG_POST + name, post.toString(), "application/json"), expectedStatus);
         
         if (expectedStatus != 200)
@@ -266,18 +266,18 @@ public class BlogServiceTest extends BaseWebScriptTest
             return null;
         }
 
-        JSONObject result = new JSONObject(response.getContentAsString());
-        return result.getJSONObject("item");
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        return result.get("item");
     }
     
-    private JSONObject getPost(String name, int expectedStatus)
+    private JsonNode getPost(String name, int expectedStatus)
     throws Exception
     {
         Response response = sendRequest(new GetRequest(URL_BLOG_POST + name), expectedStatus);
         if (expectedStatus == 200)
         {
-            JSONObject result = new JSONObject(response.getContentAsString());
-            return result.getJSONObject("item");
+            JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+            return result.get("item");
         }
         else
         {
@@ -305,10 +305,10 @@ public class BlogServiceTest extends BaseWebScriptTest
         return URL;
     }
 
-    private JSONObject createComment(String nodeRef, String title, String content, int expectedStatus)
+    private JsonNode createComment(String nodeRef, String title, String content, int expectedStatus)
     throws Exception
     {
-        JSONObject comment = new JSONObject();
+        ObjectNode comment = AlfrescoDefaultObjectMapper.createObjectNode();
         comment.put("title", title);
         comment.put("content", content);
         comment.put("site", SITE_SHORT_NAME_BLOG);
@@ -320,14 +320,14 @@ public class BlogServiceTest extends BaseWebScriptTest
         }
 
         //logger.debug("Comment created: " + response.getContentAsString());
-        JSONObject result = new JSONObject(response.getContentAsString());
-        return result.getJSONObject("item");
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        return result.get("item");
     }
     
-    private JSONObject updateComment(String nodeRef, String title, String content, int expectedStatus)
+    private JsonNode updateComment(String nodeRef, String title, String content, int expectedStatus)
     throws Exception
     {
-        JSONObject comment = new JSONObject();
+        ObjectNode comment = AlfrescoDefaultObjectMapper.createObjectNode();
         comment.put("title", title);
         comment.put("content", content);
         Response response = sendRequest(new PutRequest(getCommentUrl(nodeRef), comment.toString(), "application/json"), expectedStatus);
@@ -338,8 +338,8 @@ public class BlogServiceTest extends BaseWebScriptTest
         }
 
         //logger.debug("Comment updated: " + response.getContentAsString());
-        JSONObject result = new JSONObject(response.getContentAsString());
-        return result.getJSONObject("item");
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        return result.get("item");
     }
     
     
@@ -349,7 +349,7 @@ public class BlogServiceTest extends BaseWebScriptTest
     {
         String title = "test";
         String content = "test";
-        JSONObject item = createPost(title, content, null, true, 200);
+        JsonNode item = createPost(title, content, null, true, 200);
         
         // check that the values
         assertEquals(title, item.get("title"));
@@ -358,13 +358,13 @@ public class BlogServiceTest extends BaseWebScriptTest
         
         // check that other user doesn't have access to the draft
         this.authenticationComponent.setCurrentUser(USER_TWO);
-        getPost(item.getString("name"), 404);
+        getPost(item.get("name").textValue(), 404);
         this.authenticationComponent.setCurrentUser(USER_ONE);
         
         // Now we'll GET my-drafts to ensure that the post is there.
         Response response = sendRequest(new GetRequest(URL_MY_DRAFT_BLOG_POSTS), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
-        assertTrue("Wrong number of posts", result.length() > 0);
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertTrue("Wrong number of posts", result.size() > 0);
     }
     
     /**
@@ -377,67 +377,66 @@ public class BlogServiceTest extends BaseWebScriptTest
         String[] tags = new String[]{"foo", "bar"};
         String title = "test";
         String content = "test";
-        JSONObject item = createPost(title, content, tags, true, 200);
+        JsonNode item = createPost(title, content, tags, true, 200);
         
         // check that the values
         assertEquals(title, item.get("title"));
         assertEquals(content, item.get("content"));
         assertEquals(true, item.get("isDraft"));
-        JSONArray reportedTags = (JSONArray)item.get("tags");
-        assertEquals("Tags size was wrong.", 2, reportedTags.length());
-        List<String> recoveredTagsList = Arrays.asList(new String[]{reportedTags.getString(0), reportedTags.getString(1)});
+        ArrayNode reportedTags = (ArrayNode)item.get("tags");
+        assertEquals("Tags size was wrong.", 2, reportedTags.size());
+        List<String> recoveredTagsList = Arrays.asList(new String[]{reportedTags.get(0).textValue(), reportedTags.get(1).textValue()});
         assertEquals("Tags were wrong.", Arrays.asList(tags), recoveredTagsList);
         
         // comment on the blog post.
-        NodeRef blogPostNode = new NodeRef(item.getString("nodeRef"));
+        NodeRef blogPostNode = new NodeRef(item.get("nodeRef").textValue());
         // Currently (mid-Swift dev) there is no Java CommentService, so we have to post a comment via the REST API.
         String commentsPostUrl = "/api/node/" + blogPostNode.getStoreRef().getProtocol() +
                                  "/" + blogPostNode.getStoreRef().getIdentifier() + "/" +
                                  blogPostNode.getId() + "/comments";
         
-        String jsonToPost = new JSONStringer().object()
-                                                  .key("title").value("Commented blog title")
-                                                  .key("content").value("Some content.")
-                                              .endObject().toString();
-                          
-        Response response = sendRequest(new PostRequest(commentsPostUrl, jsonToPost, "application/json"), 200);
+        ObjectNode jsonToPost = AlfrescoDefaultObjectMapper.createObjectNode();
+        jsonToPost.put("title", "Commented blog title");
+        jsonToPost.put("content", "Some content.");
+
+        Response response = sendRequest(new PostRequest(commentsPostUrl, AlfrescoDefaultObjectMapper.writeValueAsString(jsonToPost), "application/json"), 200);
         
         // check that other user doesn't have access to the draft
         this.authenticationComponent.setCurrentUser(USER_TWO);
-        getPost(item.getString("name"), 404);
+        getPost(item.get("name").textValue(), 404);
         this.authenticationComponent.setCurrentUser(USER_ONE);
         
         // Now we'll GET my-drafts to ensure that the post is there.
         response = sendRequest(new GetRequest(URL_MY_DRAFT_BLOG_POSTS), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // Ensure it reports the tag correctly on GET.
-        JSONArray items = result.getJSONArray("items");
-        JSONArray tagsArray = items.getJSONObject(0).getJSONArray("tags");
-        assertEquals("Wrong number of tags", 2, tagsArray.length());
-        assertEquals("Tag wrong", tags[0], tagsArray.getString(0));
-        assertEquals("Tag wrong", tags[1], tagsArray.getString(1));
+        ArrayNode items = (ArrayNode) result.get("items");
+        ArrayNode tagsArray = (ArrayNode) items.get(0).get("tags");
+        assertEquals("Wrong number of tags", 2, tagsArray.size());
+        assertEquals("Tag wrong", tags[0], tagsArray.get(0).textValue());
+        assertEquals("Tag wrong", tags[1], tagsArray.get(1).textValue());
         
         // Ensure the comment count is accurate
-        assertEquals("Wrong comment count", 1, items.getJSONObject(0).getInt("commentCount"));
+        assertEquals("Wrong comment count", 1, items.get(0).get("commentCount").intValue());
         
         // and that there is content at the commentsURL.
-        String commentsUrl = "/api" + items.getJSONObject(0).getString("commentsUrl");
+        String commentsUrl = "/api" + items.get(0).get("commentsUrl");
         response = sendRequest(new GetRequest(commentsUrl), 200);
         
         
         // Now get blog-post by tag.
         // 1. No such tag
         response = sendRequest(new GetRequest(URL_BLOG_POSTS + "?tag=NOSUCHTAG"), 200);
-        result = new JSONObject(response.getContentAsString());
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
-        assertEquals(0, result.getInt("total"));
+        assertEquals(0, result.get("total").intValue());
         
         // tag created above
         response = sendRequest(new GetRequest(URL_BLOG_POSTS + "?tag=foo"), 200);
-        result = new JSONObject(response.getContentAsString());
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
-        assertEquals(1, result.getInt("total"));
+        assertEquals(1, result.get("total").intValue());
         
         //TODO More assertions on recovered node.
     }
@@ -447,8 +446,8 @@ public class BlogServiceTest extends BaseWebScriptTest
         String title = "published";
         String content = "content";
         
-        JSONObject item = createPost(title, content, null, false, 200);
-        final String postName = item.getString("name");
+        JsonNode item = createPost(title, content, null, false, 200);
+        final String postName = item.get("name").textValue();
         
         // check the values
         assertEquals(title, item.get("title"));
@@ -457,15 +456,15 @@ public class BlogServiceTest extends BaseWebScriptTest
         
         // check that user two has access to it as well
         this.authenticationComponent.setCurrentUser(USER_TWO);
-        getPost(item.getString("name"), 200);
+        getPost(item.get("name").textValue(), 200);
         this.authenticationComponent.setCurrentUser(USER_ONE);
 
         // Now we'll GET my-published to ensure that the post is there.
         Response response = sendRequest(new GetRequest(URL_MY_PUBLISHED_BLOG_POSTS), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // we should have posts.size + drafts.size together
-        assertEquals(this.posts.size() + this.drafts.size(), result.getInt("total"));
+        assertEquals(this.posts.size() + this.drafts.size(), result.get("total"));
         
         // Finally, we'll delete the blog-post to test the REST DELETE call.
         response = sendRequest(new DeleteRequest(URL_BLOG_POST + postName), 200);
@@ -474,7 +473,7 @@ public class BlogServiceTest extends BaseWebScriptTest
     
     public void testCreateEmptyPost() throws Exception
     {
-        JSONObject item = createPost(null, null, null, false, 200);
+        JsonNode item = createPost(null, null, null, false, 200);
         
         // check the values
         assertEquals("", item.get("title"));
@@ -483,38 +482,38 @@ public class BlogServiceTest extends BaseWebScriptTest
         
         // check that user two has access to it as well
         this.authenticationComponent.setCurrentUser(USER_TWO);
-        getPost(item.getString("name"), 200);
+        getPost(item.get("name").textValue(), 200);
         this.authenticationComponent.setCurrentUser(USER_ONE);
     }
     
     public void testUpdated() throws Exception
     {
-        JSONObject item = createPost("test", "test", null, false, 200);
-        String name = item.getString("name");
-        assertEquals(false, item.getBoolean("isUpdated"));
+        JsonNode item = createPost("test", "test", null, false, 200);
+        String name = item.get("name").textValue();
+        assertEquals(false, item.get("isUpdated").booleanValue());
         
         item = updatePost(name, "new title", "new content", null, false, 200);
-        assertEquals(true, item.getBoolean("isUpdated"));
-        assertEquals("new title", item.getString("title"));
-        assertEquals("new content", item.getString("content"));
+        assertEquals(true, item.get("isUpdated").booleanValue());
+        assertEquals("new title", item.get("title").textValue());
+        assertEquals("new content", item.get("content").textValue());
     }
     
     public void testUpdateWithEmptyValues() throws Exception
     {
-        JSONObject item = createPost("test", "test", null, false, 200);
-        String name = item.getString("name");
-        assertEquals(false, item.getBoolean("isUpdated"));
+        JsonNode item = createPost("test", "test", null, false, 200);
+        String name = item.get("name").textValue();
+        assertEquals(false, item.get("isUpdated").booleanValue());
         
-        item = updatePost(item.getString("name"), null, null, null, false, 200);
-        assertEquals("", item.getString("title"));
-        assertEquals("", item.getString("content"));
+        item = updatePost(item.get("name").textValue(), null, null, null, false, 200);
+        assertEquals("", item.get("title").textValue());
+        assertEquals("", item.get("content").textValue());
     }
     
     public void testPublishThroughUpdate() throws Exception
     {
-        JSONObject item = createPost("test", "test", null, true, 200);
-        String name = item.getString("name");
-        assertEquals(true, item.getBoolean("isDraft"));
+        JsonNode item = createPost("test", "test", null, true, 200);
+        String name = item.get("name").textValue();
+        assertEquals(true, item.get("isDraft"));
         
         // check that user two does not have access
         this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -522,9 +521,9 @@ public class BlogServiceTest extends BaseWebScriptTest
         this.authenticationComponent.setCurrentUser(USER_ONE);
         
         item = updatePost(name, "new title", "new content", null, false, 200);
-        assertEquals("new title", item.getString("title"));
-        assertEquals("new content", item.getString("content"));
-        assertEquals(false, item.getBoolean("isDraft"));
+        assertEquals("new title", item.get("title").textValue());
+        assertEquals("new content", item.get("content").textValue());
+        assertEquals(false, item.get("isDraft").booleanValue());
         
         // check that user two does have access
         this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -534,9 +533,9 @@ public class BlogServiceTest extends BaseWebScriptTest
 
     public void testCannotDoUnpublish() throws Exception
     {
-        JSONObject item = createPost("test", "test", null, false, 200);
-        String name = item.getString("name");
-        assertEquals(false, item.getBoolean("isDraft"));
+        JsonNode item = createPost("test", "test", null, false, 200);
+        String name = item.get("name").textValue();
+        assertEquals(false, item.get("isDraft").booleanValue());
         
         item = updatePost(name, "new title", "new content", null, true, 400); // should return bad request
     }
@@ -545,25 +544,25 @@ public class BlogServiceTest extends BaseWebScriptTest
     {
         String url = URL_BLOG_POSTS;
         Response response = sendRequest(new GetRequest(url), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
-        JSONObject blog;
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        JsonNode blog;
         
         // We shouldn't have any posts at this point
         assertEquals(0, this.posts.size());
         assertEquals(0, this.drafts.size());
         
-        assertEquals(0, result.getInt("total"));
-        assertEquals(0, result.getInt("startIndex"));
-        assertEquals(0, result.getInt("itemCount"));
-        assertEquals(0, result.getJSONArray("items").length());
+        assertEquals(0, result.get("total").intValue());
+        assertEquals(0, result.get("startIndex").intValue());
+        assertEquals(0, result.get("itemCount").intValue());
+        assertEquals(0, result.get("items").size());
         
         // Check that the permissions are correct
-        JSONObject metadata = result.getJSONObject("metadata");
-        JSONObject perms = metadata.getJSONObject("blogPermissions");
-        assertEquals(false, metadata.getBoolean("externalBlogConfig"));
-        assertEquals(false, perms.getBoolean("delete")); // No container yet
-        assertEquals(true, perms.getBoolean("edit"));
-        assertEquals(true, perms.getBoolean("create"));
+        JsonNode metadata = result.get("metadata");
+        JsonNode perms = metadata.get("blogPermissions");
+        assertEquals(false, metadata.get("externalBlogConfig").booleanValue());
+        assertEquals(false, perms.get("delete").booleanValue()); // No container yet
+        assertEquals(true, perms.get("edit").booleanValue());
+        assertEquals(true, perms.get("create").booleanValue());
         
 
         // Create a draft and a full post
@@ -575,87 +574,87 @@ public class BlogServiceTest extends BaseWebScriptTest
         
         // Check now
         response = sendRequest(new GetRequest(url), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(2, result.getInt("total"));
-        assertEquals(0, result.getInt("startIndex"));
-        assertEquals(2, result.getInt("itemCount"));
-        assertEquals(2, result.getJSONArray("items").length());
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(2, result.get("total").intValue());
+        assertEquals(0, result.get("startIndex").intValue());
+        assertEquals(2, result.get("itemCount").intValue());
+        assertEquals(2, result.get("items").size());
 
         // Check the core permissions
-        metadata = result.getJSONObject("metadata");
-        perms = metadata.getJSONObject("blogPermissions");
-        assertEquals(false, metadata.getBoolean("externalBlogConfig"));
-        assertEquals(true, perms.getBoolean("delete")); // On the container itself
-        assertEquals(true, perms.getBoolean("edit"));
-        assertEquals(true, perms.getBoolean("create"));
+        metadata = result.get("metadata");
+        perms = metadata.get("blogPermissions");
+        assertEquals(false, metadata.get("externalBlogConfig").booleanValue());
+        assertEquals(true, perms.get("delete").booleanValue()); // On the container itself
+        assertEquals(true, perms.get("edit").booleanValue());
+        assertEquals(true, perms.get("create").booleanValue());
         
         // Check each one in detail, they'll come back Published
         //  then draft (newest first within that)
-        blog = result.getJSONArray("items").getJSONObject(0);
-        assertEquals(TITLE_1, blog.get("title"));
-        assertEquals(false, blog.getBoolean("isDraft"));
-        perms = blog.getJSONObject("permissions");
-        assertEquals(true, perms.getBoolean("delete"));
-        assertEquals(true, perms.getBoolean("edit"));
+        blog = result.get("items").get(0);
+        assertEquals(TITLE_1, blog.get("title").textValue());
+        assertEquals(false, blog.get("isDraft").booleanValue());
+        perms = blog.get("permissions");
+        assertEquals(true, perms.get("delete").booleanValue());
+        assertEquals(true, perms.get("edit").booleanValue());
         
-        blog = result.getJSONArray("items").getJSONObject(1);
-        assertEquals(TITLE_2, blog.get("title"));
-        assertEquals(true, blog.getBoolean("isDraft"));
-        perms = blog.getJSONObject("permissions");
-        assertEquals(true, perms.getBoolean("delete"));
-        assertEquals(true, perms.getBoolean("edit"));
+        blog = result.get("items").get(1);
+        assertEquals(TITLE_2, blog.get("title").textValue());
+        assertEquals(true, blog.get("isDraft").booleanValue());
+        perms = blog.get("permissions");
+        assertEquals(true, perms.get("delete").booleanValue());
+        assertEquals(true, perms.get("edit").booleanValue());
         
         
         // Add a third post
         createPost(TITLE_3, "Still Stuff", null, false, Status.STATUS_OK);
         
         response = sendRequest(new GetRequest(url), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(3, result.getInt("total"));
-        assertEquals(0, result.getInt("startIndex"));
-        assertEquals(3, result.getInt("itemCount"));
-        assertEquals(3, result.getJSONArray("items").length());
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(3, result.get("total").intValue());
+        assertEquals(0, result.get("startIndex").intValue());
+        assertEquals(3, result.get("itemCount").intValue());
+        assertEquals(3, result.get("items").size());
 
         // Published then draft, newest first
-        blog = result.getJSONArray("items").getJSONObject(0);
-        assertEquals(TITLE_3, blog.get("title"));
-        blog = result.getJSONArray("items").getJSONObject(1);
-        assertEquals(TITLE_1, blog.get("title"));
-        blog = result.getJSONArray("items").getJSONObject(2);
-        assertEquals(TITLE_2, blog.get("title"));
+        blog = result.get("items").get(0);
+        assertEquals(TITLE_3, blog.get("title").textValue());
+        blog = result.get("items").get(1);
+        assertEquals(TITLE_1, blog.get("title").textValue());
+        blog = result.get("items").get(2);
+        assertEquals(TITLE_2, blog.get("title").textValue());
 
         
         // Ensure that paging behaves properly
         response = sendRequest(new GetRequest(url + "?pageSize=2&startIndex=0"), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(3, result.getInt("total"));
-        assertEquals(0, result.getInt("startIndex"));
-        assertEquals(2, result.getInt("itemCount"));
-        assertEquals(2, result.getJSONArray("items").length());
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(3, result.get("total").intValue());
+        assertEquals(0, result.get("startIndex").intValue());
+        assertEquals(2, result.get("itemCount").intValue());
+        assertEquals(2, result.get("items").size());
 
-        assertEquals(TITLE_3, result.getJSONArray("items").getJSONObject(0).get("title"));
-        assertEquals(TITLE_1, result.getJSONArray("items").getJSONObject(1).get("title"));
+        assertEquals(TITLE_3, result.get("items").get(0).get("title").textValue());
+        assertEquals(TITLE_1, result.get("items").get(1).get("title").textValue());
         
         
         response = sendRequest(new GetRequest(url + "?pageSize=2&startIndex=1"), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(3, result.getInt("total"));
-        assertEquals(1, result.getInt("startIndex"));
-        assertEquals(2, result.getInt("itemCount"));
-        assertEquals(2, result.getJSONArray("items").length());
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(3, result.get("total").intValue());
+        assertEquals(1, result.get("startIndex").intValue());
+        assertEquals(2, result.get("itemCount").intValue());
+        assertEquals(2, result.get("items").size());
 
-        assertEquals(TITLE_1, result.getJSONArray("items").getJSONObject(0).get("title"));
-        assertEquals(TITLE_2, result.getJSONArray("items").getJSONObject(1).get("title"));
+        assertEquals(TITLE_1, result.get("items").get(0).get("title").textValue());
+        assertEquals(TITLE_2, result.get("items").get(1).get("title").textValue());
         
         
         response = sendRequest(new GetRequest(url + "?pageSize=2&startIndex=2"), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(3, result.getInt("total"));
-        assertEquals(2, result.getInt("startIndex"));
-        assertEquals(1, result.getInt("itemCount"));
-        assertEquals(1, result.getJSONArray("items").length());
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(3, result.get("total").intValue());
+        assertEquals(2, result.get("startIndex").intValue());
+        assertEquals(1, result.get("itemCount").intValue());
+        assertEquals(1, result.get("items").size());
 
-        assertEquals(TITLE_2, result.getJSONArray("items").getJSONObject(0).get("title"));
+        assertEquals(TITLE_2, result.get("items").get(0).get("title"));
 
         
         // Switch user, check that permissions are correct
@@ -663,51 +662,51 @@ public class BlogServiceTest extends BaseWebScriptTest
         this.authenticationComponent.setCurrentUser(USER_TWO);
         
         response = sendRequest(new GetRequest(url), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(2, result.getInt("total"));
-        assertEquals(0, result.getInt("startIndex"));
-        assertEquals(2, result.getInt("itemCount"));
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(2, result.get("total").intValue());
+        assertEquals(0, result.get("startIndex").intValue());
+        assertEquals(2, result.get("itemCount").intValue());
         
-        assertEquals(2, result.getJSONArray("items").length());
-        blog = result.getJSONArray("items").getJSONObject(0);
-        assertEquals(TITLE_3, blog.get("title"));
-        assertEquals(false, blog.getBoolean("isDraft"));
-        perms = blog.getJSONObject("permissions");
-        assertEquals(false, perms.getBoolean("delete"));
-        assertEquals(true, perms.getBoolean("edit"));
+        assertEquals(2, result.get("items").size());
+        blog = result.get("items").get(0);
+        assertEquals(TITLE_3, blog.get("title").textValue());
+        assertEquals(false, blog.get("isDraft").booleanValue());
+        perms = blog.get("permissions");
+        assertEquals(false, perms.get("delete").booleanValue());
+        assertEquals(true, perms.get("edit").booleanValue());
         
-        blog = result.getJSONArray("items").getJSONObject(1);
-        assertEquals(TITLE_1, blog.get("title"));
-        assertEquals(false, blog.getBoolean("isDraft"));
-        perms = blog.getJSONObject("permissions");
-        assertEquals(false, perms.getBoolean("delete"));
-        assertEquals(true, perms.getBoolean("edit"));
+        blog = result.get("items").get(1);
+        assertEquals(TITLE_1, blog.get("title").textValue());
+        assertEquals(false, blog.get("isDraft").booleanValue());
+        perms = blog.get("permissions");
+        assertEquals(false, perms.get("delete").booleanValue());
+        assertEquals(true, perms.get("edit").booleanValue());
     }
     
     public void testGetNew() throws Exception
     {
         String url = URL_BLOG_POSTS + "/new";
         Response response = sendRequest(new GetRequest(url), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // we should have posts.size
-        assertEquals(this.posts.size(), result.getInt("total"));
+        assertEquals(this.posts.size(), result.get("total").intValue());
     }
     
     public void testGetDrafts() throws Exception
     {
         String url = URL_BLOG_POSTS + "/mydrafts";
         Response response = sendRequest(new GetRequest(URL_BLOG_POSTS), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // we should have drafts.size resultss
-        assertEquals(this.drafts.size(), result.getInt("total"));
+        assertEquals(this.drafts.size(), result.get("total").intValue());
         
         // the second user should have zero
         this.authenticationComponent.setCurrentUser(USER_TWO);
         response = sendRequest(new GetRequest(url), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(0, result.getInt("total"));
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(0, result.get("total").intValue());
         this.authenticationComponent.setCurrentUser(USER_ONE);
 
     }
@@ -716,50 +715,50 @@ public class BlogServiceTest extends BaseWebScriptTest
     {
         String url = URL_BLOG_POSTS + "/mypublished";
         Response response = sendRequest(new GetRequest(url), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // we should have posts.size results
-        assertEquals(this.drafts.size(), result.getInt("total"));
+        assertEquals(this.drafts.size(), result.get("total").intValue());
         
         // the second user should have zero
         this.authenticationComponent.setCurrentUser(USER_TWO);
         response = sendRequest(new GetRequest(url), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(0, result.getInt("total"));
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(0, result.get("total").intValue());
         this.authenticationComponent.setCurrentUser(USER_ONE);
     }
 
     public void testComments() throws Exception
     {
-        JSONObject item = createPost("test", "test", null, false, 200);
-        String name = item.getString("name");
-        String nodeRef = item.getString("nodeRef");
+        JsonNode item = createPost("test", "test", null, false, 200);
+        String name = item.get("name").textValue();
+        String nodeRef = item.get("nodeRef").textValue();
         
-        JSONObject commentOne = createComment(nodeRef, "comment", "content", 200);
-        JSONObject commentTwo = createComment(nodeRef, "comment", "content", 200);
+        JsonNode commentOne = createComment(nodeRef, "comment", "content", 200);
+        JsonNode commentTwo = createComment(nodeRef, "comment", "content", 200);
         
         // fetch the comments
         Response response = sendRequest(new GetRequest(getCommentsUrl(nodeRef)), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
-        assertEquals(2, result.getInt("total"));
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(2, result.get("total").intValue());
         
         // add another one
-        JSONObject commentThree = createComment(nodeRef, "comment", "content", 200);
+        JsonNode commentThree = createComment(nodeRef, "comment", "content", 200);
         
         response = sendRequest(new GetRequest(getCommentsUrl(nodeRef)), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(3, result.getInt("total"));
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(3, result.get("total").intValue());
         
         // delete the last comment
-        response = sendRequest(new DeleteRequest(getCommentUrl(commentThree.getString("nodeRef"))), 200);
+        response = sendRequest(new DeleteRequest(getCommentUrl(commentThree.get("nodeRef").textValue())), 200);
         
         response = sendRequest(new GetRequest(getCommentsUrl(nodeRef)), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(2, result.getInt("total"));
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(2, result.get("total").intValue());
         
-        JSONObject commentTwoUpdated = updateComment(commentTwo.getString("nodeRef"), "new title", "new content", 200);
-        assertEquals("new title", commentTwoUpdated.getString("title"));
-        assertEquals("new content", commentTwoUpdated.getString("content"));
+        JsonNode commentTwoUpdated = updateComment(commentTwo.get("nodeRef").textValue(), "new title", "new content", 200);
+        assertEquals("new title", commentTwoUpdated.get("title").textValue());
+        assertEquals("new content", commentTwoUpdated.get("content").textValue());
     }
 
     /**
@@ -769,20 +768,20 @@ public class BlogServiceTest extends BaseWebScriptTest
     public void testDeleteCommentPostActivity() throws Exception
     {
         this.authenticationComponent.setCurrentUser(USER_ONE);
-        JSONObject item = createPost("testActivity", "test", null, false, 200);
+        JsonNode item = createPost("testActivity", "test", null, false, 200);
         assertNotNull(item);
         postLookup.execute();
         feedGenerator.execute();
         int activityNumStart = activityService.getSiteFeedEntries(SITE_SHORT_NAME_BLOG).size();
-        String nodeRef = item.getString("nodeRef");
-        JSONObject commentOne = createComment(nodeRef, "comment", "content", 200);
+        String nodeRef = item.get("nodeRef").textValue();
+        JsonNode commentOne = createComment(nodeRef, "comment", "content", 200);
         assertNotNull(item);
         postLookup.execute();
         feedGenerator.execute();
         int activityNumNext = activityService.getSiteFeedEntries(SITE_SHORT_NAME_BLOG).size();
         assertEquals("The activity feeds were not generated after adding a comment", activityNumStart + 1, activityNumNext);
         activityNumStart = activityNumNext;
-        NodeRef commentNodeRef = new NodeRef(commentOne.getString("nodeRef"));
+        NodeRef commentNodeRef = new NodeRef(commentOne.get("nodeRef").textValue());
         Response resp = sendRequest(new DeleteRequest(getDeleteCommentUrl(commentNodeRef)), 200);
         assertTrue(resp.getStatus() == 200);
         postLookup.execute();
@@ -801,26 +800,26 @@ public class BlogServiceTest extends BaseWebScriptTest
        // Try to fetch the details on a new site
        Response response = sendRequest(new GetRequest(URL_BLOG_CORE), 200);
        String json = response.getContentAsString();
-       JSONObject result = new JSONObject(json);
+       JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(json);
        
        assertEquals("No item in:\n"+json, true, result.has("item"));
-       JSONObject item = result.getJSONObject("item");
+       JsonNode item = result.get("item");
        
        assertEquals("Missing key in: " + item, true, item.has("qnamePath"));
        assertEquals("Missing key in: " + item, true, item.has("detailsUrl"));
        assertEquals("Missing key in: " + item, true, item.has("blogPostsUrl"));
        
        // Blog properties are empty to start
-       assertEquals("", item.getString("type"));
-       assertEquals("", item.getString("name"));
-       assertEquals("", item.getString("description"));
-       assertEquals("", item.getString("url"));
-       assertEquals("", item.getString("username"));
-       assertEquals("", item.getString("password"));
+       assertEquals("", item.get("type").textValue());
+       assertEquals("", item.get("name").textValue());
+       assertEquals("", item.get("description").textValue());
+       assertEquals("", item.get("url").textValue());
+       assertEquals("", item.get("username").textValue());
+       assertEquals("", item.get("password").textValue());
        
        
        // Have it updated
-       JSONObject blog = new JSONObject();
+       ObjectNode blog = AlfrescoDefaultObjectMapper.createObjectNode();
        blog.put("blogType", "wordpress");
        blog.put("blogName", "A Blog!");
        blog.put("username", "guest");
@@ -829,22 +828,22 @@ public class BlogServiceTest extends BaseWebScriptTest
        // Check again now
        response = sendRequest(new GetRequest(URL_BLOG_CORE), 200);
        json = response.getContentAsString();
-       result = new JSONObject(json);
+       result = AlfrescoDefaultObjectMapper.getReader().readTree(json);
        
        assertEquals("No item in:\n"+json, true, result.has("item"));
-       item = result.getJSONObject("item");
+       item = result.get("item");
        
        assertEquals("Missing key in: " + item, true, item.has("qnamePath"));
        assertEquals("Missing key in: " + item, true, item.has("detailsUrl"));
        assertEquals("Missing key in: " + item, true, item.has("blogPostsUrl"));
        
        // Blog properties should now be set
-       assertEquals("wordpress", item.getString("type"));
-       assertEquals("A Blog!", item.getString("name"));
-       assertEquals("", item.getString("description"));
-       assertEquals("", item.getString("url"));
-       assertEquals("guest", item.getString("username"));
-       assertEquals("", item.getString("password"));
+       assertEquals("wordpress", item.get("type").textValue());
+       assertEquals("A Blog!", item.get("name").textValue());
+       assertEquals("", item.get("description").textValue());
+       assertEquals("", item.get("url").textValue());
+       assertEquals("guest", item.get("username").textValue());
+       assertEquals("", item.get("password").textValue());
     }
  
     /**
@@ -923,26 +922,26 @@ public class BlogServiceTest extends BaseWebScriptTest
     public void off_testPostTags() throws Exception
     {
         String[] tags = { "first", "test" };
-        JSONObject item = createPost("tagtest", "tagtest", tags, false, 200);
-        assertEquals(2, item.getJSONArray("tags").length());
-        assertEquals("first", item.getJSONArray("tags").get(0));
-        assertEquals("test", item.getJSONArray("tags").get(1));
+        JsonNode item = createPost("tagtest", "tagtest", tags, false, 200);
+        assertEquals(2, item.get("tags").size());
+        assertEquals("first", item.get("tags").get(0));
+        assertEquals("test", item.get("tags").get(1));
         
-        item = updatePost(item.getString("name"), null, null, new String[] { "First", "Test", "Second" }, false, 200);
-        assertEquals(3, item.getJSONArray("tags").length());
-        assertEquals("first", item.getJSONArray("tags").get(0));
-        assertEquals("test", item.getJSONArray("tags").get(1));
-        assertEquals("second", item.getJSONArray("tags").get(2));
+        item = updatePost(item.get("name").textValue(), null, null, new String[] { "First", "Test", "Second" }, false, 200);
+        assertEquals(3, item.get("tags").size());
+        assertEquals("first", item.get("tags").get(0));
+        assertEquals("test", item.get("tags").get(1));
+        assertEquals("second", item.get("tags").get(2));
     }
     
     public void off_testClearTags() throws Exception
     {
         String[] tags = { "abc", "def"};
-        JSONObject item = createPost("tagtest", "tagtest", tags, false, 200);
-        assertEquals(2, item.getJSONArray("tags").length());
+        JsonNode item = createPost("tagtest", "tagtest", tags, false, 200);
+        assertEquals(2, item.get("tags").size());
         
-        item = updatePost(item.getString("name"), null, null, new String[0], false, 200);
-        assertEquals(0, item.getJSONArray("tags").length());
+        item = updatePost(item.get("name").textValue(), null, null, new String[0], false, 200);
+        assertEquals(0, item.get("tags").size());
     }
 
     /**
@@ -991,8 +990,9 @@ public class BlogServiceTest extends BaseWebScriptTest
     {
         String url = "/api/blog/site/" + siteName + "/" + COMPONENT_BLOG;
         Response response = sendRequest(new GetRequest(url), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
-        assertTrue("The user sould have permission to create a new blog.", result.getJSONObject("item").getJSONObject("permissions").getBoolean("create"));
+        assertTrue("The user sould have permission to create a new blog.",
+                result.get("item").get("permissions").get("create").booleanValue());
     }
 }

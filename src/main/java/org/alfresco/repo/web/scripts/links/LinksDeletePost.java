@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.links;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,8 +37,6 @@ import java.util.ResourceBundle;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
 import org.alfresco.service.cmr.links.LinkInfo;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -58,7 +58,7 @@ public class LinksDeletePost extends AbstractLinksWebScript
    
    @Override
    protected Map<String, Object> executeImpl(SiteInfo site, String linkName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+      WebScriptRequest req, JsonNode json, Status status, Cache cache)
    {
       final ResourceBundle rb = getResources();
       Map<String, Object> model = new HashMap<String, Object>();
@@ -66,12 +66,12 @@ public class LinksDeletePost extends AbstractLinksWebScript
       // Get the requested nodes from the JSON
       // Silently skips over any invalid ones specified
       List<LinkInfo> links = new ArrayList<LinkInfo>();
-      if (json.containsKey("items"))
+      if (json.has("items"))
       {
-         JSONArray items = (JSONArray)json.get("items");
+         ArrayNode items = (ArrayNode) json.get("items");
          for (int i=0; i<items.size(); i++)
          {
-            String name = (String)items.get(i);
+            String name = items.get(i).textValue();
             LinkInfo link = linksService.getLink(site.getShortName(), name);
             if (link != null)
             {

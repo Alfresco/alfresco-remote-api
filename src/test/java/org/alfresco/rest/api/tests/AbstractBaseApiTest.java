@@ -61,7 +61,6 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.TempFileProvider;
 import org.alfresco.util.testing.category.LuceneTests;
-import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -568,7 +567,7 @@ public abstract class AbstractBaseApiTest extends EnterpriseTestApi
         SiteMember siteMember = new SiteMember(userId, siteRole.name());
         HttpResponse response = publicApiClient.post(getScope(), "sites", siteId, "members", null, siteMember.toJSON().toString());
         checkStatus(201, response.getStatusCode());
-        return SiteMember.parseSiteMember(siteMember.getSiteId(), (JSONObject)response.getJsonResponse().get("entry"));
+        return SiteMember.parseSiteMember(siteMember.getSiteId(), response.getJsonResponse().get("entry"));
     }
 
     protected Site createSite(String siteTitle, SiteVisibility siteVisibility) throws Exception

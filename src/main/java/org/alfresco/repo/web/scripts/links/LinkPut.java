@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.links;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +36,6 @@ import java.util.regex.Pattern;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
 import org.alfresco.service.cmr.links.LinkInfo;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -53,7 +53,7 @@ public class LinkPut extends AbstractLinksWebScript
 
     @Override
    protected Map<String, Object> executeImpl(SiteInfo site, String linkName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+      WebScriptRequest req, JsonNode json, Status status, Cache cache)
    {
       final ResourceBundle rb = getResources();
       Map<String, Object> model = new HashMap<String, Object>();
@@ -79,7 +79,7 @@ public class LinkPut extends AbstractLinksWebScript
       link.setURL(url);
       
       // Handle internal / not internal
-      if (json.containsKey("internal"))
+      if (json.has("internal"))
       {
          link.setInternal(true);
       }

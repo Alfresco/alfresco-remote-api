@@ -26,6 +26,9 @@
 
 package org.alfresco.repo.web.scripts.facet;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -39,12 +42,9 @@ import org.alfresco.repo.search.impl.solr.facet.SolrFacetProperties;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.collections.CollectionUtils;
 import org.alfresco.util.collections.Function;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -137,30 +137,29 @@ public class SolrFacetConfigAdminPut extends AbstractSolrFacetConfigAdminWebScri
 
     private SolrFacetProperties parseRequestForFacetProperties(WebScriptRequest req)
     {
-        JSONObject json = null;
         try
         {
-            json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
 
-            final String filterID = json.getString(PARAM_FILTER_ID); // Must exist
+            final String filterID = json.get(PARAM_FILTER_ID).textValue(); // Must exist
 
-            final String facetQNameStr = getValue(String.class, json.opt(PARAM_FACET_QNAME), null);
+            final String facetQNameStr = getValue(String.class, json.get(PARAM_FACET_QNAME), null);
             
             // Note that in resolving the QName string here, we expect there to be some facet QNames which are not
             // really QNames. These are SOLR/SearchService 'specials', examples being "SITE" or "TAG".
             // These will be resolved here to a QName with no namespace.
             final QName facetQName = (facetQNameStr == null) ? null : FacetQNameUtils.createQName(facetQNameStr, namespaceService);
-            final String displayName = getValue(String.class, json.opt(PARAM_DISPLAY_NAME), null);
-            final String displayControl = getValue(String.class, json.opt(PARAM_DISPLAY_CONTROL), null);
-            final int maxFilters = getValue(Integer.class, json.opt(PARAM_MAX_FILTERS), -1);
-            final int hitThreshold = getValue(Integer.class, json.opt(PARAM_HIT_THRESHOLD), -1);
-            final int minFilterValueLength = getValue(Integer.class, json.opt(PARAM_MIN_FILTER_VALUE_LENGTH), -1);
-            final String sortBy = getValue(String.class, json.opt(PARAM_SORT_BY), null);
-            final String scope = getValue(String.class, json.opt(PARAM_SCOPE), null);
-            final Boolean isEnabled = getValue(Boolean.class, json.opt(PARAM_IS_ENABLED), null);
-            JSONArray scopedSitesJsonArray = getValue(JSONArray.class, json.opt(PARAM_SCOPED_SITES), null);
+            final String displayName = getValue(String.class, json.get(PARAM_DISPLAY_NAME), null);
+            final String displayControl = getValue(String.class, json.get(PARAM_DISPLAY_CONTROL), null);
+            final int maxFilters = getValue(Integer.class, json.get(PARAM_MAX_FILTERS), -1);
+            final int hitThreshold = getValue(Integer.class, json.get(PARAM_HIT_THRESHOLD), -1);
+            final int minFilterValueLength = getValue(Integer.class, json.get(PARAM_MIN_FILTER_VALUE_LENGTH), -1);
+            final String sortBy = getValue(String.class, json.get(PARAM_SORT_BY), null);
+            final String scope = getValue(String.class, json.get(PARAM_SCOPE), null);
+            final Boolean isEnabled = getValue(Boolean.class, json.get(PARAM_IS_ENABLED), null);
+            ArrayNode scopedSitesJsonArray = getValue(ArrayNode.class, json.get(PARAM_SCOPED_SITES), null);
             final Set<String> scopedSites = getScopedSites(scopedSitesJsonArray);
-            final JSONObject customPropJsonObj = getValue(JSONObject.class, json.opt(PARAM_CUSTOM_PROPERTIES), null);
+            final ObjectNode customPropJsonObj = getValue(ObjectNode.class, json.get(PARAM_CUSTOM_PROPERTIES), null);
             final Set<CustomProperties> customProps = getCustomProperties(customPropJsonObj);
 
             SolrFacetProperties fp = new SolrFacetProperties.Builder()
@@ -181,10 +180,6 @@ public class SolrFacetConfigAdminPut extends AbstractSolrFacetConfigAdminWebScri
         catch (IOException e)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from req.", e);
-        }
-        catch (JSONException e)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from req.", e);
         }
     }
 }

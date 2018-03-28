@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.node;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -40,9 +41,7 @@ import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -135,35 +134,29 @@ public class NodeFolderPost extends DeclarativeWebScript
         
         
         // Process the JSON post details
-        JSONObject json = null;
-        JSONParser parser = new JSONParser();
+        JsonNode json;
         try
         {
-           json = (JSONObject)parser.parse(req.getContent().getContent());
+           json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
         }
         catch (IOException io)
         {
            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + io.getMessage());
         }
-        catch (ParseException pe)
-        {
-           throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + pe.getMessage());
-        }
-
         
         // Fetch the name, title and description
-        String name = (String)json.get("name");
+        String name = json.get("name").textValue();
         if (name == null)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Name is required");
         }
                 
-        String title = (String)json.get("title");
+        String title = json.get("title").textValue();
         if (title == null)
         {
             title = name;
         }
-        String description = (String)json.get("description");
+        String description = json.get("description").textValue();
         
         Map<QName,Serializable> props = new HashMap<QName, Serializable>();
         props.put(ContentModel.PROP_NAME, name);
@@ -175,7 +168,7 @@ public class NodeFolderPost extends DeclarativeWebScript
         QName type = ContentModel.TYPE_FOLDER;
         if (json.get("type") != null)
         {
-            type = QName.createQName( (String)json.get("type"), namespaceService );
+            type = QName.createQName( json.get("type").textValue(), namespaceService );
             if (! dictionaryService.isSubClass(type, ContentModel.TYPE_FOLDER))
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Specified type is not a folder");

@@ -25,20 +25,21 @@
  */
 package org.alfresco.repo.web.scripts.subscriptions;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 import org.springframework.extensions.webscripts.WebScriptResponse;
 
 public class SubscriptionServiceFollowersCountGet extends AbstractSubscriptionServiceWebScript
 {
-    @SuppressWarnings("unchecked")
-    public JSONObject executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException
+    public JsonNode executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException
     {
         int count = subscriptionService.getFollowersCount(userId);
 
-        JSONObject obj = new JSONObject();
+        ObjectNode obj = AlfrescoDefaultObjectMapper.createObjectNode();
         obj.put("count", count);
 
         return obj;

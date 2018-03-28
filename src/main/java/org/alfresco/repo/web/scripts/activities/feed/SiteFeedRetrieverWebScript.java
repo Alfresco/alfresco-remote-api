@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.activities.feed;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +39,6 @@ import org.alfresco.service.cmr.activities.ActivityService;
 import org.alfresco.util.JSONtoFmModel;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONException;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -113,7 +113,7 @@ public class SiteFeedRetrieverWebScript extends DeclarativeWebScript
                         activityFeedModels.add(JSONtoFmModel.convertJSONObjectToMap(feedEntry));
                     }
                 }
-                catch (JSONException je)
+                catch (IOException je)
                 {    
                     throw new AlfrescoRuntimeException("Unable to get user feed entries: " + je.getMessage());
                 }

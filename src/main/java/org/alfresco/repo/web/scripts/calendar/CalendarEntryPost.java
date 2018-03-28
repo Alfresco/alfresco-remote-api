@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.calendar;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +35,6 @@ import java.util.StringTokenizer;
 import org.alfresco.service.cmr.calendar.CalendarEntry;
 import org.alfresco.service.cmr.calendar.CalendarEntryDTO;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.JSONException;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -49,8 +48,12 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 public class CalendarEntryPost extends AbstractCalendarWebScript
 {
    @Override
-   protected Map<String, Object> executeImpl(SiteInfo site, String eventName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+   protected Map<String, Object> executeImpl(SiteInfo site,
+                                             String eventName,
+                                             WebScriptRequest req,
+                                             JsonNode json,
+                                             Status status,
+                                             Cache cache)
    {
       final ResourceBundle rb = getResources();
       CalendarEntry entry = new CalendarEntryDTO();
@@ -70,16 +73,16 @@ public class CalendarEntryPost extends AbstractCalendarWebScript
          isAllDay = extractDates(entry, json);
          
          // Handle tags
-         if (json.containsKey("tags"))
+         if (json.has("tags"))
          {
-            StringTokenizer st = new StringTokenizer((String)json.get("tags"), ",");
+            StringTokenizer st = new StringTokenizer(json.get("tags").textValue(), ",");
             while (st.hasMoreTokens())
             {
                entry.getTags().add(st.nextToken());
             }
          }
       }
-      catch (JSONException je)
+      catch (Exception je)
       {
          String message = rb.getString(MSG_INVALID_JSON);
          return buildError(MessageFormat.format(message, je.getMessage()));

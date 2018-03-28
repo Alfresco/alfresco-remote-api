@@ -25,7 +25,8 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import org.json.simple.JSONObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class SiteMembershipApproval extends org.alfresco.rest.api.model.SiteMembershipApproval
 {
@@ -40,9 +41,9 @@ public class SiteMembershipApproval extends org.alfresco.rest.api.model.SiteMemb
     }
 
     @SuppressWarnings("unchecked")
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject siteMembershipRequestJson = new JSONObject();
+        ObjectNode siteMembershipRequestJson = AlfrescoDefaultObjectMapper.createObjectNode();
         siteMembershipRequestJson.put("role", getRole());
         return siteMembershipRequestJson;
     }

@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.download;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -48,8 +49,7 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.junit.Test;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
@@ -182,7 +182,7 @@ public class DownloadRestApiTest extends BaseWebScriptTest
     }
 
     @Test 
-    public void testCreateAndGetDownload() throws UnsupportedEncodingException, IOException, JSONException 
+    public void testCreateAndGetDownload() throws IOException
     {
         // CReate the download
         String postData = "[{ \"nodeRef\": \"" +
@@ -193,9 +193,9 @@ public class DownloadRestApiTest extends BaseWebScriptTest
         Response response = sendRequest(new PostRequest(URL_DOWNLOADS, postData, "application/json"), 200);    
 
         // Parse the response
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
-        NodeRef downloadNodeRef = new NodeRef(result.getString("nodeRef"));
+        NodeRef downloadNodeRef = new NodeRef(result.get("nodeRef").textValue());
         
         // Get the status
         String statusUrl = MessageFormat.format(URL_DOWNLOAD_STATUS, downloadNodeRef.getStoreRef().getProtocol(), downloadNodeRef.getStoreRef().getIdentifier(), downloadNodeRef.getId());

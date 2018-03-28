@@ -31,6 +31,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -72,9 +75,8 @@ import org.alfresco.rest.workflow.api.tests.WorkflowApiClient.TasksClient;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.test_category.OwnJVMTestsCategory;
 import org.alfresco.util.ISO8601DateFormat;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.lang.StringUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.http.HttpStatus;
@@ -125,7 +127,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Check resulting task
-            JSONObject taskJSONObject = tasksClient.findTaskById(task.getId());
+            JsonNode taskJSONObject = tasksClient.findTaskById(task.getId());
             assertNotNull(taskJSONObject);
             assertEquals(task.getId(), taskJSONObject.get("id"));
             assertEquals(processInstance.getId(), taskJSONObject.get("processId"));
@@ -217,7 +219,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // Set assignee, task should be accessible now
             activitiProcessEngine.getTaskService().setAssignee(task.getId(), requestContext.getRunAsUser());
-            JSONObject jsonObject = tasksClient.findTaskById(task.getId());
+            JsonNode jsonObject = tasksClient.findTaskById(task.getId());
             assertNotNull(jsonObject);
             
             // Fetching task as admin should be possible
@@ -287,7 +289,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             dueDateCal.add(Calendar.DAY_OF_YEAR, 1);
             Date dueDate = dueDateCal.getTime();
             
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("name", "Updated name");
             taskBody.put("description", "Updated description");
             taskBody.put("dueAt", formatDate(dueDate));
@@ -298,7 +300,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "name", "description", "dueAt", "priority", "assignee", "owner"}));
             
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertEquals("Updated name", result.get("name"));
             assertEquals("Updated description", result.get("description"));
             assertEquals(1234, Integer.valueOf(result.get("priority").toString()).intValue());
@@ -316,7 +318,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(dueDate, task.getDueDate());
             
             // update owner with admin user id
-            taskBody = new JSONObject();
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("owner", adminContext.getRunAsUser());
             selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "owner"}));
@@ -325,7 +327,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(adminContext.getRunAsUser(), result.get("owner"));
             
             // update owner with initiator user id
-            taskBody = new JSONObject();
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("owner", requestContext.getRunAsUser());
             selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "owner"}));
@@ -334,7 +336,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(requestContext.getRunAsUser(), result.get("owner"));
             
             // update owner with other user id
-            taskBody = new JSONObject();
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("owner", otherContext.getRunAsUser());
             selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "owner"}));
@@ -345,8 +347,8 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // update due date to date more in the future
             dueDateCal.add(Calendar.DAY_OF_YEAR, 1);
             dueDate = dueDateCal.getTime();
-            
-            taskBody = new JSONObject();
+
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("dueAt", formatDate(dueDate));
             
             selectedFields = new ArrayList<String>();
@@ -358,8 +360,8 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // update due date to date a day less in the future
             dueDateCal.add(Calendar.DAY_OF_YEAR, -1);
             dueDate = dueDateCal.getTime();
-            
-            taskBody = new JSONObject();
+
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("dueAt", formatDate(dueDate));
             
             selectedFields = new ArrayList<String>();
@@ -372,8 +374,8 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             dueDateCal = Calendar.getInstance();
             dueDateCal.set(Calendar.MILLISECOND, 0);
             dueDate = dueDateCal.getTime();
-            
-            taskBody = new JSONObject();
+
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("dueAt", formatDate(dueDate));
             
             selectedFields = new ArrayList<String>();
@@ -442,12 +444,12 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
 
             // Updating the task by user in group
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("name", "Updated name by user in group");
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "name" }));
             requestContext.setRunAsUser(persons.get(0).getId());
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertEquals("Updated name by user in group", result.get("name"));
             task = activitiProcessEngine.getTaskService().createTaskQuery().processInstanceId(processInfo.getId()).singleResult();
             assertNotNull(task);
@@ -474,7 +476,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // Updating by user in group for claimed task by another user
             try
             {
-                taskBody = new JSONObject();
+                taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
                 taskBody.put("name", "Updated name by user in group for claimed task");
                 selectedFields.addAll(Arrays.asList(new String[] { "name" }));
                 requestContext.setRunAsUser(persons.get(0).getId());
@@ -546,8 +548,8 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
 
             // Define the "wbpm_delegatee" variable for the taskDefine delegatee user name. POST request will be executed.
-            JSONArray variablesArray = new JSONArray();
-            JSONObject variableBody = new JSONObject();
+            ArrayNode variablesArray = AlfrescoDefaultObjectMapper.createArrayNode();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", delegatee);
             variableBody.put("value", user);
             variableBody.put("scope", "local");
@@ -556,9 +558,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             try
             {
                 // Set variable for the task.
-                JSONObject response = tasksClient.createTaskVariables(activeTask.getId(), variablesArray);
+                JsonNode response = tasksClient.createTaskVariables(activeTask.getId(), variablesArray);
                 assertNotNull(response);
-                JSONObject variable = (JSONObject) response.get("entry");
+                JsonNode variable = response.get("entry");
                 assertEquals(delegatee, variable.get("name"));
                 
                 // Check that d:noderef type was returned with appropriate nodeRef Id value. 
@@ -568,13 +570,13 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
                 // Get process variables. GET request will be executed.
                 response = publicApiClient.processesClient().getProcessvariables(processInstance.getId());
                 assertNotNull(response);
-                assertTrue(delegatee + " variable was not set", response.toJSONString().contains(delegatee));
-                JSONArray entries = (JSONArray) response.get("entries");
+                assertTrue(delegatee + " variable was not set", AlfrescoDefaultObjectMapper.writeValueAsString(response).contains(delegatee));
+                ArrayNode entries = (ArrayNode) response.get("entries");
 
                 // Find "wbpm_delegatee" variable.
-                for (Object entry : entries)
+                for (JsonNode entry : entries)
                 {
-                    variable = (JSONObject) ((JSONObject) entry).get("entry");
+                    variable = entry.get("entry");
                     if (variable.get("name").equals(delegatee))
                     {
                         // Check that type corresponds to the target class. 
@@ -610,7 +612,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Updating the task when NOT assignee/owner or initiator results in an error
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("name", "Updated name");
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "name" }));
@@ -629,7 +631,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             activitiProcessEngine.getTaskService().setAssignee(task.getId(), requestContext.getRunAsUser());
             taskBody.put("name", "Updated name by assignee");
             
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertEquals("Updated name by assignee", result.get("name"));
             task = activitiProcessEngine.getTaskService().createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
             assertNotNull(task);
@@ -680,7 +682,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         TasksClient tasksClient = publicApiClient.tasksClient();
         try 
         {
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("name", "Updated name");
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "name" }));
@@ -710,7 +712,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // Try updating an unexisting property
             try 
             {
-                JSONObject taskBody = new JSONObject();
+                JsonNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
                 List<String> selectedFields = new ArrayList<String>();
                 selectedFields.add("unexisting");
                 tasksClient.updateTask(task.getId(), taskBody, selectedFields);
@@ -725,7 +727,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // Try updating a readonly-property
             try 
             {
-                JSONObject taskBody = new JSONObject();
+                JsonNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
                 List<String> selectedFields = new ArrayList<String>();
                 selectedFields.add("id");
                 tasksClient.updateTask(task.getId(), taskBody, selectedFields);
@@ -757,7 +759,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Claiming the task when NOT part of candidate-group results in an error
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "claimed");
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "state", "assignee" }));
@@ -793,9 +795,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // Claiming the task when part of candidate-group and NO assignee is currenlty set should work
             activitiProcessEngine.getTaskService().setAssignee(task.getId(), null);
-            taskBody = new JSONObject();
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "claimed");
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertNotNull(result);
             assertEquals(requestContext.getRunAsUser(), result.get("assignee"));
             assertEquals(requestContext.getRunAsUser(), activitiProcessEngine.getTaskService().createTaskQuery().taskId(task.getId()).singleResult().getAssignee());
@@ -857,7 +859,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Unclaiming the task when NOT assignee, owner, initiator or admin results in error
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "unclaimed");
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "state" }));
@@ -875,7 +877,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // Unclaiming as process initiator
             requestContext.setRunAsUser(initiator);
             activitiProcessEngine.getTaskService().setAssignee(task.getId(), null);
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertNull(result.get("assignee"));
             assertNull(activitiProcessEngine.getTaskService().createTaskQuery().taskId(task.getId()).singleResult().getAssignee());
             
@@ -935,7 +937,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Unclaiming the task when NOT assignee, owner, initiator or admin results in error
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "completed");
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "state" }));
@@ -952,7 +954,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // Completing as assignee initiator
             activitiProcessEngine.getTaskService().setAssignee(asAssigneeTask.getId(), user);
-            JSONObject result = tasksClient.updateTask(asAssigneeTask.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(asAssigneeTask.getId(), taskBody, selectedFields);
             assertEquals("completed", result.get("state"));
             assertNotNull(result.get("endedAt"));
             assertNull(activitiProcessEngine.getTaskService().createTaskQuery().taskId(asAssigneeTask.getId()).singleResult());
@@ -988,13 +990,13 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             requestContext.setRunAsUser(initiator);
             activitiProcessEngine.getTaskService().setAssignee(withVariablesTask.getId(), null);
             
-            JSONArray variablesArray = new JSONArray();
-            JSONObject variableBody = new JSONObject();
+            ArrayNode variablesArray = AlfrescoDefaultObjectMapper.createArrayNode();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "newGlobalVariable");
             variableBody.put("value", 1234);
             variableBody.put("scope", "global");
             variablesArray.add(variableBody);
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "newLocalVariable");
             variableBody.put("value", 5678);
             variableBody.put("scope", "local");
@@ -1015,18 +1017,18 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(1234, historyTask.getProcessVariables().get("newGlobalVariable"));
             assertEquals(5678, historyTask.getTaskLocalVariables().get("newLocalVariable"));
             assertNotNull("The outcome should not be null for completed task.", historyTask.getTaskLocalVariables().get("bpm_outcome"));
-            JSONObject variables = tasksClient.findTaskVariables(withVariablesTask.getId());
+            JsonNode variables = tasksClient.findTaskVariables(withVariablesTask.getId());
             assertNotNull(variables);
-            JSONObject list = (JSONObject) variables.get("list");
+            JsonNode list = variables.get("list");
             assertNotNull(list);
-            JSONArray entries = (JSONArray) list.get("entries");
+            ArrayNode entries = (ArrayNode) list.get("entries");
             assertNotNull(entries);
             
             boolean foundGlobal = false;
             boolean foundLocal = false;
-            for (Object entry : entries)
+            for (JsonNode entry : entries)
             {
-                JSONObject variableObject = (JSONObject) ((JSONObject) entry).get("entry");
+                JsonNode variableObject = entry.get("entry");
                 if ("newGlobalVariable".equals(variableObject.get("name")))
                 {
                     assertEquals(1234L, variableObject.get("value"));
@@ -1064,7 +1066,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Delegating as non-assignee/owner/initiator/admin should result in an error
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "delegated");
             taskBody.put("assignee", initiator);
             List<String> selectedFields = new ArrayList<String>();
@@ -1082,7 +1084,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // Delegating (as assignee) and not passing in an asisgnee should result in an error
             activitiProcessEngine.getTaskService().setAssignee(task.getId(), user);
-            taskBody = new JSONObject();
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "delegated");
             selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "state" }));
@@ -1103,7 +1105,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "state", "assignee" }));
             assertNull(task.getDelegationState());
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertEquals("delegated", result.get("state"));
             assertEquals(initiator, result.get("assignee"));
             assertEquals(requestContext.getRunAsUser(), result.get("owner"));
@@ -1205,7 +1207,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Resolving as non-assignee/owner/initiator/admin should result in an error
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "resolved");
             taskBody.put("assignee", initiator);
             List<String> selectedFields = new ArrayList<String>();
@@ -1228,7 +1230,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             taskBody.put("assignee", initiator);
             selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "state", "assignee" }));
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertEquals("resolved", result.get("state"));
             assertEquals(initiator, result.get("assignee"));
             task = activitiProcessEngine.getTaskService().createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
@@ -1304,15 +1306,15 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Unclaimed to claimed
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "claimed");
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "state", "assignee" }));
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertEquals("claimed", result.get("state"));
             
             // claimed to unclaimed
-            taskBody = new JSONObject();
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("state", "unclaimed");
             result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertEquals("unclaimed", result.get("state"));
@@ -1334,31 +1336,31 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             Task task = activitiProcessEngine.getTaskService().createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
             
             TasksClient tasksClient = publicApiClient.tasksClient();
-            JSONObject taskObject = tasksClient.findTaskById(task.getId());
+            JsonNode taskObject = tasksClient.findTaskById(task.getId());
             assertNull(taskObject.get("dueAt"));
             
             List<String> selectedFields = new ArrayList<String>();
             selectedFields.addAll(Arrays.asList(new String[] { "name", "description", "dueAt", "priority", "assignee", "owner"}));
             
             // set due date
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             String dueAt = formatDate(new Date());
             taskBody.put("dueAt", dueAt);
-            JSONObject result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
+            JsonNode result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertNotNull(result.get("dueAt"));
             
             taskObject = tasksClient.findTaskById(task.getId());
             assertNotNull(taskObject.get("dueAt"));
             
-            taskBody = new JSONObject();
+            taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("dueAt", taskObject.get("dueAt"));
             result = tasksClient.updateTask(task.getId(), taskBody, selectedFields);
             assertNotNull(result.get("dueAt"));
             
             taskObject = tasksClient.findTaskById(task.getId());
             assertNotNull(taskObject.get("dueAt"));
-            
-            JSONObject variableBody = new JSONObject();
+
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "bpm_workflowDueDate");
             variableBody.put("value", formatDate(new Date()));
             variableBody.put("type", "d:date");
@@ -1408,12 +1410,12 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Check resulting task
-            JSONObject taskListJSONObject = tasksClient.findTasks(null);
+            JsonNode taskListJSONObject = tasksClient.findTasks(null);
             assertNotNull(taskListJSONObject);
-            JSONArray jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            ArrayNode jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(1, jsonEntries.size());
             
-            JSONObject taskJSONObject = (JSONObject) ((JSONObject) jsonEntries.get(0)).get("entry");
+            JsonNode taskJSONObject = (jsonEntries.get(0)).get("entry");
             assertNotNull(taskJSONObject);
             assertEquals(task.getId(), taskJSONObject.get("id"));
             assertEquals(processInstance.getId(), taskJSONObject.get("processId"));
@@ -1436,12 +1438,12 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(otherContext);
             taskListJSONObject = tasksClient.findTasks(null);
             assertNotNull(taskListJSONObject);
-            jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(0, jsonEntries.size());
             
             // get tasks for user which has one task assigned by somebody else
             publicApiClient.setRequestContext(requestContext);
-            JSONObject taskBody = new JSONObject();
+            ObjectNode taskBody = AlfrescoDefaultObjectMapper.createObjectNode();
             taskBody.put("assignee", otherContext.getRunAsUser());
             
             List<String> selectedFields = new ArrayList<String>();
@@ -1452,7 +1454,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(otherContext);
             taskListJSONObject = tasksClient.findTasks(null);
             assertNotNull(taskListJSONObject);
-            jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(1, jsonEntries.size());
         }
         finally
@@ -1883,9 +1885,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
 
             params.clear();
             params.put("where", "(status = 'completed' AND processDefinitionName = 'Adhoc Activiti Process')");
-            JSONObject response = publicApiClient.processesClient().getTasks(processInstance.getId(), params);
+            JsonNode response = publicApiClient.processesClient().getTasks(processInstance.getId(), params);
             assertNotNull(response);
-            JSONObject paginationJSON = (JSONObject) response.get("pagination");
+            JsonNode paginationJSON = response.get("pagination");
             assertEquals(1l, paginationJSON.get("count"));
 
             params.clear();
@@ -1920,16 +1922,16 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // Test with existing processDefinitionId
             Map<String, String> params = new HashMap<String, String>();
             params.put("where", "(processDefinitionId = '" + processDefinitionId + "' AND includeProcessVariables = true AND includeTaskVariables = true)");
-            JSONObject taskListJSONObject = tasksClient.findTasks(params);
+            JsonNode taskListJSONObject = tasksClient.findTasks(params);
             assertNotNull(taskListJSONObject);
-            JSONObject paginationJSON = (JSONObject) taskListJSONObject.get("pagination");
+            JsonNode paginationJSON = taskListJSONObject.get("pagination");
             assertEquals(6l, paginationJSON.get("count"));
             assertEquals(6l, paginationJSON.get("totalItems"));
             assertEquals(0l, paginationJSON.get("skipCount"));
             assertEquals(false, paginationJSON.get("hasMoreItems"));
-            JSONArray jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            ArrayNode jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(6, jsonEntries.size());
-            validateVariables((JSONObject) jsonEntries.get(0), requestContext);
+            validateVariables(jsonEntries.get(0), requestContext);
             
             // Test with existing processDefinitionId and max items
             params.clear();
@@ -1937,14 +1939,14 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             params.put("where", "(processDefinitionId = '" + processDefinitionId + "' AND includeProcessVariables = true AND includeTaskVariables = true)");
             taskListJSONObject = tasksClient.findTasks(params);
             assertNotNull(taskListJSONObject);
-            paginationJSON = (JSONObject) taskListJSONObject.get("pagination");
+            paginationJSON = taskListJSONObject.get("pagination");
             assertEquals(3l, paginationJSON.get("count"));
             assertEquals(6l, paginationJSON.get("totalItems"));
             assertEquals(0l, paginationJSON.get("skipCount"));
             assertEquals(true, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(3, jsonEntries.size());
-            validateVariables((JSONObject) jsonEntries.get(0), requestContext);
+            validateVariables(jsonEntries.get(0), requestContext);
             
             // Test with existing processDefinitionId and skip count
             params.clear();
@@ -1952,12 +1954,12 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             params.put("where", "(processDefinitionId = '" + processDefinitionId + "' AND includeProcessVariables = true AND includeTaskVariables = true)");
             taskListJSONObject = tasksClient.findTasks(params);
             assertNotNull(taskListJSONObject);
-            paginationJSON = (JSONObject) taskListJSONObject.get("pagination");
+            paginationJSON = taskListJSONObject.get("pagination");
             assertEquals(4l, paginationJSON.get("count"));
             assertEquals(6l, paginationJSON.get("totalItems"));
             assertEquals(2l, paginationJSON.get("skipCount"));
             assertEquals(false, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(4, jsonEntries.size());
             
             // Test with existing processDefinitionId and max items and skip count
@@ -1967,12 +1969,12 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             params.put("where", "(processDefinitionId = '" + processDefinitionId + "' AND includeProcessVariables = true AND includeTaskVariables = true)");
             taskListJSONObject = tasksClient.findTasks(params);
             assertNotNull(taskListJSONObject);
-            paginationJSON = (JSONObject) taskListJSONObject.get("pagination");
+            paginationJSON = taskListJSONObject.get("pagination");
             assertEquals(3l, paginationJSON.get("count"));
             assertEquals(6l, paginationJSON.get("totalItems"));
             assertEquals(2l, paginationJSON.get("skipCount"));
             assertEquals(true, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(3, jsonEntries.size());
             
             // Test with existing processDefinitionId and max items and skip count
@@ -1982,12 +1984,12 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             params.put("where", "(processDefinitionId = '" + processDefinitionId + "' AND includeProcessVariables = true AND includeTaskVariables = true)");
             taskListJSONObject = tasksClient.findTasks(params);
             assertNotNull(taskListJSONObject);
-            paginationJSON = (JSONObject) taskListJSONObject.get("pagination");
+            paginationJSON = taskListJSONObject.get("pagination");
             assertEquals(2l, paginationJSON.get("count"));
             assertEquals(6l, paginationJSON.get("totalItems"));
             assertEquals(4l, paginationJSON.get("skipCount"));
             assertEquals(false, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(2, jsonEntries.size());
         }
         finally
@@ -2028,14 +2030,14 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // Test without skipCount
             Map<String, String> params = new HashMap<String, String>();
             params.put("where", "(includeProcessVariables = true AND includeTaskVariables = true)");
-            JSONObject taskListJSONObject = tasksClient.findTasks(params);
+            JsonNode taskListJSONObject = tasksClient.findTasks(params);
             assertNotNull(taskListJSONObject);
-            JSONObject paginationJSON = (JSONObject) taskListJSONObject.get("pagination");
+            JsonNode paginationJSON = taskListJSONObject.get("pagination");
             assertEquals(15l, paginationJSON.get("count"));
             assertEquals(15l, paginationJSON.get("totalItems"));
             assertEquals(0l, paginationJSON.get("skipCount"));
             assertEquals(false, paginationJSON.get("hasMoreItems"));
-            JSONArray jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            ArrayNode jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(15, jsonEntries.size());
             
             // Test with skipCount
@@ -2044,12 +2046,12 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             params.put("where", "(includeProcessVariables = true AND includeTaskVariables = true)");
             taskListJSONObject = tasksClient.findTasks(params);
             assertNotNull(taskListJSONObject);
-            paginationJSON = (JSONObject) taskListJSONObject.get("pagination");
+            paginationJSON = taskListJSONObject.get("pagination");
             assertEquals(10l, paginationJSON.get("count"));
             assertEquals(15l, paginationJSON.get("totalItems"));
             assertEquals(5l, paginationJSON.get("skipCount"));
             assertEquals(false, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(10, jsonEntries.size());
             
             params.clear();
@@ -2057,12 +2059,12 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             params.put("where", "(includeProcessVariables = true AND includeTaskVariables = true)");
             taskListJSONObject = tasksClient.findTasks(params);
             assertNotNull(taskListJSONObject);
-            paginationJSON = (JSONObject) taskListJSONObject.get("pagination");
+            paginationJSON = taskListJSONObject.get("pagination");
             assertEquals(10l, paginationJSON.get("count"));
             assertEquals(15l, paginationJSON.get("totalItems"));
             assertEquals(0l, paginationJSON.get("skipCount"));
             assertEquals(true, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
             assertEquals(10, jsonEntries.size());
         }
         finally
@@ -2071,16 +2073,16 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         }
     }
     
-    protected void validateVariables(JSONObject entry, RequestContext requestContext) {
-        JSONObject taskObject = (JSONObject) entry.get("entry");
-        JSONArray variables = (JSONArray) taskObject.get("variables");
+    protected void validateVariables(JsonNode entry, RequestContext requestContext) {
+        JsonNode taskObject = entry.get("entry");
+        ArrayNode variables = (ArrayNode) taskObject.get("variables");
         boolean foundInitiator = false;
         boolean foundAssignee = false;
         boolean foundPercentageComplete = false;
         boolean foundReassignable = false;
         for (int i = 0; i < variables.size(); i++) 
         {
-            JSONObject variableJSON = (JSONObject) variables.get(i);
+            JsonNode variableJSON = variables.get(i);
             if ("initiator".equals(variableJSON.get("name"))) 
             {
                 assertEquals("d:noderef", variableJSON.get("type"));
@@ -2144,50 +2146,50 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             Map<String, String> params = new HashMap<String, String>();
             params.put("where", "(processDefinitionId = '" + startedProcesses.get(0).getProcessDefinitionId() + "')");
             params.put("orderBy", "priority ASC");
-            JSONObject tasksResponseJSON = tasksClient.findTasks(params);
+            JsonNode tasksResponseJSON = tasksClient.findTasks(params);
             
-            JSONObject paginationJSON = (JSONObject) tasksResponseJSON.get("pagination");
+            JsonNode paginationJSON = tasksResponseJSON.get("pagination");
             assertEquals(6l, paginationJSON.get("count"));
             assertEquals(6l, paginationJSON.get("totalItems"));
-            JSONArray tasksListJSON = (JSONArray) tasksResponseJSON.get("entries");
+            ArrayNode tasksListJSON = (ArrayNode) tasksResponseJSON.get("entries");
             assertEquals(6, tasksListJSON.size());
-            JSONObject taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(0)).get("entry");
+            JsonNode taskJSON = (tasksListJSON.get(0)).get("entry");
             assertEquals(taskList.get(numberOfTasks - 1).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(1)).get("entry");
+            taskJSON = (tasksListJSON.get(1)).get("entry");
             assertEquals(taskList.get(0).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(2)).get("entry");
+            taskJSON = (tasksListJSON.get(2)).get("entry");
             assertEquals(taskList.get(1).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(3)).get("entry");
+            taskJSON = (tasksListJSON.get(3)).get("entry");
             assertEquals(taskList.get(2).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(4)).get("entry");
+            taskJSON = (tasksListJSON.get(4)).get("entry");
             assertEquals(taskList.get(3).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(5)).get("entry");
+            taskJSON = (tasksListJSON.get(5)).get("entry");
             assertEquals(taskList.get(4).getId(), taskJSON.get("id"));
             
             params.put("orderBy", "priority DESC");
             tasksResponseJSON = tasksClient.findTasks(params);
             
-            paginationJSON = (JSONObject) tasksResponseJSON.get("pagination");
+            paginationJSON = tasksResponseJSON.get("pagination");
             assertEquals(6l, paginationJSON.get("count"));
             assertEquals(6l, paginationJSON.get("totalItems"));
-            tasksListJSON = (JSONArray) tasksResponseJSON.get("entries");
+            tasksListJSON = (ArrayNode) tasksResponseJSON.get("entries");
             assertEquals(6, tasksListJSON.size());
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(0)).get("entry");
+            taskJSON = (tasksListJSON.get(0)).get("entry");
             assertEquals(taskList.get(4).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(1)).get("entry");
+            taskJSON = (tasksListJSON.get(1)).get("entry");
             assertEquals(taskList.get(3).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(2)).get("entry");
+            taskJSON = (tasksListJSON.get(2)).get("entry");
             assertEquals(taskList.get(2).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(3)).get("entry");
+            taskJSON = (tasksListJSON.get(3)).get("entry");
             assertEquals(taskList.get(1).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(4)).get("entry");
+            taskJSON = (tasksListJSON.get(4)).get("entry");
             assertEquals(taskList.get(0).getId(), taskJSON.get("id"));
-            taskJSON = (JSONObject) ((JSONObject) tasksListJSON.get(5)).get("entry");
+            taskJSON = (tasksListJSON.get(5)).get("entry");
             assertEquals(taskList.get(numberOfTasks - 1).getId(), taskJSON.get("id"));
 
             params.put("orderBy", "dueAt DESC");
             tasksResponseJSON = tasksClient.findTasks(params);
-            tasksListJSON = (JSONArray) tasksResponseJSON.get("entries");
+            tasksListJSON = (ArrayNode) tasksResponseJSON.get("entries");
             assertEquals(6, tasksListJSON.size());
 
         }
@@ -2215,9 +2217,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             Map<String, String> params = new HashMap<String, String>();
             params.put("processId", processInstance.getId());
             
-            JSONObject resultingTasks = tasksClient.findTasks(params);
+            JsonNode resultingTasks = tasksClient.findTasks(params);
             assertNotNull(resultingTasks);
-            JSONArray jsonEntries = (JSONArray) resultingTasks.get("entries");
+            ArrayNode jsonEntries = (ArrayNode) resultingTasks.get("entries");
             assertNotNull(jsonEntries);
             assertEquals(0, jsonEntries.size());
             
@@ -2226,7 +2228,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             resultingTasks = tasksClient.findTasks(params);
             assertNotNull(resultingTasks);
-            jsonEntries = (JSONArray) resultingTasks.get("entries");
+            jsonEntries = (ArrayNode) resultingTasks.get("entries");
             assertNotNull(jsonEntries);
             assertEquals(1, jsonEntries.size());
             
@@ -2235,7 +2237,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(new RequestContext(TenantUtil.DEFAULT_TENANT, tenantAdmin));
             resultingTasks = tasksClient.findTasks(params);
             assertNotNull(resultingTasks);
-            jsonEntries = (JSONArray) resultingTasks.get("entries");
+            jsonEntries = (ArrayNode) resultingTasks.get("entries");
             assertNotNull(jsonEntries);
             assertEquals(1, jsonEntries.size());
             
@@ -2245,7 +2247,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(new RequestContext(TenantUtil.DEFAULT_TENANT, tenantAdmin));
             resultingTasks = tasksClient.findTasks(params);
             assertNotNull(resultingTasks);
-            jsonEntries = (JSONArray) resultingTasks.get("entries");
+            jsonEntries = (ArrayNode) resultingTasks.get("entries");
             assertNotNull(jsonEntries);
             assertEquals(0, jsonEntries.size());
         }
@@ -2270,9 +2272,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
 
             TasksClient tasksClient = publicApiClient.tasksClient();
             
-            JSONObject taskCandidatesJSONObject = tasksClient.findTaskCandidates(task.getId());
+            JsonNode taskCandidatesJSONObject = tasksClient.findTaskCandidates(task.getId());
             assertNotNull(taskCandidatesJSONObject);
-            JSONArray candidateArrayJSON = (JSONArray) ((JSONObject) taskCandidatesJSONObject.get("list")).get("entries");
+            ArrayNode candidateArrayJSON = (ArrayNode) (taskCandidatesJSONObject.get("list")).get("entries");
             assertEquals(3, candidateArrayJSON.size());
             
             boolean testUser1Found = false;
@@ -2280,7 +2282,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             boolean testGroupFound = false;
             
             for(int i=0; i < candidateArrayJSON.size(); i++) {
-                JSONObject entry = (JSONObject) ((JSONObject) candidateArrayJSON.get(i)).get("entry");
+                JsonNode entry = (candidateArrayJSON.get(i)).get("entry");
                 if("group".equals(entry.get("candidateType"))) 
                 {
                     testGroupFound = true;
@@ -2335,7 +2337,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // Set assignee, task variables should be accessible now
             activitiProcessEngine.getTaskService().setAssignee(task.getId(), requestContext.getRunAsUser());
-            JSONObject jsonObject = tasksClient.findTaskVariables(task.getId());
+            JsonNode jsonObject = tasksClient.findTaskVariables(task.getId());
             assertNotNull(jsonObject);
             
             // Fetching task variables as admin should be possible
@@ -2379,26 +2381,26 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(8, actualLocalVariables.size());
             
             TasksClient tasksClient = publicApiClient.tasksClient();
-            JSONObject variables = tasksClient.findTaskVariables(task.getId());
+            JsonNode variables = tasksClient.findTaskVariables(task.getId());
             assertNotNull(variables);
-            JSONObject list = (JSONObject) variables.get("list");
+            JsonNode list = variables.get("list");
             assertNotNull(list);
-            JSONArray entries = (JSONArray) list.get("entries");
+            ArrayNode entries = (ArrayNode) list.get("entries");
             assertNotNull(entries);
             
             // Check pagination object for size
-            JSONObject pagination = (JSONObject) list.get("pagination");
+            JsonNode pagination = list.get("pagination");
             assertNotNull(pagination);
             assertEquals(12L, pagination.get("count"));
             assertEquals(12L, pagination.get("totalItems"));
             assertEquals(0L, pagination.get("skipCount"));
-            assertFalse((Boolean) pagination.get("hasMoreItems"));
+            assertFalse(pagination.get("hasMoreItems").booleanValue());
             
             // Should contain one variable less than the actual variables in the engine, tenant-domain var is filtered out
             assertEquals(actualLocalVariables.size() + actualGlobalVariables.size() - 1, entries.size());
             
-            List<JSONObject> localResults = new ArrayList<JSONObject>();
-            List<JSONObject> globalResults = new ArrayList<JSONObject>();
+            List<JsonNode> localResults = new ArrayList<>();
+            List<JsonNode> globalResults = new ArrayList<>();
             
             Set<String> expectedLocalVars = new HashSet<String>();
             expectedLocalVars.addAll(actualLocalVariables.keySet());
@@ -2408,10 +2410,10 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             expectedGlobalVars.remove(ActivitiConstants.VAR_TENANT_DOMAIN);
             
             // Add JSON entries to map for easy access when asserting values
-            Map<String, JSONObject> entriesByName = new HashMap<String, JSONObject>();
+            Map<String, JsonNode> entriesByName = new HashMap<>();
             for(int i=0; i < entries.size(); i++) 
             {
-                JSONObject entry = (JSONObject) ((JSONObject) entries.get(i)).get("entry");
+                JsonNode entry = (entries.get(i)).get("entry");
                 assertNotNull(entry);
                 
                 // Check if full entry is present
@@ -2433,7 +2435,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
                     expectedGlobalVars.remove(entry.get("name"));
                 }
                 
-                entriesByName.put((String) entry.get("name"), entry);
+                entriesByName.put(entry.get("name").textValue(), entry);
             }
             
             // Check correct count of globas vs. local
@@ -2445,7 +2447,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(0, expectedLocalVars.size());
             
             // Check if types are returned, based on content-model
-            JSONObject var = entriesByName.get("bpm_percentComplete");
+            JsonNode var = entriesByName.get("bpm_percentComplete");
             assertNotNull(var);
             assertEquals("d:int", var.get("type"));
             assertEquals(0L, var.get("value"));
@@ -2492,16 +2494,16 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(8, actualLocalVariables.size());
             
             // Update a global value that is present in the model with type given
-            JSONObject variableBody = new JSONObject();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "bpm_percentComplete");
             variableBody.put("value", 20);
             variableBody.put("type", "d:int");
             variableBody.put("scope", "global");
             
             TasksClient tasksClient = publicApiClient.tasksClient();
-            JSONObject resultEntry = tasksClient.updateTaskVariable(task.getId(), "bpm_percentComplete", variableBody);
+            JsonNode resultEntry = tasksClient.updateTaskVariable(task.getId(), "bpm_percentComplete", variableBody);
             assertNotNull(resultEntry);
-            JSONObject result = (JSONObject) resultEntry.get("entry");
+            JsonNode result = resultEntry.get("entry");
             assertEquals("bpm_percentComplete", result.get("name"));
             assertEquals(20L, result.get("value"));
             assertEquals("d:int", result.get("type"));
@@ -2509,14 +2511,14 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(20, activitiProcessEngine.getRuntimeService().getVariable(processInstance.getId(), "bpm_percentComplete"));
             
             // Update a local value that is present in the model with name and scope, omitting type to see if type is deducted from model
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "bpm_percentComplete");
             variableBody.put("value", 30);
             variableBody.put("scope", "local");
             
             result = resultEntry = tasksClient.updateTaskVariable(task.getId(), "bpm_percentComplete", variableBody);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             assertEquals("bpm_percentComplete", result.get("name"));
             assertEquals(30L, result.get("value"));
             assertEquals("d:int", result.get("type"));
@@ -2549,16 +2551,16 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(8, actualLocalVariables.size());
             
             // Set a new global value that is NOT present in the model with type given
-            JSONObject variableBody = new JSONObject();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "newVariable");
             variableBody.put("value", 1234L);
             variableBody.put("type", "d:long");
             variableBody.put("scope", "global");
             
             TasksClient tasksClient = publicApiClient.tasksClient();
-            JSONObject resultEntry = tasksClient.updateTaskVariable(task.getId(), "newVariable", variableBody);
+            JsonNode resultEntry = tasksClient.updateTaskVariable(task.getId(), "newVariable", variableBody);
             assertNotNull(resultEntry);
-            JSONObject result = (JSONObject) resultEntry.get("entry");
+            JsonNode result = resultEntry.get("entry");
             assertEquals("newVariable", result.get("name"));
             assertEquals(1234L, result.get("value"));
             assertEquals("d:long", result.get("type"));
@@ -2589,15 +2591,15 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(8, actualLocalVariables.size());
             
             // Raw number value
-            JSONObject variableBody = new JSONObject();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "newVariable");
             variableBody.put("value", 1234);
             variableBody.put("scope", "global");
             
             TasksClient tasksClient = publicApiClient.tasksClient();
-            JSONObject resultEntry = tasksClient.updateTaskVariable(task.getId(), "newVariable", variableBody);
+            JsonNode resultEntry = tasksClient.updateTaskVariable(task.getId(), "newVariable", variableBody);
             assertNotNull(resultEntry);
-            JSONObject result = (JSONObject) resultEntry.get("entry");
+            JsonNode result = resultEntry.get("entry");
             assertEquals("newVariable", result.get("name"));
             assertEquals(1234L, result.get("value"));
             assertEquals("d:int", result.get("type"));
@@ -2606,14 +2608,14 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             
             // Raw boolean value
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "newVariable");
             variableBody.put("value", Boolean.TRUE);
             variableBody.put("scope", "local");
             
             resultEntry = tasksClient.updateTaskVariable(task.getId(), "newVariable", variableBody);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             assertEquals("newVariable", result.get("name"));
             assertEquals(Boolean.TRUE, result.get("value"));
             assertEquals("d:boolean", result.get("type"));
@@ -2622,14 +2624,14 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             
             // Raw string value
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "newVariable");
             variableBody.put("value", "test value");
             variableBody.put("scope", "global");
             
             resultEntry = tasksClient.updateTaskVariable(task.getId(), "newVariable", variableBody);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             assertEquals("newVariable", result.get("name"));
             assertEquals("test value", result.get("value"));
             assertEquals("d:text", result.get("type"));
@@ -2655,7 +2657,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(task);
             
             // Update without name
-            JSONObject variableBody = new JSONObject();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("value", 1234);
             variableBody.put("scope", "global");
             
@@ -2672,7 +2674,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // Update without scope
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("value", 1234);
             variableBody.put("name", "newVariable");
             
@@ -2688,7 +2690,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // Update in 'any' scope
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("value", 1234);
             variableBody.put("name", "newVariable");
             variableBody.put("scope", "any");
@@ -2705,7 +2707,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // Update in illegal scope
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("value", 1234);
             variableBody.put("name", "newVariable");
             variableBody.put("scope", "illegal");
@@ -2722,7 +2724,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // Update using unsupported type
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("value", 1234);
             variableBody.put("name", "newVariable");
             variableBody.put("scope", "local");
@@ -2740,7 +2742,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // Update using unsupported type (invalid QName)
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("value", 1234);
             variableBody.put("name", "newVariable");
             variableBody.put("scope", "local");
@@ -2779,7 +2781,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             String taskId = tasks.get(0).getId();
             
             // Update an existing variable with wrong type
-            JSONObject variableJson = new JSONObject();
+            ObjectNode variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "wf_requiredApprovePercent");
             variableJson.put("value", 55.99);
             variableJson.put("type", "d:double");
@@ -2795,47 +2797,47 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
                 assertEquals(HttpStatus.BAD_REQUEST.value(), e.getHttpResponse().getStatusCode());
             }
             
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "wf_requiredApprovePercent");
             variableJson.put("value", 55.99);
             variableJson.put("type", "d:int");
             variableJson.put("scope", "global");
             
-            JSONObject resultEntry = publicApiClient.tasksClient().updateTaskVariable(taskId, "wf_requiredApprovePercent", variableJson);
+            JsonNode resultEntry = publicApiClient.tasksClient().updateTaskVariable(taskId, "wf_requiredApprovePercent", variableJson);
             assertNotNull(resultEntry);
-            JSONObject result = (JSONObject) resultEntry.get("entry");
+            JsonNode result = resultEntry.get("entry");
             
             assertEquals("wf_requiredApprovePercent", result.get("name"));
             assertEquals(55l, result.get("value"));
             assertEquals("d:int", result.get("type"));
             assertEquals(55, activitiProcessEngine.getRuntimeService().getVariable(processRest.getId(), "wf_requiredApprovePercent"));
             
-            JSONObject taskVariables = publicApiClient.tasksClient().findTaskVariables(taskId);
+            JsonNode taskVariables = publicApiClient.tasksClient().findTaskVariables(taskId);
             assertNotNull(taskVariables);
-            JSONObject list = (JSONObject) taskVariables.get("list");
+            JsonNode list = taskVariables.get("list");
             assertNotNull(list);
             
             // Add process variables to map for easy lookup
-            Map<String, JSONObject> variablesByName = new HashMap<String, JSONObject>();
-            JSONObject entry = null;
-            JSONArray entries = (JSONArray) list.get("entries");
+            Map<String, JsonNode> variablesByName = new HashMap<>();
+            JsonNode entry = null;
+            ArrayNode entries = (ArrayNode) list.get("entries");
             assertNotNull(entries);
             for(int i=0; i<entries.size(); i++) 
             {
-                entry = (JSONObject) entries.get(i);
+                entry = entries.get(i);
                 assertNotNull(entry);
-                entry = (JSONObject) entry.get("entry");
+                entry = entry.get("entry");
                 assertNotNull(entry);
-                variablesByName.put((String) entry.get("name"), entry);
+                variablesByName.put(entry.get("name").textValue(), entry);
             }
             
-            JSONObject approvePercentObject = variablesByName.get("wf_requiredApprovePercent");
+            JsonNode approvePercentObject = variablesByName.get("wf_requiredApprovePercent");
             assertNotNull(approvePercentObject);
             assertEquals(55l, approvePercentObject.get("value"));
             assertEquals("d:int", approvePercentObject.get("type"));
             
             // set a new variable
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "testVariable");
             variableJson.put("value", "text");
             variableJson.put("type", "d:text");
@@ -2843,7 +2845,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             resultEntry = publicApiClient.tasksClient().updateTaskVariable(taskId, "testVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("testVariable", result.get("name"));
             assertEquals("text", result.get("value"));
@@ -2851,7 +2853,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals("text", activitiProcessEngine.getTaskService().getVariable(taskId, "testVariable"));
             
             // change the variable value and type (should be working because no content model type)
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "testVariable");
             variableJson.put("value", 123);
             variableJson.put("type", "d:int");
@@ -2859,7 +2861,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             resultEntry = publicApiClient.tasksClient().updateTaskVariable(taskId, "testVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("testVariable", result.get("name"));
             assertEquals(123l, result.get("value"));
@@ -2867,7 +2869,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(123, activitiProcessEngine.getTaskService().getVariable(taskId, "testVariable"));
             
             // change the variable value for a list of noderefs (bpm_assignees)
-            final JSONObject updateAssigneesJson = new JSONObject();
+            final ObjectNode updateAssigneesJson = AlfrescoDefaultObjectMapper.createObjectNode();
             updateAssigneesJson.put("name", "bpm_assignees");
             updateAssigneesJson.put("type", "d:noderef");
             updateAssigneesJson.put("scope", "global");
@@ -2877,7 +2879,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
                 @Override
                 public Void doWork() throws Exception
                 {
-                    JSONArray assigneeArray = new JSONArray();
+                    ArrayNode assigneeArray = AlfrescoDefaultObjectMapper.createArrayNode();
                     assigneeArray.add(requestContext.getRunAsUser());
                     updateAssigneesJson.put("value", assigneeArray);
                     return null;
@@ -2886,7 +2888,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             resultEntry = publicApiClient.tasksClient().updateTaskVariable(taskId, "bpm_assignees", updateAssigneesJson);
             assertNotNull(resultEntry);
-            final JSONObject updateAssigneeResult = (JSONObject) resultEntry.get("entry");
+            final JsonNode updateAssigneeResult = resultEntry.get("entry");
             
             assertEquals("bpm_assignees", updateAssigneeResult.get("name"));
             TenantUtil.runAsUserTenant(new TenantRunAsWork<Void>()
@@ -2894,7 +2896,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
                 @Override
                 public Void doWork() throws Exception
                 {
-                    JSONArray assigneeArray = (JSONArray) updateAssigneeResult.get("value");
+                    ArrayNode assigneeArray = (ArrayNode) updateAssigneeResult.get("value");
                     assertNotNull(assigneeArray);
                     assertEquals(1, assigneeArray.size());
                     return null;
@@ -2904,7 +2906,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals("d:noderef", updateAssigneeResult.get("type"));
             
             // update the bpm_assignees with a single entry, should result in an error
-            final JSONObject updateAssigneeJson = new JSONObject();
+            final ObjectNode updateAssigneeJson = AlfrescoDefaultObjectMapper.createObjectNode();
             updateAssigneeJson.put("name", "bpm_assignees");
             updateAssigneeJson.put("type", "d:noderef");
             updateAssigneeJson.put("scope", "global");
@@ -2949,7 +2951,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         ProcessInstance processInstance = startAdhocProcess(initiator, requestContext.getNetworkId(), null);
         try
         {
-            JSONObject variableBody = new JSONObject();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "newVariable");
             variableBody.put("value", 1234);
             variableBody.put("scope", "global");
@@ -2972,7 +2974,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // Set assignee, task variables should be updatable now
             activitiProcessEngine.getTaskService().setAssignee(task.getId(), requestContext.getRunAsUser());
-            JSONObject jsonObject = tasksClient.updateTaskVariable(task.getId(), "newVariable", variableBody);
+            JsonNode jsonObject = tasksClient.updateTaskVariable(task.getId(), "newVariable", variableBody);
             assertNotNull(jsonObject);
             
             // Updating task variables as admin should be possible
@@ -3020,14 +3022,14 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(8, actualLocalVariables.size());
             
             // Update a global value that is present in the model with type given
-            JSONArray variablesArray = new JSONArray();
-            JSONObject variableBody = new JSONObject();
+            ArrayNode variablesArray = AlfrescoDefaultObjectMapper.createArrayNode();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "bpm_percentComplete");
             variableBody.put("value", 20);
             variableBody.put("type", "d:int");
             variableBody.put("scope", "global");
             variablesArray.add(variableBody);
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "bpm_workflowPriority");
             variableBody.put("value", 50);
             variableBody.put("type", "d:int");
@@ -3035,19 +3037,19 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             variablesArray.add(variableBody);
             
             TasksClient tasksClient = publicApiClient.tasksClient();
-            JSONObject result = tasksClient.createTaskVariables(task.getId(), variablesArray);
+            JsonNode result = tasksClient.createTaskVariables(task.getId(), variablesArray);
             assertNotNull(result);
-            JSONObject resultObject = (JSONObject) result.get("list");
-            JSONArray resultList = (JSONArray) resultObject.get("entries");
+            JsonNode resultObject = result.get("list");
+            ArrayNode resultList = (ArrayNode) resultObject.get("entries");
             assertEquals(2, resultList.size());
-            JSONObject firstResultObject = (JSONObject) ((JSONObject) resultList.get(0)).get("entry");
+            JsonNode firstResultObject = (resultList.get(0)).get("entry");
             assertEquals("bpm_percentComplete", firstResultObject.get("name"));
             assertEquals(20L, firstResultObject.get("value"));
             assertEquals("d:int", firstResultObject.get("type"));
             assertEquals("global", firstResultObject.get("scope")); 
             assertEquals(20, activitiProcessEngine.getRuntimeService().getVariable(processInstance.getId(), "bpm_percentComplete"));
             
-            JSONObject secondResultObject = (JSONObject) ((JSONObject) resultList.get(1)).get("entry");
+            JsonNode secondResultObject = (resultList.get(1)).get("entry");
             assertEquals("bpm_workflowPriority", secondResultObject.get("name"));
             assertEquals(50L, secondResultObject.get("value"));
             assertEquals("d:int", secondResultObject.get("type"));
@@ -3092,33 +3094,33 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             TasksClient tasksClient = publicApiClient.tasksClient();
             
             // Get all local variables
-            JSONObject variables = tasksClient.findTaskVariables(task.getId(), Collections.singletonMap("where", "(scope = local)"));
+            JsonNode variables = tasksClient.findTaskVariables(task.getId(), Collections.singletonMap("where", "(scope = local)"));
             assertNotNull(variables);
-            JSONObject list = (JSONObject) variables.get("list");
+            JsonNode list = variables.get("list");
             assertNotNull(list);
-            JSONArray entries = (JSONArray) list.get("entries");
+            ArrayNode entries = (ArrayNode) list.get("entries");
             assertNotNull(entries);
             
             // Check pagination object for size
-            JSONObject pagination = (JSONObject) list.get("pagination");
+            JsonNode pagination = list.get("pagination");
             assertNotNull(pagination);
-            assertEquals(actualLocalVariables.size(), ((Long)pagination.get("count")).intValue());
-            assertEquals(actualLocalVariables.size(), ((Long)pagination.get("totalItems")).intValue());
+            assertEquals(actualLocalVariables.size(), pagination.get("count").longValue());
+            assertEquals(actualLocalVariables.size(), pagination.get("totalItems").longValue());
             assertEquals(0L, pagination.get("skipCount"));
-            assertFalse((Boolean) pagination.get("hasMoreItems"));
+            assertFalse(pagination.get("hasMoreItems").booleanValue());
             
             assertEquals(actualLocalVariables.size(), entries.size());
             
             // Add JSON entries to map for easy access when asserting values
-            Map<String, JSONObject> entriesByName = new HashMap<String, JSONObject>();
+            Map<String, JsonNode> entriesByName = new HashMap<>();
             for (int i = 0; i < entries.size(); i++)
             {
-                JSONObject var = (JSONObject) entries.get(i);
-                entriesByName.put((String) ((JSONObject) var.get("entry")).get("name"), (JSONObject) var.get("entry"));
+                JsonNode var = entries.get(i);
+                entriesByName.put(var.get("entry").get("name").textValue(), var.get("entry"));
             }
             
             // Check all values and types
-            JSONObject var = entriesByName.get("testVarString");
+            JsonNode var = entriesByName.get("testVarString");
             assertNotNull(var);
             assertEquals("d:text", var.get("type"));
             assertEquals("string", var.get("value"));
@@ -3193,20 +3195,20 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             TasksClient tasksClient = publicApiClient.tasksClient();
             
-            JSONObject variables = tasksClient.findTaskVariables(task.getId(), Collections.singletonMap("where", "(scope = local)"));
+            JsonNode variables = tasksClient.findTaskVariables(task.getId(), Collections.singletonMap("where", "(scope = local)"));
             assertNotNull(variables);
-            JSONObject list = (JSONObject) variables.get("list");
+            JsonNode list = variables.get("list");
             assertNotNull(list);
-            JSONArray entries = (JSONArray) list.get("entries");
+            ArrayNode entries = (ArrayNode) list.get("entries");
             assertNotNull(entries);
             
             // Check pagination object for size
-            JSONObject pagination = (JSONObject) list.get("pagination");
+            JsonNode pagination = list.get("pagination");
             assertNotNull(pagination);
             assertEquals(8L, pagination.get("count"));
             assertEquals(8L, pagination.get("totalItems"));
             assertEquals(0L, pagination.get("skipCount"));
-            assertFalse((Boolean) pagination.get("hasMoreItems"));
+            assertFalse(pagination.get("hasMoreItems").booleanValue());
             
             assertEquals(actualLocalVariables.size(), entries.size());
             
@@ -3215,7 +3217,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             for(int i=0; i < entries.size(); i++) 
             {
-                JSONObject entry = (JSONObject) ((JSONObject) entries.get(i)).get("entry");
+                JsonNode entry = (entries.get(i)).get("entry");
                 assertNotNull(entry);
                 
                 // Check if full entry is present with correct scope
@@ -3233,18 +3235,18 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // Now check the global scope
             variables = tasksClient.findTaskVariables(task.getId(), Collections.singletonMap("where", "(scope = global)"));
             assertNotNull(variables);
-            list = (JSONObject) variables.get("list");
+            list = variables.get("list");
             assertNotNull(list);
-            entries = (JSONArray) list.get("entries");
+            entries = (ArrayNode) list.get("entries");
             assertNotNull(entries);
             
             // Check pagination object for size
-            pagination = (JSONObject) list.get("pagination");
+            pagination = list.get("pagination");
             assertNotNull(pagination);
             assertEquals(4L, pagination.get("count"));
             assertEquals(4L, pagination.get("totalItems"));
             assertEquals(0L, pagination.get("skipCount"));
-            assertFalse((Boolean) pagination.get("hasMoreItems"));
+            assertFalse(pagination.get("hasMoreItems").booleanValue());
             
             // Should contain one variable less than the actual variables in the engine, tenant-domain var is filtered out
             assertEquals(actualGlobalVariables.size() - 1, entries.size());
@@ -3255,7 +3257,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             for(int i=0; i < entries.size(); i++) 
             {
-                JSONObject entry = (JSONObject) ((JSONObject) entries.get(i)).get("entry");
+                JsonNode entry = (entries.get(i)).get("entry");
                 assertNotNull(entry);
                 
                 // Check if full entry is present with correct scope
@@ -3293,20 +3295,20 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             TasksClient tasksClient = publicApiClient.tasksClient();
             
-            JSONObject variables = tasksClient.findTaskVariables(task.getId());
+            JsonNode variables = tasksClient.findTaskVariables(task.getId());
             assertNotNull(variables);
-            JSONObject list = (JSONObject) variables.get("list");
+            JsonNode list = variables.get("list");
             assertNotNull(list);
-            JSONArray entries = (JSONArray) list.get("entries");
+            ArrayNode entries = (ArrayNode) list.get("entries");
             assertNotNull(entries);
             
             // Check pagination object for size
-            JSONObject pagination = (JSONObject) list.get("pagination");
+            JsonNode pagination = list.get("pagination");
             assertNotNull(pagination);
             assertEquals(42L, pagination.get("count"));
             assertEquals(42L, pagination.get("totalItems"));
             assertEquals(0L, pagination.get("skipCount"));
-            assertFalse((Boolean) pagination.get("hasMoreItems"));
+            assertFalse(pagination.get("hasMoreItems").booleanValue());
         }
         finally
         {
@@ -3465,14 +3467,14 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             Task task = activitiProcessEngine.getTaskService().createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
             assertNotNull(task);
             
-            JSONObject model = publicApiClient.tasksClient().findTaskFormModel(task.getId());
+            JsonNode model = publicApiClient.tasksClient().findTaskFormModel(task.getId());
             assertNotNull(model);
             
-            JSONArray entries = (JSONArray) model.get("entries");
+            ArrayNode entries = (ArrayNode) model.get("entries");
             assertNotNull(entries);
             
             // Add all entries to a map, to make lookup easier
-            Map<String, JSONObject> modelFieldsByName = createEntryMap(entries);
+            Map<String, JsonNode> modelFieldsByName = createEntryMap(entries);
             testModelEntries(modelFieldsByName);
             
             // get task form model with admin
@@ -3480,7 +3482,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             model = publicApiClient.tasksClient().findTaskFormModel(task.getId());
             assertNotNull(model);
             
-            entries = (JSONArray) model.get("entries");
+            entries = (ArrayNode) model.get("entries");
             assertNotNull(entries);
             
             modelFieldsByName = createEntryMap(entries);
@@ -3514,32 +3516,32 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         }
     }
     
-    protected Map<String, JSONObject> createEntryMap(JSONArray entries)
+    protected Map<String, JsonNode> createEntryMap(ArrayNode entries)
     {
-        Map<String, JSONObject> modelFieldsByName = new HashMap<String, JSONObject>();
-        JSONObject entry = null;
+        Map<String, JsonNode> modelFieldsByName = new HashMap<>();
+        JsonNode entry = null;
         for(int i=0; i<entries.size(); i++) 
         {
-            entry = (JSONObject) entries.get(i);
+            entry = entries.get(i);
             assertNotNull(entry);
-            entry = (JSONObject) entry.get("entry");
+            entry = entry.get("entry");
             assertNotNull(entry);
-            modelFieldsByName.put((String) entry.get("name"), entry);
+            modelFieldsByName.put(entry.get("name").textValue(), entry);
         }
         return modelFieldsByName;
     }
     
-    protected void testModelEntries(Map<String, JSONObject> modelFieldsByName)
+    protected void testModelEntries(Map<String, JsonNode> modelFieldsByName)
     {
         // Check well-known properties and their types
         
         // Validate bpm:completionDate
-        JSONObject modelEntry = modelFieldsByName.get("bpm_completionDate");
+        JsonNode modelEntry = modelFieldsByName.get("bpm_completionDate");
         assertNotNull(modelEntry);
         assertEquals("Completion Date", modelEntry.get("title"));
         assertEquals("{http://www.alfresco.org/model/bpm/1.0}completionDate", modelEntry.get("qualifiedName"));
         assertEquals("d:date", modelEntry.get("dataType"));
-        assertFalse((Boolean)modelEntry.get("required"));
+        assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate cm:owner
         modelEntry = modelFieldsByName.get("cm_owner");
@@ -3547,7 +3549,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         assertEquals("Owner", modelEntry.get("title"));
         assertEquals("{http://www.alfresco.org/model/content/1.0}owner", modelEntry.get("qualifiedName"));
         assertEquals("d:text", modelEntry.get("dataType"));
-        assertFalse((Boolean)modelEntry.get("required"));
+        assertFalse(modelEntry.get("required").booleanValue());
         
         // Validate bpm:package
         modelEntry = modelFieldsByName.get("bpm_package");
@@ -3555,7 +3557,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         assertEquals("Content Package", modelEntry.get("title"));
         assertEquals("{http://www.alfresco.org/model/bpm/1.0}package", modelEntry.get("qualifiedName"));
         assertEquals("bpm:workflowPackage", modelEntry.get("dataType"));
-        assertFalse((Boolean)modelEntry.get("required"));
+        assertFalse(modelEntry.get("required").booleanValue());
     }
     
     @Test
@@ -3582,17 +3584,16 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         try
         {
             TasksClient tasksClient = publicApiClient.tasksClient();
-            JSONObject itemsJSON = tasksClient.findTaskItems(task.getId());
+            JsonNode itemsJSON = tasksClient.findTaskItems(task.getId());
             assertNotNull(itemsJSON);
-            JSONArray entriesJSON = (JSONArray) itemsJSON.get("entries");
+            ArrayNode entriesJSON = (ArrayNode) itemsJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             boolean doc1Found = false;
             boolean doc2Found = false;
-            for (Object entryObject : entriesJSON)
+            for (JsonNode entryObject : entriesJSON)
             {
-                JSONObject entryObjectJSON = (JSONObject) entryObject;
-                JSONObject entryJSON = (JSONObject) entryObjectJSON.get("entry");
+                JsonNode entryJSON = entryObject.get("entry");
                 if (entryJSON.get("name").equals("Test Doc1")) {
                     doc1Found = true;
                     assertEquals(docNodeRefs[0].getId(), entryJSON.get("id"));
@@ -3626,7 +3627,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(adminContext);
             itemsJSON = tasksClient.findTaskItems(task.getId());
             assertNotNull(itemsJSON);
-            entriesJSON = (JSONArray) itemsJSON.get("entries");
+            entriesJSON = (ArrayNode) itemsJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             
@@ -3647,7 +3648,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(otherContext);
             itemsJSON = tasksClient.findTaskItems(task.getId());
             assertNotNull(itemsJSON);
-            entriesJSON = (JSONArray) itemsJSON.get("entries");
+            entriesJSON = (ArrayNode) itemsJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             
@@ -3662,7 +3663,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(otherContext);
             itemsJSON = tasksClient.findTaskItems(task.getId());
             assertNotNull(itemsJSON);
-            entriesJSON = (JSONArray) itemsJSON.get("entries");
+            entriesJSON = (ArrayNode) itemsJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             
@@ -3704,7 +3705,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(requestContext);
             itemsJSON = tasksClient.findTaskItems(task.getId());
             assertNotNull(itemsJSON);
-            entriesJSON = (JSONArray) itemsJSON.get("entries");
+            entriesJSON = (ArrayNode) itemsJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             
@@ -3753,9 +3754,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         try
         {
             TasksClient tasksClient = publicApiClient.tasksClient();
-            JSONObject createItemObject = new JSONObject();
+            ObjectNode createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
-            JSONObject result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            JsonNode result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
@@ -3769,7 +3770,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(result.get("size"));
             assertNotNull(result.get("mimeType"));
             
-            JSONObject itemJSON = tasksClient.findTaskItem(task.getId(), docNodeRefs[0].getId());
+            JsonNode itemJSON = tasksClient.findTaskItem(task.getId(), docNodeRefs[0].getId());
             assertEquals(docNodeRefs[0].getId(), itemJSON.get("id"));
             
             tasksClient.deleteTaskItem(task.getId(), docNodeRefs[0].getId());
@@ -3785,7 +3786,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // add item as admin
             publicApiClient.setRequestContext(adminContext);
-            result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
             assertEquals("Test Doc1", result.get("name"));
@@ -3807,7 +3808,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // add item with candidate user
             activitiProcessEngine.getTaskService().addCandidateUser(task.getId(), otherPerson);
             publicApiClient.setRequestContext(otherContext);
-            result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
             assertEquals("Test Doc1", result.get("name"));
@@ -3831,7 +3832,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(otherContext);
             try
             {
-                tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+                tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
                 fail("Expected exception");
             }
             catch (PublicApiException e)
@@ -3848,7 +3849,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             activitiProcessEngine.getTaskService().deleteCandidateUser(task.getId(), otherContext.getRunAsUser());
             activitiProcessEngine.getTaskService().addCandidateGroup(task.getId(), group);
             publicApiClient.setRequestContext(otherContext);
-            result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
             assertEquals("Test Doc1", result.get("name"));
@@ -3872,7 +3873,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(otherContext);
             try
             {
-                tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+                tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
                 fail("Expected exception");
             }
             catch (PublicApiException e)
@@ -3884,7 +3885,7 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             publicApiClient.setRequestContext(requestContext);
             try
             {
-                tasksClient.addTaskItem("fakeid", createItemObject.toJSONString());
+                tasksClient.addTaskItem("fakeid", AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
                 fail("Expected exception");
             }
             catch (PublicApiException e)
@@ -3893,11 +3894,11 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // invalid item id
-            createItemObject = new JSONObject();
+            createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", "fakeid");
             try
             {
-                tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+                tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
                 fail("Expected exception");
             }
             catch (PublicApiException e)
@@ -3916,11 +3917,11 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
                 }
             }, requestContext.getRunAsUser(), requestContext.getNetworkId());
             
-            createItemObject = new JSONObject();
+            createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
             try
             {
-                tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+                tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
                 fail("Expected exception");
             }
             catch (PublicApiException e)
@@ -3974,14 +3975,14 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // delete item as admin
-            JSONObject createItemObject = new JSONObject();
+            ObjectNode createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
-            JSONObject result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            JsonNode result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
             
-            JSONObject itemJSON = tasksClient.findTaskItem(task.getId(), docNodeRefs[0].getId());
+            JsonNode itemJSON = tasksClient.findTaskItem(task.getId(), docNodeRefs[0].getId());
             assertEquals(docNodeRefs[0].getId(), itemJSON.get("id"));
             
             publicApiClient.setRequestContext(adminContext);
@@ -3997,9 +3998,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // delete item with candidate user
-            createItemObject = new JSONObject();
+            createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
-            result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
@@ -4021,9 +4022,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // delete item with not involved user
-            createItemObject = new JSONObject();
+            createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
-            result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
@@ -4052,9 +4053,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             activitiProcessEngine.getTaskService().deleteCandidateUser(task.getId(), otherContext.getRunAsUser());
             activitiProcessEngine.getTaskService().addCandidateGroup(task.getId(), group);
             publicApiClient.setRequestContext(otherContext);
-            createItemObject = new JSONObject();
+            createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
-            result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
@@ -4076,9 +4077,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             // delete item with user from candidate group with assignee
             activitiProcessEngine.getTaskService().setAssignee(task.getId(), requestContext.getRunAsUser());
             publicApiClient.setRequestContext(requestContext);
-            createItemObject = new JSONObject();
+            createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
-            result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
@@ -4135,9 +4136,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // delete item from completed task
-            createItemObject = new JSONObject();
+            createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
-            result = tasksClient.addTaskItem(task.getId(), createItemObject.toJSONString());
+            result = tasksClient.addTaskItem(task.getId(), AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             
             assertNotNull(result);
             assertEquals(docNodeRefs[0].getId(), result.get("id"));
@@ -4192,9 +4193,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
     
     protected int getResultSizeForTaskQuery(Map<String, String> params, TasksClient tasksClient) throws Exception 
     {
-        JSONObject taskListJSONObject = tasksClient.findTasks(params);
+        JsonNode taskListJSONObject = tasksClient.findTasks(params);
         assertNotNull(taskListJSONObject);
-        JSONArray jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
         return jsonEntries.size();
     }
     
@@ -4205,9 +4206,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
     
     protected void assertTasksPresentInTaskQuery(Map<String, String> params, TasksClient tasksClient, boolean countShouldMatch, String ...taskIds) throws Exception 
     {
-        JSONObject taskListJSONObject = tasksClient.findTasks(params);
+        JsonNode taskListJSONObject = tasksClient.findTasks(params);
         assertNotNull(taskListJSONObject);
-        JSONArray jsonEntries = (JSONArray) taskListJSONObject.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) taskListJSONObject.get("entries");
         if(countShouldMatch) {
             assertEquals("Wrong amount of tasks returned by query", taskIds.length, jsonEntries.size());
         }
@@ -4217,9 +4218,9 @@ public class TaskWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         for(int i=0; i< jsonEntries.size(); i++) 
         {
-            JSONObject entry = (JSONObject) ((JSONObject)jsonEntries.get(i)).get("entry");
+            JsonNode entry = jsonEntries.get(i).get("entry");
             assertNotNull(entry);
-            String taskId = (String) entry.get("id");
+            String taskId = entry.get("id").textValue();
             tasksToFind.remove(taskId);
         }
         assertEquals("Not all tasks have been found in query response, missing: " + StringUtils.join(tasksToFind, ","), 

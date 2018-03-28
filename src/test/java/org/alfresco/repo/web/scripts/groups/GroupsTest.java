@@ -26,11 +26,12 @@
 package org.alfresco.repo.web.scripts.groups;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
@@ -40,11 +41,9 @@ import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
@@ -211,27 +210,27 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_ROOTGROUPS), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
     		//System.out.println(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
-    		assertTrue(data.length() >= 3);
+    		ArrayNode data = (ArrayNode) top.get("data");
+    		assertTrue(data.size() >= 3);
     		boolean gotRootGroup = false;
     		boolean gotEmailGroup = false;
     		
     		
-    		for(int i = 0; i < data.length(); i++)
+    		for(int i = 0; i < data.size(); i++)
     		{
-    			JSONObject rootGroup = data.getJSONObject(i);
-    			if(rootGroup.getString("shortName").equals(TEST_ROOTGROUP))
+    			JsonNode rootGroup = data.get(i);
+    			if(rootGroup.get("shortName").equals(TEST_ROOTGROUP))
     			{
     				// This is our test rootgroup
-    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.getString("shortName"));
-    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.getString("displayName"));
-    				assertEquals("authorityType wrong", "GROUP", rootGroup.getString("authorityType"));
+    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName"));
+    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName"));
+    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType"));
     				gotRootGroup = true;
     			}
-    			if(rootGroup.getString("shortName").equals(EMAIL_GROUP))
+    			if(rootGroup.get("shortName").equals(EMAIL_GROUP))
     			{
     				gotEmailGroup = true;
     			}
@@ -254,22 +253,22 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_ROOTGROUPS + "?zone=APP.DEFAULT"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
     		//System.out.println(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
+    		ArrayNode data = (ArrayNode) top.get("data");
     		
-    		assertTrue(data.length() > 0);
+    		assertTrue(data.size() > 0);
     		
-    		for(int i = 0; i < data.length(); i++)
+    		for(int i = 0; i < data.size(); i++)
     		{
-    			JSONObject rootGroup = data.getJSONObject(i);
-    			if(rootGroup.getString("shortName").equals(TEST_ROOTGROUP))
+    			JsonNode rootGroup = data.get(i);
+    			if(rootGroup.get("shortName").equals(TEST_ROOTGROUP))
     			{
     				// This is our test rootgroup
-    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.getString("shortName"));
-    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.getString("displayName"));
-    				assertEquals("authorityType wrong", "GROUP", rootGroup.getString("authorityType"));
+    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName"));
+    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName"));
+    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType"));
     			}
     		}	
     	}
@@ -279,20 +278,20 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_ROOTGROUPS + "?zone=AUTH.ALF"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
-    		assertTrue(data.length() > 0);
+    		ArrayNode data = (ArrayNode) top.get("data");
+    		assertTrue(data.size() > 0);
     		
-    		for(int i = 0; i < data.length(); i++)
+    		for(int i = 0; i < data.size(); i++)
     		{
-    			JSONObject rootGroup = data.getJSONObject(i);
-    			if(rootGroup.getString("shortName").equals(TEST_ROOTGROUP))
+    			JsonNode rootGroup = data.get(i);
+    			if(rootGroup.get("shortName").equals(TEST_ROOTGROUP))
     			{
     				// This is our test rootgroup
-    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.getString("shortName"));
-    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.getString("displayName"));
-    				assertEquals("authorityType wrong", "GROUP", rootGroup.getString("authorityType"));
+    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName"));
+    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName"));
+    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType"));
     			}
     		}	
     	}
@@ -302,10 +301,10 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_ROOTGROUPS + "?zone=WIBBLE"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
-    		assertTrue(data.length() == 0);
+    		ArrayNode data = (ArrayNode) top.get("data");
+    		assertTrue(data.size() == 0);
     		// Should return no results
     	}
     	
@@ -320,10 +319,10 @@ public class GroupsTest extends BaseWebScriptTest
         
     	{
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + ADMIN_GROUP), 200);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONObject data = top.getJSONObject("data");
-    		assertTrue(data.length() > 0);
+    		JsonNode data = top.get("data");
+    		assertTrue(data.size() > 0);
     	}
     	
     	{
@@ -335,10 +334,10 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_GROUPB), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONObject data = top.getJSONObject("data");
-    		assertTrue(data.length() > 0);
+    		JsonNode data = top.get("data");
+    		assertTrue(data.size() > 0);
     	}
     	
     	/**
@@ -346,10 +345,10 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_GROUPE), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONObject data = top.getJSONObject("data");
-    		assertTrue(data.length() > 0);
+    		JsonNode data = top.get("data");
+    		assertTrue(data.size() > 0);
     	}
     
     }
@@ -367,7 +366,7 @@ public class GroupsTest extends BaseWebScriptTest
     	 * Negative test - try to create a group without admin authority
     	 */
     	{
-    		JSONObject newGroupJSON = new JSONObject();
+    		ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     		newGroupJSON.put("displayName", myDisplayName); 
     		sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + myGroupName,  newGroupJSON.toString(), "application/json"), Status.STATUS_INTERNAL_SERVER_ERROR);   
     	}
@@ -381,20 +380,20 @@ public class GroupsTest extends BaseWebScriptTest
     		 * Create a root group
     		 */
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+    			ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			newGroupJSON.put("displayName", myDisplayName); 
     			Response response = sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + myGroupName,  newGroupJSON.toString(), "application/json"), Status.STATUS_CREATED);
-    			JSONObject top = new JSONObject(response.getContentAsString());
-    			JSONObject rootGroup = top.getJSONObject("data");
-    			assertEquals("shortName wrong", myGroupName, rootGroup.getString("shortName"));
-    			assertEquals("displayName wrong", myDisplayName, rootGroup.getString("displayName"));
+    			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+    			JsonNode rootGroup = top.get("data");
+    			assertEquals("shortName wrong", myGroupName, rootGroup.get("shortName"));
+    			assertEquals("displayName wrong", myDisplayName, rootGroup.get("displayName"));
     		}
     	
     		/**
     		 * Negative test Create a root group that already exists
     		 */
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+    			ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			newGroupJSON.put("displayName", myDisplayName); 
     			sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + myGroupName,  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);   
     		}
@@ -436,18 +435,18 @@ public class GroupsTest extends BaseWebScriptTest
     		String groupLinkFullName = "";
     		{
     			Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_LINK), Status.STATUS_OK);
-    			JSONObject top = new JSONObject(response.getContentAsString());
+    			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     			logger.debug(response.getContentAsString());
-    			JSONObject data = top.getJSONObject("data");
-    			assertTrue(data.length() > 0);
-    			groupLinkFullName = data.getString("fullName");
+    			JsonNode data = top.get("data");
+    			assertTrue(data.size() > 0);
+    			groupLinkFullName = data.get("fullName").textValue();
     		}
     		
     		/**
     		 * Create a root group
     		 */
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+                ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			newGroupJSON.put("displayName", myRootGroup); 
     			sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + myRootGroup,  newGroupJSON.toString(), "application/json"), Status.STATUS_CREATED);    
     		}
@@ -461,7 +460,7 @@ public class GroupsTest extends BaseWebScriptTest
     		 */
     		this.authenticationComponent.setCurrentUser(USER_ONE);
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+                ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			sendRequest(new PostRequest(URL_GROUPS + "/" + myRootGroup +"/children/" + groupLinkFullName, newGroupJSON.toString(), "application/json" ), Status.STATUS_INTERNAL_SERVER_ERROR);
     		}
     		
@@ -471,11 +470,11 @@ public class GroupsTest extends BaseWebScriptTest
     		 * Link Group B
     		 */
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+                ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			Response response = sendRequest(new PostRequest(URL_GROUPS + "/" + myRootGroup +"/children/" + groupLinkFullName, newGroupJSON.toString(), "application/json" ), Status.STATUS_OK);
-    			JSONObject top = new JSONObject(response.getContentAsString());
+    			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     			logger.debug(response.getContentAsString());
-    			JSONObject data = top.getJSONObject("data");
+    			JsonNode data = top.get("data");
     		}
     		
     		/**
@@ -483,7 +482,7 @@ public class GroupsTest extends BaseWebScriptTest
     		 * - duplicate groups (children with the same name) are not allowed 
     		 */
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+    			ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			Response response = sendRequest(new PostRequest(URL_GROUPS + "/" + myRootGroup +"/children/" + groupLinkFullName, newGroupJSON.toString(), "application/json" ), Status.STATUS_INTERNAL_SERVER_ERROR);
     		}
     		
@@ -493,26 +492,26 @@ public class GroupsTest extends BaseWebScriptTest
         	{
         		logger.debug("Get child GROUPS of myRootGroup");
         		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + myRootGroup + "/children?authorityType=GROUP"), Status.STATUS_OK);
-        		JSONObject top = new JSONObject(response.getContentAsString());
+        		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         		logger.debug(response.getContentAsString());
-        		JSONArray data = top.getJSONArray("data");
-        		assertTrue("no child groups of myGroup", data.length() == 1);
+        		ArrayNode data = (ArrayNode) top.get("data");
+        		assertTrue("no child groups of myGroup", data.size() == 1);
         		
-        		JSONObject subGroup = data.getJSONObject(0);
-        		assertEquals("shortName wrong", TEST_LINK, subGroup.getString("shortName"));
-        		assertEquals("authorityType wrong", "GROUP", subGroup.getString("authorityType"));
+        		JsonNode subGroup = data.get(0);
+        		assertEquals("shortName wrong", TEST_LINK, subGroup.get("shortName"));
+        		assertEquals("authorityType wrong", "GROUP", subGroup.get("authorityType"));
         	}
         	
         	/**
         	 * Now link in an existing user
         	 */		 
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+                ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			String userOneFullName = USER_ONE;
     			Response response = sendRequest(new PostRequest(URL_GROUPS + "/" + myRootGroup +"/children/" + userOneFullName, newGroupJSON.toString(), "application/json" ), Status.STATUS_OK);
-    			JSONObject top = new JSONObject(response.getContentAsString());
+    			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     			logger.debug(response.getContentAsString());
-    			JSONObject data = top.getJSONObject("data");
+    			JsonNode data = top.get("data");
     		}
     		
         	/**
@@ -521,14 +520,14 @@ public class GroupsTest extends BaseWebScriptTest
         	{
         		logger.debug("Get child USERS of myRootGroup");
         		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + myRootGroup + "/children?authorityType=USER"), Status.STATUS_OK);
-        		JSONObject top = new JSONObject(response.getContentAsString());
+        		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         		logger.debug(response.getContentAsString());
-        		JSONArray data = top.getJSONArray("data");
-        		assertTrue("no child groups of myGroup", data.length() == 1);
+        		ArrayNode data = (ArrayNode) top.get("data");
+        		assertTrue("no child groups of myGroup", data.size() == 1);
         		
-        		JSONObject subGroup = data.getJSONObject(0);
-        		assertEquals("shortName wrong", USER_ONE, subGroup.getString("shortName"));
-        		assertEquals("authorityType wrong", "USER", subGroup.getString("authorityType"));
+        		JsonNode subGroup = data.get(0);
+        		assertEquals("shortName wrong", USER_ONE, subGroup.get("shortName"));
+        		assertEquals("authorityType wrong", "USER", subGroup.get("authorityType"));
         	}
     			
     		/**
@@ -537,7 +536,7 @@ public class GroupsTest extends BaseWebScriptTest
     		{
     			logger.debug("Unlink Test Link");
     			Response response = sendRequest(new DeleteRequest(URL_GROUPS + "/" + myRootGroup +"/children/" + groupLinkFullName ), Status.STATUS_OK);
-    			JSONObject top = new JSONObject(response.getContentAsString());
+    			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     			logger.debug(response.getContentAsString());
 
     		}
@@ -548,12 +547,12 @@ public class GroupsTest extends BaseWebScriptTest
         	{
         		logger.debug("Get child GROUPS of myRootGroup");
         		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + myRootGroup + "/children?authorityType=GROUP"), Status.STATUS_OK);
-        		JSONObject top = new JSONObject(response.getContentAsString());
+        		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         		logger.debug(response.getContentAsString());
-        		JSONArray data = top.getJSONArray("data");
+        		ArrayNode data = (ArrayNode) top.get("data");
         		//TODO TEST failing
         		
-        		//assertTrue("group B not removed", data.length() == 0);
+        		//assertTrue("group B not removed", data.size() == 0);
         	}
         	
     		/**
@@ -563,15 +562,15 @@ public class GroupsTest extends BaseWebScriptTest
     		{
     			// Delete incase it already exists from a previous test run
         		sendRequest(new DeleteRequest(URL_ROOTGROUPS + "/BUFFY"), 0);
-        		
-    			JSONObject newGroupJSON = new JSONObject();
+
+                ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			Response response = sendRequest(new PostRequest(URL_GROUPS + "/" + myRootGroup +"/children/" + myNewGroup, newGroupJSON.toString(), "application/json" ), Status.STATUS_CREATED);
-    			JSONObject top = new JSONObject(response.getContentAsString());
+    			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     			logger.debug(response.getContentAsString());
-    			JSONObject data = top.getJSONObject("data");
-        		assertEquals("shortName wrong", "BUFFY", data.getString("shortName"));
-        		assertEquals("fullName wrong", myNewGroup, data.getString("fullName"));
-        		assertEquals("authorityType wrong", "GROUP", data.getString("authorityType"));
+    			JsonNode data = top.get("data");
+        		assertEquals("shortName wrong", "BUFFY", data.get("shortName"));
+        		assertEquals("fullName wrong", myNewGroup, data.get("fullName"));
+        		assertEquals("authorityType wrong", "GROUP", data.get("authorityType"));
     		}
         	
     		/**
@@ -580,13 +579,13 @@ public class GroupsTest extends BaseWebScriptTest
         	{
         		logger.debug("Get child GROUPS of myRootGroup");
         		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + myRootGroup + "/children?authorityType=GROUP"), Status.STATUS_OK);
-        		JSONObject top = new JSONObject(response.getContentAsString());
+        		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         		logger.debug(response.getContentAsString());
-        		JSONArray data = top.getJSONArray("data");
-           		for(int i = 0; i < data.length(); i++)
+        		ArrayNode data = (ArrayNode) top.get("data");
+           		for(int i = 0; i < data.size(); i++)
         		{
-        			JSONObject rootGroup = data.getJSONObject(i);
-        			if(rootGroup.getString("fullName").equals(myNewGroup))
+        			JsonNode rootGroup = data.get(i);
+        			if(rootGroup.get("fullName").equals(myNewGroup))
         			{
         			
         			}
@@ -623,7 +622,7 @@ public class GroupsTest extends BaseWebScriptTest
     		 * Create a root group
     		 */
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+                ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			newGroupJSON.put("displayName", myDisplayName); 
     			sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + myGroupName,  newGroupJSON.toString(), "application/json"), Status.STATUS_CREATED);
     		}
@@ -632,14 +631,14 @@ public class GroupsTest extends BaseWebScriptTest
     		 * Now change its display name
     		 */
     		{
-    			JSONObject newGroupJSON = new JSONObject();
+                ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
     			newGroupJSON.put("displayName", myNewDisplayName); 
     			Response response = sendRequest(new PutRequest(URL_GROUPS + "/" + myGroupName,  newGroupJSON.toString(), "application/json"), Status.STATUS_OK);    
-    			JSONObject top = new JSONObject(response.getContentAsString());
+    			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         		logger.debug(response.getContentAsString());
-        		JSONObject data = top.getJSONObject("data");
-        		assertTrue(data.length() > 0);
-        		assertEquals("displayName wrong", myNewDisplayName, data.getString("displayName"));
+        		JsonNode data = top.get("data");
+        		assertTrue(data.size() > 0);
+        		assertEquals("displayName wrong", myNewDisplayName, data.get("displayName"));
 
     		}
     		
@@ -648,11 +647,11 @@ public class GroupsTest extends BaseWebScriptTest
         	 */
         	{
         		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" +  myGroupName), Status.STATUS_OK);
-        		JSONObject top = new JSONObject(response.getContentAsString());
+        		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         		logger.debug(response.getContentAsString());
-        		JSONObject data = top.getJSONObject("data");
-        		assertTrue(data.length() > 0);
-        		assertEquals("displayName wrong", myNewDisplayName, data.getString("displayName"));
+        		JsonNode data = top.get("data");
+        		assertTrue(data.size() > 0);
+        		assertEquals("displayName wrong", myNewDisplayName, data.get("displayName"));
 
         	}   
         	
@@ -660,7 +659,7 @@ public class GroupsTest extends BaseWebScriptTest
     		 * Negative test
     		 */
         	{
-        		JSONObject newGroupJSON = new JSONObject();
+                ObjectNode newGroupJSON = AlfrescoDefaultObjectMapper.createObjectNode();
         		newGroupJSON.put("displayName", myNewDisplayName); 
         		sendRequest(new PutRequest(URL_GROUPS + "/" + "rubbish",  newGroupJSON.toString(), "application/json"), Status.STATUS_NOT_FOUND);    
         	}
@@ -684,55 +683,55 @@ public class GroupsTest extends BaseWebScriptTest
     	// Search on partial short name
     	{
 		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?shortNameFilter=" + "ALFRESCO_ADMIN*"), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("length not 1", 1, data.length());
- 			JSONObject authority = data.getJSONObject(0);
-			assertEquals("", ADMIN_GROUP, authority.getString("shortName"));
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("size not 1", 1, data.size());
+ 			JsonNode authority = data.get(0);
+			assertEquals("", ADMIN_GROUP, authority.get("shortName"));
     	}
     	
     	// Search on partial short name with a ?
     	{
 		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?shortNameFilter=" + "ALFRE?CO_ADMIN*"), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("length not 1", 1, data.length());
- 			JSONObject authority = data.getJSONObject(0);
-			assertEquals("", ADMIN_GROUP, authority.getString("shortName"));
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("size not 1", 1, data.size());
+ 			JsonNode authority = data.get(0);
+			assertEquals("", ADMIN_GROUP, authority.get("shortName"));
     	}
     	
     	// Negative test.
     	{
 		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?shortNameFilter=" + "XX?X"), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("length not 0", 0, data.length());
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("size not 0", 0, data.size());
     	}
     	
     	// Search on full shortName
 		{
 		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?shortNameFilter=" + ADMIN_GROUP), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("length not 1", 1, data.length());
- 			JSONObject authority = data.getJSONObject(0);
-			assertEquals("", ADMIN_GROUP, authority.getString("shortName"));
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("size not 1", 1, data.size());
+ 			JsonNode authority = data.get(0);
+			assertEquals("", ADMIN_GROUP, authority.get("shortName"));
 		}
 		
     	// Search on partial short name of a non root group
     	{
 		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?shortNameFilter=" + TEST_GROUPD ), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
 		    //System.out.println(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("length not 1", 1, data.length());
- 			JSONObject authority = data.getJSONObject(0);
-			assertEquals("", TEST_GROUPD, authority.getString("shortName"));
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("size not 1", 1, data.size());
+ 			JsonNode authority = data.get(0);
+			assertEquals("", TEST_GROUPD, authority.get("shortName"));
 
     	}
     	
@@ -740,28 +739,28 @@ public class GroupsTest extends BaseWebScriptTest
     	{
     		String url = URL_GROUPS + "?shortNameFilter=" + TEST_GROUPD + "& zone=" + AuthorityService.ZONE_APP_DEFAULT;
 		    Response response = sendRequest(new GetRequest(url ), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
 		    //System.out.println(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("length not 1", 1, data.length());
- 			JSONObject authority = data.getJSONObject(0);
-			assertEquals("", TEST_GROUPD, authority.getString("shortName"));
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("size not 1", 1, data.size());
+ 			JsonNode authority = data.get(0);
+			assertEquals("", TEST_GROUPD, authority.get("shortName"));
     	}
     	
     	// Search for a group (which is not in the default zone) in all zones
     	{
 		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?shortNameFilter=" + TEST_GROUPE ), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
 		    //System.out.println(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("length not 1", 1, data.length());
- 			JSONObject authority = data.getJSONObject(0);
-			assertEquals("Group E not found", TEST_GROUPE, authority.getString("shortName"));
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("size not 1", 1, data.size());
+ 			JsonNode authority = data.get(0);
+			assertEquals("Group E not found", TEST_GROUPE, authority.get("shortName").textValue());
 			
 			// Double check group E is in the share zone
-			Set<String> zones = authorityService.getAuthorityZones(authority.getString("fullName"));
+			Set<String> zones = authorityService.getAuthorityZones(authority.get("fullName").textValue());
 			assertTrue(zones.contains(AuthorityService.ZONE_APP_SHARE));
     	}
     	
@@ -770,35 +769,35 @@ public class GroupsTest extends BaseWebScriptTest
 //    	// Search for Group E in a specific zone (without name filter)
 //    	{
 //		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?zone=" + AuthorityService.ZONE_APP_SHARE), Status.STATUS_OK);
-//		    JSONObject top = new JSONObject(response.getContentAsString());
+//		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 //		    logger.debug(response.getContentAsString());
 //		    System.out.println(response.getContentAsString());
-//		    JSONArray data = top.getJSONArray("data");
-//		    assertEquals("Can't find any groups in Share zone", 1, data.length());
-// 			JSONObject authority = data.getJSONObject(0);
-//			assertEquals("", TEST_GROUPE, authority.getString("shortName"));
+//		    ArrayNode data = top.get("data");
+//		    assertEquals("Can't find any groups in Share zone", 1, data.size());
+// 			JsonNode authority = data.get(0);
+//			assertEquals("", TEST_GROUPE, authority.get("shortName"));
 //    	}
  
     	// Search for a group in a specifc non default zone
     	{
 		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?shortNameFilter=" + TEST_GROUPE + "&zone=" + AuthorityService.ZONE_APP_SHARE), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
 //		    System.out.println(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("Can't find Group E in Share zone", 1, data.length());
- 			JSONObject authority = data.getJSONObject(0);
-			assertEquals("", TEST_GROUPE, authority.getString("shortName"));
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("Can't find Group E in Share zone", 1, data.size());
+ 			JsonNode authority = data.get(0);
+			assertEquals("", TEST_GROUPE, authority.get("shortName"));
     	}
     	
     	// Negative test Search for a group in a wrong zone
     	{
 		    Response response = sendRequest(new GetRequest(URL_GROUPS + "?shortNameFilter=" + TEST_GROUPE + "&zone=" + "SOME.THING"), Status.STATUS_OK);
-		    JSONObject top = new JSONObject(response.getContentAsString());
+		    JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 		    logger.debug(response.getContentAsString());
 //		    System.out.println(response.getContentAsString());
-		    JSONArray data = top.getJSONArray("data");
-		    assertEquals("length not 0", 0, data.length());
+		    ArrayNode data = (ArrayNode) top.get("data");
+		    assertEquals("size not 0", 0, data.size());
     	}
     	
     
@@ -808,32 +807,32 @@ public class GroupsTest extends BaseWebScriptTest
     {
         createTestTree();
 
-        JSONArray data = getDataArray(URL_GROUPS + "?shortNameFilter=*");
-        int defaultSize = data.length();
+        ArrayNode data = getDataArray(URL_GROUPS + "?shortNameFilter=*");
+        int defaultSize = data.size();
         String firstGroup = data.get(0).toString();
 
         assertTrue("There should be at least 6 groups in default zone!", defaultSize > 5);
 
         // Test maxItems works
         data = getDataArray(URL_GROUPS + "?shortNameFilter=*" +"&maxItems=3");
-        assertEquals("There should only be 3 groups!", 3, data.length());
+        assertEquals("There should only be 3 groups!", 3, data.size());
         assertEquals("The first group should be the same!!", firstGroup, data.get(0).toString());
         
         // Test skipCount works
         data = getDataArray(URL_GROUPS + "?shortNameFilter=*" + "&skipCount=2");
-        assertEquals("The number of groups returned is wrong!", defaultSize-2, data.length());
+        assertEquals("The number of groups returned is wrong!", defaultSize-2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount
         data = getDataArray(URL_GROUPS + "?shortNameFilter=*" +"&skipCount=2&maxItems=3");
-        assertEquals("The number of groups returned is wrong!", 3, data.length());
+        assertEquals("The number of groups returned is wrong!", 3, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount when maxItems is too big.
         // Shoudl return last 2 items.
         int skipCount = defaultSize-2;
         data = getDataArray(URL_GROUPS + "?shortNameFilter=*" + "&skipCount="+skipCount+"&maxItems=5");
-        assertEquals("The number of groups returned is wrong!", 2, data.length());
+        assertEquals("The number of groups returned is wrong!", 2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
     }
     
@@ -841,32 +840,32 @@ public class GroupsTest extends BaseWebScriptTest
     {
         createTestTree();
         
-        JSONArray data = getDataArray(URL_ROOTGROUPS);
-        int defaultSize = data.length();
+        ArrayNode data = getDataArray(URL_ROOTGROUPS);
+        int defaultSize = data.size();
         String firstGroup = data.get(0).toString();
         
         assertTrue("There should be at least 3 groups in default zone!", defaultSize > 2);
         
         // Test maxItems works
         data = getDataArray(URL_ROOTGROUPS + "?maxItems=2");
-        assertEquals("There should only be 2 groups!", 2, data.length());
+        assertEquals("There should only be 2 groups!", 2, data.size());
         assertEquals("The first group should be the same!!", firstGroup, data.get(0).toString());
         
         // Test skipCount works
         data = getDataArray(URL_ROOTGROUPS + "?skipCount=1");
-        assertEquals("The number of groups returned is wrong!", defaultSize-1, data.length());
+        assertEquals("The number of groups returned is wrong!", defaultSize-1, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount
         data = getDataArray(URL_ROOTGROUPS + "?skipCount=1&maxItems=2");
-        assertEquals("The number of groups returned is wrong!", 2, data.length());
+        assertEquals("The number of groups returned is wrong!", 2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount when maxItems is too big.
         // Shoudl return last 2 items.
         int skipCount = defaultSize-1;
         data = getDataArray(URL_ROOTGROUPS + "?skipCount="+skipCount+"&maxItems=5");
-        assertEquals("The number of groups returned is wrong!", 1, data.length());
+        assertEquals("The number of groups returned is wrong!", 1, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
     }
     
@@ -877,62 +876,62 @@ public class GroupsTest extends BaseWebScriptTest
         // Test for immediate parents
         String baseUrl = URL_GROUPS + "/" + TEST_GROUPD + "/parents";
         
-        JSONArray data = getDataArray(baseUrl);
-        int defaultSize = data.length();
+        ArrayNode data = getDataArray(baseUrl);
+        int defaultSize = data.size();
         String firstGroup = data.get(0).toString();
 
         assertEquals("There should be at least 3 groups in default zone!", 3, defaultSize);
 
         // Test maxItems works
         data = getDataArray(baseUrl +"?maxItems=2");
-        assertEquals("There should only be 2 groups!", 2, data.length());
+        assertEquals("There should only be 2 groups!", 2, data.size());
         assertEquals("The first group should be the same!!", firstGroup, data.get(0).toString());
         
         // Test skipCount works
         data = getDataArray(baseUrl + "?skipCount=1");
-        assertEquals("The number of groups returned is wrong!", 2, data.length());
+        assertEquals("The number of groups returned is wrong!", 2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount
         data = getDataArray(baseUrl + "?skipCount=1&maxItems=1");
-        assertEquals("The number of groups returned is wrong!", 1, data.length());
+        assertEquals("The number of groups returned is wrong!", 1, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount when maxItems is too big.
         // Should return last 2 items.
         data = getDataArray(baseUrl + "?skipCount=1&maxItems=5");
-        assertEquals("The number of groups returned is wrong!", 2, data.length());
+        assertEquals("The number of groups returned is wrong!", 2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
 
         //Test for ALL parents
         baseUrl = URL_GROUPS + "/" + TEST_GROUPD + "/parents?level=ALL";
         
         data = getDataArray(baseUrl);
-        defaultSize = data.length();
+        defaultSize = data.size();
         firstGroup = data.get(0).toString();
         
         assertTrue("There should be at least 3 groups in default zone!", defaultSize > 2);
         
         // Test maxItems works
         data = getDataArray(baseUrl +"&maxItems=2");
-        assertEquals("There should only be 2 groups!", 2, data.length());
+        assertEquals("There should only be 2 groups!", 2, data.size());
         assertEquals("The first group should be the same!!", firstGroup, data.get(0).toString());
         
         // Test skipCount works
         data = getDataArray(baseUrl + "&skipCount=1");
-        assertEquals("The number of groups returned is wrong!", defaultSize-1, data.length());
+        assertEquals("The number of groups returned is wrong!", defaultSize-1, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount
         data = getDataArray(baseUrl + "&skipCount=1&maxItems=2");
-        assertEquals("The number of groups returned is wrong!", 2, data.length());
+        assertEquals("The number of groups returned is wrong!", 2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount when maxItems is too big.
         // Shoudl return last 2 items.
         int skipCount = defaultSize-2;
         data = getDataArray(baseUrl + "&skipCount="+skipCount+"&maxItems=5");
-        assertEquals("The number of groups returned is wrong!", 2, data.length());
+        assertEquals("The number of groups returned is wrong!", 2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
     }
 
@@ -943,39 +942,39 @@ public class GroupsTest extends BaseWebScriptTest
         // Test for immediate parents
         String baseUrl = URL_GROUPS + "/" + TEST_ROOTGROUP + "/children?authorityType=GROUP";
         
-        JSONArray data = getDataArray(baseUrl);
-        int defaultSize = data.length();
+        ArrayNode data = getDataArray(baseUrl);
+        int defaultSize = data.size();
         String firstGroup = data.get(0).toString();
         
         assertEquals("There should be 6 groups in default zone!", 6, defaultSize);
         
         // Test maxItems works
         data = getDataArray(baseUrl +"&maxItems=2");
-        assertEquals("There should only be 3 groups!", 2, data.length());
+        assertEquals("There should only be 3 groups!", 2, data.size());
         assertEquals("The first group should be the same!!", firstGroup, data.get(0).toString());
         
         // Test skipCount works
         data = getDataArray(baseUrl + "&skipCount=2");
-        assertEquals("The number of groups returned is wrong!", 4, data.length());
+        assertEquals("The number of groups returned is wrong!", 4, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount
         data = getDataArray(baseUrl + "&skipCount=2&maxItems=2");
-        assertEquals("The number of groups returned is wrong!", 2, data.length());
+        assertEquals("The number of groups returned is wrong!", 2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
         
         // Test maxItems and skipCount when maxItems is too big.
         // Shoudl return last 2 items.
         data = getDataArray(baseUrl + "&skipCount=4&maxItems=5");
-        assertEquals("The number of groups returned is wrong!", 2, data.length());
+        assertEquals("The number of groups returned is wrong!", 2, data.size());
         assertFalse("The first group should not be the same!!", firstGroup.equals(data.get(0).toString()));
     }
 
-    private JSONArray getDataArray(String url) throws IOException, JSONException, UnsupportedEncodingException
+    private ArrayNode getDataArray(String url) throws IOException
     {
         Response response = sendRequest(new GetRequest(url), Status.STATUS_OK);
-        JSONObject top = new JSONObject(response.getContentAsString());
-        JSONArray data = top.getJSONArray("data");
+        JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        ArrayNode data = (ArrayNode) top.get("data");
         return data;
     }
     /**
@@ -990,11 +989,11 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + ADMIN_GROUP + "/parents"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
+    		ArrayNode data = (ArrayNode) top.get("data");
     		// Top level group has no parents
-    		assertTrue("top level group has no parents", data.length() == 0);
+    		assertTrue("top level group has no parents", data.size() == 0);
     	}
     	
     	/**
@@ -1002,10 +1001,10 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_GROUPB + "/parents"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
-    		assertTrue(data.length() > 0);
+    		ArrayNode data = (ArrayNode) top.get("data");
+    		assertTrue(data.size() > 0);
     	}
     	
        	/**
@@ -1013,10 +1012,10 @@ public class GroupsTest extends BaseWebScriptTest
     	 */
     	{
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_GROUPD + "/parents?level=ALL"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
-    		assertTrue(data.length() >= 2);
+    		ArrayNode data = (ArrayNode) top.get("data");
+    		assertTrue(data.size() >= 2);
     	}
 
 // TODO parents script does not have zone parameter    	
@@ -1025,10 +1024,10 @@ public class GroupsTest extends BaseWebScriptTest
 //    	 */
 //    	{
 //    		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_GROUPE + "/parents?level=ALL"), Status.STATUS_OK);
-//    		JSONObject top = new JSONObject(response.getContentAsString());
+//    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 //    		logger.debug(response.getContentAsString());
-//    		JSONArray data = top.getJSONArray("data");
-//    		assertTrue(data.length() >= 2);
+//    		ArrayNode data = top.get("data");
+//    		assertTrue(data.size() >= 2);
 //    	}
     	
       	/**
@@ -1060,35 +1059,35 @@ public class GroupsTest extends BaseWebScriptTest
     	{
     		logger.debug("Get all children of GROUP B");
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_GROUPB + "/children"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
-    		assertTrue(data.length() > 0);
+    		ArrayNode data = (ArrayNode) top.get("data");
+    		assertTrue(data.size() > 0);
     		boolean gotGroupD = false;
     		boolean gotGroupE = false;
     		boolean gotUserTwo = false;
     		boolean gotUserThree = false;
-      		for(int i = 0; i < data.length(); i++)
+      		for(int i = 0; i < data.size(); i++)
     		{
-    			JSONObject authority = data.getJSONObject(i);
-    			if(authority.getString("shortName").equals(TEST_GROUPD))
+    			JsonNode authority = data.get(i);
+    			if(authority.get("shortName").equals(TEST_GROUPD))
     			{
     				gotGroupD = true;
     			}
-    			if(authority.getString("shortName").equals(TEST_GROUPE))
+    			if(authority.get("shortName").equals(TEST_GROUPE))
     			{
     				gotGroupE = true;
     			}
-    			if(authority.getString("shortName").equals(USER_TWO))
+    			if(authority.get("shortName").equals(USER_TWO))
     			{
     				gotUserTwo = true;
     			}
-    			if(authority.getString("shortName").equals(USER_THREE))
+    			if(authority.get("shortName").equals(USER_THREE))
     			{
     				gotUserThree = true;
     			}
     		}
-      		assertEquals("4 groups not returned", 4, data.length());
+      		assertEquals("4 groups not returned", 4, data.size());
       		assertTrue("not got group D", gotGroupD);
       		assertTrue("not got group E", gotGroupE);
       		assertTrue("not got user two", gotUserTwo);
@@ -1102,38 +1101,38 @@ public class GroupsTest extends BaseWebScriptTest
     	{
     		logger.debug("Get child GROUPS of GROUP B");
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_GROUPB + "/children?authorityType=GROUP"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
-    		assertTrue("no child groups of group B", data.length() > 1 );
+    		ArrayNode data = (ArrayNode) top.get("data");
+    		assertTrue("no child groups of group B", data.size() > 1 );
     		
     		boolean gotGroupD = false;
     		boolean gotGroupE = false;
-    		JSONObject subGroup = data.getJSONObject(0);
-      		for(int i = 0; i < data.length(); i++)
+    		JsonNode subGroup = data.get(0);
+      		for(int i = 0; i < data.size(); i++)
     		{
-      			JSONObject authority = data.getJSONObject(i);
-    			if(authority.getString("shortName").equals(TEST_GROUPD))
+      			JsonNode authority = data.get(i);
+    			if(authority.get("shortName").equals(TEST_GROUPD))
     			{
     				gotGroupD = true;
     			}
-    			else if(authority.getString("shortName").equals(TEST_GROUPE))
+    			else if(authority.get("shortName").equals(TEST_GROUPE))
     			{
     				gotGroupE = true;
     			}
     			else
     			{
-    				fail("unexpected authority returned:" + authority.getString("shortName"));
+    				fail("unexpected authority returned:" + authority.get("shortName"));
     			}
     		}
       		assertTrue("not got group D", gotGroupD);
       		assertTrue("not got group E", gotGroupE);
       		
-    		assertEquals("authorityType wrong", "GROUP", subGroup.getString("authorityType"));
-      		for(int i = 0; i < data.length(); i++)
+    		assertEquals("authorityType wrong", "GROUP", subGroup.get("authorityType"));
+      		for(int i = 0; i < data.size(); i++)
     		{
-      			JSONObject authority = data.getJSONObject(i);
-      			assertEquals("authorityType wrong", "GROUP", authority.getString("authorityType"));      			
+      			JsonNode authority = data.get(i);
+      			assertEquals("authorityType wrong", "GROUP", authority.get("authorityType"));      			
     		}
     	}
     	
@@ -1143,14 +1142,14 @@ public class GroupsTest extends BaseWebScriptTest
     	{
     		logger.debug("Get Child Users of Group B");
     		Response response = sendRequest(new GetRequest(URL_GROUPS + "/" + TEST_GROUPB + "/children?authorityType=USER"), Status.STATUS_OK);
-    		JSONObject top = new JSONObject(response.getContentAsString());
+    		JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     		logger.debug(response.getContentAsString());
-    		JSONArray data = top.getJSONArray("data");
-    		assertTrue(data.length() > 1);
-      		for(int i = 0; i < data.length(); i++)
+    		ArrayNode data = (ArrayNode) top.get("data");
+    		assertTrue(data.size() > 1);
+      		for(int i = 0; i < data.size(); i++)
     		{
-      			JSONObject authority = data.getJSONObject(i);
-      			assertEquals("authorityType wrong", "USER", authority.getString("authorityType"));      			
+      			JsonNode authority = data.get(i);
+      			assertEquals("authorityType wrong", "USER", authority.get("authorityType"));      			
     		}
     	}
     	

@@ -25,13 +25,15 @@
  */
 package org.alfresco.repo.web.scripts;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
@@ -154,9 +156,9 @@ public class LoginTest extends BaseWebScriptTest
     	 */
         String loginURL = "/api/login.json?u=" + USER_ONE + "&pw=" + USER_ONE ;
     	Response resp = sendRequest(new GetRequest(loginURL), Status.STATUS_OK);
-    	JSONObject result = new JSONObject(resp.getContentAsString());
-    	JSONObject data = result.getJSONObject("data");
-    	String ticket = data.getString("ticket");
+    	JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(resp.getContentAsString());
+    	JsonNode data = result.get("data");
+    	String ticket = data.get("ticket").textValue();
     	assertNotNull("ticket is null", ticket);
     	
     	/**
@@ -164,9 +166,9 @@ public class LoginTest extends BaseWebScriptTest
     	 */
         String login2URL = "/api/login?u=" + USER_ONE + "&pw=" + USER_ONE + "&format=json";
     	Response resp2 = sendRequest(new GetRequest(login2URL), Status.STATUS_OK);
-    	JSONObject result2 = new JSONObject(resp2.getContentAsString());
-    	JSONObject data2 = result2.getJSONObject("data");
-    	String ticket2 = data2.getString("ticket");
+    	JsonNode result2 = AlfrescoDefaultObjectMapper.getReader().readTree(resp2.getContentAsString());
+    	JsonNode data2 = result2.get("data");
+    	String ticket2 = data2.get("ticket").textValue();
     	assertNotNull("ticket is null", ticket2);
     	
     }
@@ -182,14 +184,14 @@ public class LoginTest extends BaseWebScriptTest
          * logon via POST and JSON
          */
         {
-        JSONObject req = new JSONObject();
+        ObjectNode req = AlfrescoDefaultObjectMapper.createObjectNode();
         req.put("username", USER_ONE);
         req.put("password", USER_ONE);
         Response response = sendRequest(new PostRequest(loginURL, req.toString(), "application/json"), Status.STATUS_OK); 
         
-        JSONObject result = new JSONObject(response.getContentAsString());
-        JSONObject data = result.getJSONObject("data");
-        String ticket = data.getString("ticket");
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        JsonNode data = result.get("data");
+        String ticket = data.get("ticket").textValue();
         assertNotNull("ticket null", ticket);	
         }     
         
@@ -197,7 +199,7 @@ public class LoginTest extends BaseWebScriptTest
          * Negative test - wrong password
          */
         {
-            JSONObject req = new JSONObject();
+            ObjectNode req = AlfrescoDefaultObjectMapper.createObjectNode();
             req.put("username", USER_ONE);
             req.put("password", "blurb");
             sendRequest(new PostRequest(loginURL, req.toString(), "application/json"), Status.STATUS_FORBIDDEN); 
@@ -206,7 +208,7 @@ public class LoginTest extends BaseWebScriptTest
          * Negative test - missing username
          */
         {
-            JSONObject req = new JSONObject();
+            ObjectNode req = AlfrescoDefaultObjectMapper.createObjectNode();
             req.put("password", USER_ONE);
             sendRequest(new PostRequest(loginURL, req.toString(), "application/json"), Status.STATUS_BAD_REQUEST); 
         }
@@ -215,7 +217,7 @@ public class LoginTest extends BaseWebScriptTest
          * Negative test - missing password
          */
         {
-            JSONObject req = new JSONObject();
+            ObjectNode req = AlfrescoDefaultObjectMapper.createObjectNode();
             req.put("username", USER_ONE);
             sendRequest(new PostRequest(loginURL, req.toString(), "application/json"), Status.STATUS_BAD_REQUEST); 
         }

@@ -27,12 +27,16 @@ package org.alfresco.rest.api.tests.client.data;
 
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.alfresco.service.cmr.repository.NodeRef;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.JsonUtil;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class Activity implements Serializable, ExpectedComparison
 {
@@ -104,24 +108,24 @@ public class Activity implements Serializable, ExpectedComparison
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Activity parseActivity(JSONObject jsonObject)
+	public static Activity parseActivity(JsonNode jsonObject) throws IOException
 	{
-		Long id = (Long)jsonObject.get("id");
-		String networkId = (String)jsonObject.get("networkId");
-		String siteId = (String)jsonObject.get("siteId");
-		String feedPersonId = (String)jsonObject.get("feedPersonId");
-		String postPersonId = (String)jsonObject.get("postPersonId");
-		String postedAt = (String)jsonObject.get("postedAt");
-		String activityType = (String)jsonObject.get("activityType");
-		JSONObject summary = (JSONObject)jsonObject.get("activitySummary");
+		Long id = jsonObject.get("id").longValue();
+		String networkId = jsonObject.get("networkId").textValue();
+		String siteId = jsonObject.get("siteId").textValue();
+		String feedPersonId = jsonObject.get("feedPersonId").textValue();
+		String postPersonId = jsonObject.get("postPersonId").textValue();
+		String postedAt = jsonObject.get("postedAt").textValue();
+		String activityType = jsonObject.get("activityType").textValue();
+		Map<String, Object> summary = JsonUtil.convertJSONObjectToMap((ObjectNode) jsonObject.get("activitySummary"));
 		Activity activity = new Activity(id, networkId, siteId, feedPersonId, postPersonId, postedAt, activityType, summary);
 		return activity;
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject jsonObject = new JSONObject();
+		ObjectNode jsonObject = AlfrescoDefaultObjectMapper.createObjectNode();
 		jsonObject.put("id", String.valueOf(getId()));
 		jsonObject.put("networkId", getNetworkId());
 		jsonObject.put("siteId", getSiteId());
@@ -129,7 +133,7 @@ public class Activity implements Serializable, ExpectedComparison
 		jsonObject.put("postPersonId", getPostPersonId());
 		jsonObject.put("postedAt", getPostedAt());
 		jsonObject.put("activityType", getActivityType());
-		jsonObject.put("activitySummary", getSummary());
+		jsonObject.set("activitySummary", AlfrescoDefaultObjectMapper.convertValue(getSummary(), JsonNode.class));
 		return jsonObject;
 	}
 
@@ -176,13 +180,13 @@ public class Activity implements Serializable, ExpectedComparison
 		AssertUtil.assertEquals("summary", summary, other.getSummary());
 	}
 
-	public static Map<String, Object> getActivitySummary(JSONObject activitySummary, String activityType)
+	public static Map<String, Object> getActivitySummary(JsonNode activitySummary, String activityType)
 	{
 		Map<String, Object> summary = new HashMap<String, Object>();
 
 		if(activityType.equals("org.alfresco.documentlibrary.file-added"))
 		{
-			String nodeRefStr = (String)activitySummary.remove("nodeRef");
+			String nodeRefStr = (((ObjectNode) activitySummary).remove("nodeRef")).textValue();
 			if(NodeRef.isNodeRef(nodeRefStr))
 			{
 				summary.put("objectId", new NodeRef(nodeRefStr).getId());
@@ -191,7 +195,7 @@ public class Activity implements Serializable, ExpectedComparison
 			{
 				throw new RuntimeException("nodeRef " + nodeRefStr + " in activity feed is not a valid NodeRef");
 			}
-			String parentNodeRefStr = (String)activitySummary.remove("parentNodeRef");
+			String parentNodeRefStr = (((ObjectNode) activitySummary).remove("parentNodeRef")).textValue();
 			if(NodeRef.isNodeRef(parentNodeRefStr))
 			{
 				summary.put("parentObjectId", new NodeRef(parentNodeRefStr).getId());

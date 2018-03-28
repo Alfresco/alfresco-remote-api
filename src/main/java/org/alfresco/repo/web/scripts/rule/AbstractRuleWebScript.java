@@ -25,10 +25,13 @@
  */
 package org.alfresco.repo.web.scripts.rule;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -56,9 +59,6 @@ import org.alfresco.service.cmr.rule.RuleService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.GUID;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -173,41 +173,43 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
         return nodeRef;
     }
 
-    protected Rule parseJsonRule(JSONObject jsonRule) throws JSONException
+    protected Rule parseJsonRule(JsonNode jsonRule)
     {
         Rule result = new Rule();
 
-        if (jsonRule.has("title") == false || jsonRule.getString("title").length() == 0)
+        if (jsonRule.has("title") == false || jsonRule.get("title").textValue().length() == 0)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Title missing when creating rule");
         }
 
-        result.setTitle(jsonRule.getString("title"));
+        result.setTitle(jsonRule.get("title").textValue());
 
-        result.setDescription(jsonRule.has("description") ? jsonRule.getString("description") : "");
+        result.setDescription(jsonRule.has("description") ? jsonRule.get("description").textValue() : "");
 
-        if (jsonRule.has("ruleType") == false || jsonRule.getJSONArray("ruleType").length() == 0)
+        if (jsonRule.has("ruleType") == false || jsonRule.get("ruleType").size() == 0)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Rule type missing when creating rule");
         }
 
-        JSONArray types = jsonRule.getJSONArray("ruleType");
+        ArrayNode types = (ArrayNode) jsonRule.get("ruleType");
         List<String> ruleTypes = new ArrayList<String>();
 
-        for (int i = 0; i < types.length(); i++)
+        for (int i = 0; i < types.size(); i++)
         {
-            ruleTypes.add(types.getString(i));
+            ruleTypes.add(types.get(i).textValue());
         }
 
         result.setRuleTypes(ruleTypes);
 
-        result.applyToChildren(jsonRule.has("applyToChildren") ? jsonRule.getBoolean("applyToChildren") : false);
+        result.applyToChildren(jsonRule.has("applyToChildren") ?
+                jsonRule.get("applyToChildren").booleanValue() : false);
 
-        result.setExecuteAsynchronously(jsonRule.has("executeAsynchronously") ? jsonRule.getBoolean("executeAsynchronously") : false);
+        result.setExecuteAsynchronously(jsonRule.has("executeAsynchronously") ?
+                jsonRule.get("executeAsynchronously").booleanValue() : false);
 
-        result.setRuleDisabled(jsonRule.has("disabled") ? jsonRule.getBoolean("disabled") : false);
+        result.setRuleDisabled(jsonRule.has("disabled") ? jsonRule.get("disabled").booleanValue() : false);
 
-        JSONObject jsonAction = jsonRule.getJSONObject("action");
+        JsonNode jsonAction = jsonRule.get("action");
 
         // parse action object
         Action ruleAction = parseJsonAction(jsonAction);
@@ -217,61 +219,61 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
         return result;
     }
 
-    protected ActionImpl parseJsonAction(JSONObject jsonAction) throws JSONException
+    protected ActionImpl parseJsonAction(JsonNode jsonAction)
     {
         ActionImpl result = null;
 
-        String actionId = jsonAction.has("id") ? jsonAction.getString("id") : GUID.generate();
+        String actionId = jsonAction.has("id") ? jsonAction.get("id").textValue() : GUID.generate();
 
-        if (jsonAction.getString("actionDefinitionName").equalsIgnoreCase("composite-action"))
+        if (jsonAction.get("actionDefinitionName").textValue().equalsIgnoreCase("composite-action"))
         {
             result = new CompositeActionImpl(null, actionId);
         }
         else
         {
-            result = new ActionImpl(null, actionId, jsonAction.getString("actionDefinitionName"));
+            result = new ActionImpl(null, actionId, jsonAction.get("actionDefinitionName").textValue());
         }
 
         // Post Action Queue parameter
         if (jsonAction.has("actionedUponNode"))
         {
-            NodeRef actionedUponNode = new NodeRef(jsonAction.getString("actionedUponNode"));
+            NodeRef actionedUponNode = new NodeRef(jsonAction.get("actionedUponNode").textValue());
             result.setNodeRef(actionedUponNode);
         }
 
         if (jsonAction.has("description"))
         {
-            result.setDescription(jsonAction.getString("description"));
+            result.setDescription(jsonAction.get("description").textValue());
         }
 
         if (jsonAction.has("title"))
         {
-            result.setTitle(jsonAction.getString("title"));
+            result.setTitle(jsonAction.get("title").textValue());
         }
 
         if (jsonAction.has("parameterValues"))
         {
-            JSONObject jsonParameterValues = jsonAction.getJSONObject("parameterValues");
+            JsonNode jsonParameterValues = jsonAction.get("parameterValues");
             result.setParameterValues(parseJsonParameterValues(jsonParameterValues, result.getActionDefinitionName(), true));
         }
 
         if (jsonAction.has("executeAsync"))
         {
-            result.setExecuteAsynchronously(jsonAction.getBoolean("executeAsync"));
+            result.setExecuteAsynchronously(jsonAction.get("executeAsync").booleanValue());
         }
 
         if (jsonAction.has("runAsUser"))
         {
-            result.setRunAsUser(jsonAction.getString("runAsUser"));
+            result.setRunAsUser(jsonAction.get("runAsUser").textValue());
         }
 
         if (jsonAction.has("actions"))
         {
-            JSONArray jsonActions = jsonAction.getJSONArray("actions");
+            ArrayNode jsonActions = (ArrayNode) jsonAction.get("actions");
 
-            for (int i = 0; i < jsonActions.length(); i++)
+            for (int i = 0; i < jsonActions.size(); i++)
             {
-                JSONObject innerJsonAction = jsonActions.getJSONObject(i);
+                JsonNode innerJsonAction = jsonActions.get(i);
 
                 Action innerAction = parseJsonAction(innerJsonAction);
 
@@ -282,11 +284,11 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
 
         if (jsonAction.has("conditions"))
         {
-            JSONArray jsonConditions = jsonAction.getJSONArray("conditions");
+            ArrayNode jsonConditions = (ArrayNode) jsonAction.get("conditions");
 
-            for (int i = 0; i < jsonConditions.length(); i++)
+            for (int i = 0; i < jsonConditions.size(); i++)
             {
-                JSONObject jsonCondition = jsonConditions.getJSONObject(i);
+                JsonNode jsonCondition = jsonConditions.get(i);
 
                 // parse action conditions
                 ActionCondition actionCondition = parseJsonActionCondition(jsonCondition);
@@ -297,27 +299,27 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
 
         if (jsonAction.has("compensatingAction"))
         {
-            Action compensatingAction = parseJsonAction(jsonAction.getJSONObject("compensatingAction"));
+            Action compensatingAction = parseJsonAction(jsonAction.get("compensatingAction"));
             result.setCompensatingAction(compensatingAction);
         }
 
         return result;
     }
 
-    protected ActionConditionImpl parseJsonActionCondition(JSONObject jsonActionCondition) throws JSONException
+    protected ActionConditionImpl parseJsonActionCondition(JsonNode jsonActionCondition)
     {
-        String id = jsonActionCondition.has("id") ? jsonActionCondition.getString("id") : GUID.generate();
+        String id = jsonActionCondition.has("id") ? jsonActionCondition.get("id").textValue() : GUID.generate();
 
-        ActionConditionImpl result = new ActionConditionImpl(id, jsonActionCondition.getString("conditionDefinitionName"));
+        ActionConditionImpl result = new ActionConditionImpl(id, jsonActionCondition.get("conditionDefinitionName").textValue());
 
         if (jsonActionCondition.has("invertCondition"))
         {
-            result.setInvertCondition(jsonActionCondition.getBoolean("invertCondition"));
+            result.setInvertCondition(jsonActionCondition.get("invertCondition").booleanValue());
         }
 
         if (jsonActionCondition.has("parameterValues"))
         {
-            JSONObject jsonParameterValues = jsonActionCondition.getJSONObject("parameterValues");
+            JsonNode jsonParameterValues = jsonActionCondition.get("parameterValues");
 
             result.setParameterValues(parseJsonParameterValues(jsonParameterValues, result.getActionConditionDefinitionName(), false));
         }
@@ -325,13 +327,12 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
         return result;
     }
 
-    protected Map<String, Serializable> parseJsonParameterValues(JSONObject jsonParameterValues, String name, boolean isAction) throws JSONException
+    protected Map<String, Serializable> parseJsonParameterValues(JsonNode jsonParameterValues, String name, boolean isAction)
     {
         Map<String, Serializable> parameterValues = new HashMap<String, Serializable>();
 
-        // get parameters names
-        JSONArray names = jsonParameterValues.names();
-        if (names == null)
+        Iterator<Map.Entry<String,JsonNode>> parametersIterator = jsonParameterValues.fields();
+        if (jsonParameterValues.size() == 0)
         {
             return null;
         }
@@ -351,10 +352,11 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
             throw new AlfrescoRuntimeException("Could not find defintion for action/condition " + name);
         }
 
-        for (int i = 0; i < names.length(); i++)
+        while (parametersIterator.hasNext())
         {
-            String propertyName = names.getString(i);
-            Object propertyValue = jsonParameterValues.get(propertyName);
+            Map.Entry<String,JsonNode> parameter = parametersIterator.next();
+            String propertyName = parameter.getKey();
+            Object propertyValue = parameter.getValue();
             
             // Get the parameter definition we care about
             ParameterDefinition paramDef = definition.getParameterDefintion(propertyName);
@@ -381,7 +383,7 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
         return parameterValues;
     }
     
-    private Serializable convertValue(QName typeQName, Object propertyValue) throws JSONException
+    private Serializable convertValue(QName typeQName, Object propertyValue)
     {        
         Serializable value = null;
         
@@ -391,7 +393,7 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
             throw new AlfrescoRuntimeException("Action property type definition " + typeQName.toPrefixString() + " is unknown.");
         }
         
-        if (propertyValue instanceof JSONArray)
+        if (propertyValue instanceof ArrayNode)
         {
             // Convert property type to java class
             Class<?> javaClass = null;
@@ -406,11 +408,11 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
                 throw new DictionaryException("Java class " + javaClassName + " of property type " + typeDef.getName() + " is invalid", e);
             }
             
-            int length = ((JSONArray)propertyValue).length();
+            int length = ((ArrayNode)propertyValue).size();
             List<Serializable> list = new ArrayList<Serializable>(length);
             for (int i = 0; i < length; i++)
             {
-                list.add(convertValue(typeQName, ((JSONArray)propertyValue).get(i)));
+                list.add(convertValue(typeQName, ((ArrayNode)propertyValue).get(i)));
             }
             value = (Serializable)list;
         }

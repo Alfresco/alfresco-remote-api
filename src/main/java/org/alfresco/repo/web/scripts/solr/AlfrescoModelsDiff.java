@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.solr;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -33,11 +35,9 @@ import java.util.Map;
 import org.alfresco.repo.solr.AlfrescoModelDiff;
 import org.alfresco.repo.solr.SOLRTrackingComponent;
 import org.alfresco.service.namespace.QName;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -80,11 +80,6 @@ public class AlfrescoModelsDiff extends DeclarativeWebScript
             setExceptionResponse(req, status, MSG_IO_EXCEPTION, Status.STATUS_INTERNAL_SERVER_ERROR, e);
             return null;
         }
-        catch (JSONException e)
-        {
-            setExceptionResponse(req, status, MSG_JSON_EXCEPTION, Status.STATUS_BAD_REQUEST, e);
-            return null;
-        }
     }
 
     private void setExceptionResponse(WebScriptRequest req, Status responseStatus, String responseMessage, int statusCode, Exception e)
@@ -104,7 +99,7 @@ public class AlfrescoModelsDiff extends DeclarativeWebScript
         responseStatus.setException(e);
     }
 
-    private Map<String, Object> buildModel(WebScriptRequest req) throws JSONException, IOException
+    private Map<String, Object> buildModel(WebScriptRequest req) throws IOException
     {
         Map<String, Object> model = new HashMap<String, Object>(1, 1.0f);
 
@@ -113,13 +108,13 @@ public class AlfrescoModelsDiff extends DeclarativeWebScript
         {
             throw new WebScriptException("Failed to convert request to String");
         }
-        JSONObject o = new JSONObject(content.getContent());
-        JSONArray jsonModels = o.getJSONArray("models");
-        Map<QName, Long> models = new HashMap<QName, Long>(jsonModels.length());
-        for(int i = 0; i < jsonModels.length(); i++)
+        JsonNode o = AlfrescoDefaultObjectMapper.getReader().readTree(content.getContent());
+        ArrayNode jsonModels = (ArrayNode) o.get("models");
+        Map<QName, Long> models = new HashMap<QName, Long>(jsonModels.size());
+        for(int i = 0; i < jsonModels.size(); i++)
         {
-            JSONObject jsonModel = jsonModels.getJSONObject(i);
-            models.put(QName.createQName(jsonModel.getString("name")), jsonModel.getLong("checksum"));
+            JsonNode jsonModel = jsonModels.get(i);
+            models.put(QName.createQName(jsonModel.get("name").textValue()), jsonModel.get("checksum").longValue());
         }
 
         List<AlfrescoModelDiff> diffs = solrTrackingComponent.getModelDiffs(models);

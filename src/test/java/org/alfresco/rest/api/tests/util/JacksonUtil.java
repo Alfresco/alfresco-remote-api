@@ -26,15 +26,15 @@
 
 package org.alfresco.rest.api.tests.util;
 
-import static org.junit.Assert.assertNotNull;
-import org.alfresco.rest.framework.jacksonextensions.JacksonHelper;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import org.alfresco.rest.framework.jacksonextensions.JacksonHelper;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Jamal Kaabi-Mofrad
@@ -48,22 +48,23 @@ public class JacksonUtil
         this.jsonHelper = jsonHelper;
     }
 
-    public <T> List<T> parseEntries(JSONObject jsonObject, Class<T> clazz) throws IOException
+    public <T> List<T> parseEntries(JsonNode jsonObject, Class<T> clazz)
     {
         assertNotNull(jsonObject);
         assertNotNull(clazz);
 
         List<T> models = new ArrayList<>();
 
-        JSONObject jsonList = (JSONObject) jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
 
-        JSONArray jsonEntries = (JSONArray) jsonList.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
         assertNotNull(jsonEntries);
 
-        for (Object entry : jsonEntries)
+        Iterator<JsonNode> iterator = jsonEntries.elements();
+        while (iterator.hasNext())
         {
-            JSONObject jsonEntry = (JSONObject) entry;
+            JsonNode jsonEntry = iterator.next();
             T pojoModel = parseEntry(jsonEntry, clazz);
             models.add(pojoModel);
         }
@@ -71,13 +72,13 @@ public class JacksonUtil
         return models;
     }
 
-    public <T> T parseEntry(JSONObject jsonObject, Class<T> clazz) throws IOException
+    public <T> T parseEntry(JsonNode jsonObject, Class<T> clazz)
     {
         assertNotNull(jsonObject);
         assertNotNull(clazz);
 
-        JSONObject entry = (JSONObject) jsonObject.get("entry");
-        T pojoModel = jsonHelper.construct(new StringReader(entry.toJSONString()), clazz);
+        JsonNode entry = jsonObject.get("entry");
+        T pojoModel = jsonHelper.construct(new StringReader(entry.toString()), clazz);
         assertNotNull(pojoModel);
 
         return pojoModel;

@@ -28,14 +28,16 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class Tag implements Serializable, ExpectedComparison, Comparable<Tag>
 {
@@ -103,28 +105,28 @@ public class Tag implements Serializable, ExpectedComparison, Comparable<Tag>
 				+ "]";
 	}
 
-	public static Tag parseTag(String nodeId, JSONObject jsonObject)
+	public static Tag parseTag(String nodeId, JsonNode jsonObject)
 	{
-		String id = (String)jsonObject.get("id");
-		String value = (String)jsonObject.get("tag");
+		String id = jsonObject.get("id").textValue();
+		String value = jsonObject.get("tag").textValue();
 		Tag tag = new Tag(nodeId, id, value);
 		return tag;
 	}
 	
-	public static ListResponse<Tag> parseTags(String nodeId, JSONObject jsonObject)
+	public static ListResponse<Tag> parseTags(String nodeId, JsonNode jsonObject)
 	{
 		List<Tag> tags = new ArrayList<Tag>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+			JsonNode jsonEntry = jsonEntries.get(i);
+            JsonNode entry = jsonEntry.get("entry");
 			tags.add(parseTag(nodeId, entry));
 		}
 		
@@ -134,9 +136,9 @@ public class Tag implements Serializable, ExpectedComparison, Comparable<Tag>
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject entry = new JSONObject();
+        ObjectNode entry = AlfrescoDefaultObjectMapper.createObjectNode();
 //		entry.put("id", getId());
 		entry.put("tag", getTag());
 		return entry;

@@ -28,13 +28,15 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class PersonNetwork implements Network, Comparable<PersonNetwork>, ExpectedComparison
 {
@@ -70,27 +72,27 @@ public class PersonNetwork implements Network, Comparable<PersonNetwork>, Expect
 		return network;
 	}
 	
-	public static PersonNetwork parseNetworkMember(JSONObject jsonObject)
+	public static PersonNetwork parseNetworkMember(JsonNode jsonObject)
 	{
-		Boolean homeNetwork = (Boolean)jsonObject.get("homeNetwork");
+		Boolean homeNetwork = jsonObject.get("homeNetwork").booleanValue();
 		PersonNetwork networkMember = new PersonNetwork(homeNetwork, NetworkImpl.parseNetwork(jsonObject));
 		return networkMember;
 	}
 	
-	public static ListResponse<PersonNetwork> parseNetworkMembers(JSONObject jsonObject)
+	public static ListResponse<PersonNetwork> parseNetworkMembers(JsonNode jsonObject)
 	{
 		List<PersonNetwork> networkMembers = new ArrayList<PersonNetwork>();
 
-		JSONObject jsonList = (JSONObject)jsonObject.get("list");
+		JsonNode jsonList = jsonObject.get("list");
 		assertNotNull(jsonList);
 
-		JSONArray jsonEntries = (JSONArray)jsonList.get("entries");
+		ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
 		assertNotNull(jsonEntries);
 
 		for(int i = 0; i < jsonEntries.size(); i++)
 		{
-			JSONObject jsonEntry = (JSONObject)jsonEntries.get(i);
-			JSONObject entry = (JSONObject)jsonEntry.get("entry");
+			JsonNode jsonEntry = jsonEntries.get(i);
+			JsonNode entry = jsonEntry.get("entry");
 			networkMembers.add(PersonNetwork.parseNetworkMember(entry));
 		}
 
@@ -107,12 +109,12 @@ public class PersonNetwork implements Network, Comparable<PersonNetwork>, Expect
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject networkMemberJson = new JSONObject();
+        ObjectNode networkMemberJson = AlfrescoDefaultObjectMapper.createObjectNode();
 		networkMemberJson.put("id", getId());
 		networkMemberJson.put("homeNetwork", isHomeNetwork());
-		networkMemberJson.put("network", getNetwork());
+		networkMemberJson.put("network", AlfrescoDefaultObjectMapper.convertValue(getNetwork(), ObjectNode.class));
 		return networkMemberJson;
 	}
 	

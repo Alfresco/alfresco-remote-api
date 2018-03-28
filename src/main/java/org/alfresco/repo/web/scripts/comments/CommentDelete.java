@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.comments;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +35,6 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.namespace.QName;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -59,7 +59,7 @@ public class CommentDelete extends AbstractCommentsWebScript
     {
         String pageParams = req.getParameter(JSON_KEY_PAGE_PARAMS);
 
-        JSONObject jsonPageParams = parseJSONFromString(pageParams);
+        JsonNode jsonPageParams = parseJSONFromString(pageParams);
 
         String parentNodeRefStr = getOrNull(jsonPageParams, JSON_KEY_NODEREF);
         NodeRef parentNodeRef = null;

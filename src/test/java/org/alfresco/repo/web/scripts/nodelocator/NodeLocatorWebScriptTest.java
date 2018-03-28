@@ -26,6 +26,7 @@
 
 package org.alfresco.repo.web.scripts.nodelocator;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.model.Repository;
 import org.alfresco.repo.node.archive.NodeArchiveService;
@@ -49,7 +50,7 @@ import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.test_category.OwnJVMTestsCategory;
 import org.alfresco.util.GUID;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.junit.experimental.categories.Category;
 import org.springframework.context.ApplicationContext;
 import org.springframework.extensions.surf.util.URLEncoder;
@@ -242,10 +243,10 @@ public class NodeLocatorWebScriptTest extends BaseWebScriptTest
     {
         Response response = sendRequest(new GetRequest(url), 200);
         String jsonStr = response.getContentAsString();
-        JSONObject json = new JSONObject(jsonStr);
-        JSONObject result = json.getJSONObject("data");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr);
+        JsonNode result = json.get("data");
         assertNotNull(result);
-        String nodeRef = result.getString("nodeRef");
+        String nodeRef = result.get("nodeRef").textValue();
         String expResult = expNode == null ? "null" : expNode.toString();
         assertEquals(expResult, nodeRef);
     }

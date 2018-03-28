@@ -36,7 +36,7 @@ import org.alfresco.service.cmr.security.AuthenticationService;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.util.PropertyMap;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 
 /**
@@ -108,7 +108,7 @@ public class TransferWebScriptTest extends BaseWebScriptTest
     public void testVerify() throws Exception
     {
         String url = "/api/transfer/test";
-        PostRequest req = new PostRequest(url, new JSONObject().toString(), "application/json");
+        PostRequest req = new PostRequest(url, AlfrescoDefaultObjectMapper.createObjectNode().toString(), "application/json");
         
         //First, we'll try the request as a simple, non-admin user (expect a 401)
         AuthenticationUtil.setFullyAuthenticatedUser(USERNAME);

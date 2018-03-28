@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.site;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.alfresco.model.ContentModel;
 import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
@@ -41,7 +43,7 @@ import org.alfresco.service.cmr.security.AccessStatus;
 import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.site.SiteVisibility;
-import org.json.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PutRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
@@ -103,7 +105,7 @@ public class SurfConfigTest extends AbstractSiteServiceTest
     {
         // Create a site as USER_ONE
         String shortName = UUID.randomUUID().toString();
-        JSONObject result = createSite("myPreset", shortName, "myTitle", "myDescription", SiteVisibility.PUBLIC, 200);
+        JsonNode result = createSite("myPreset", shortName, "myTitle", "myDescription", SiteVisibility.PUBLIC, 200);
         assertEquals("myPreset", result.get("sitePreset"));
         assertEquals(shortName, result.get("shortName"));
         assertEquals("myTitle", result.get("title"));
@@ -112,7 +114,7 @@ public class SurfConfigTest extends AbstractSiteServiceTest
 
         // Make ADMRemoteStore to create the surf-config folder and the dashboard.xml file.
         sendRequest(new PostRequest(URL_ADM + "CREATE/alfresco/site-data/pages/site/" + shortName + "/dashboard.xml?s=sitestore",
-                    new JSONObject().toString(), "application/json"), 200);
+                AlfrescoDefaultObjectMapper.createObjectNode().toString(), "application/json"), 200);
 
         // {siteName}/cm:surf-config/
         NodeRef surfConfigFolderRef = nodeService
@@ -143,17 +145,17 @@ public class SurfConfigTest extends AbstractSiteServiceTest
         assertEquals("pages", fileInfos.get(0).getName());
 
         // Add USER_TWO as a site collaborator
-        JSONObject membership = new JSONObject();
+        ObjectNode membership = AlfrescoDefaultObjectMapper.createObjectNode();
         membership.put("role", SiteModel.SITE_COLLABORATOR);
-        JSONObject person = new JSONObject();
+        ObjectNode person = AlfrescoDefaultObjectMapper.createObjectNode();
         person.put("userName", USER_TWO);
-        membership.put("person", person);
+        membership.set("person", person);
         // Post the membership
         Response response = sendRequest(new PostRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, membership.toString(), "application/json"),
                     200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(SiteModel.SITE_COLLABORATOR, result.get("role"));
-        assertEquals(USER_TWO, result.getJSONObject("authority").get("userName"));
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(SiteModel.SITE_COLLABORATOR, result.get("role").textValue());
+        assertEquals(USER_TWO, result.get("authority").get("userName").textValue());
 
         // Add USER_THREE as a site manager
         membership.put("role", SiteModel.SITE_MANAGER);
@@ -161,9 +163,9 @@ public class SurfConfigTest extends AbstractSiteServiceTest
         membership.put("person", person);
         // Post the membership
         response = sendRequest(new PostRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, membership.toString(), "application/json"), 200);
-        result = new JSONObject(response.getContentAsString());
-        assertEquals(SiteModel.SITE_MANAGER, result.get("role"));
-        assertEquals(USER_THREE, result.getJSONObject("authority").get("userName"));
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        assertEquals(SiteModel.SITE_MANAGER, result.get("role").textValue());
+        assertEquals(USER_THREE, result.get("authority").get("userName").textValue());
 
         // USER_TWO is a site collaborator so he should not be able to access the surf-config folder
         AuthenticationUtil.setFullyAuthenticatedUser(USER_TWO);
@@ -192,9 +194,9 @@ public class SurfConfigTest extends AbstractSiteServiceTest
         person.put("userName", USER_ONE);
         membership.put("person", person);
         response = sendRequest(new PutRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, membership.toString(), "application/json"), 200);
-        result = new JSONObject(response.getContentAsString());
+        result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertEquals(SiteModel.SITE_CONTRIBUTOR, result.get("role"));
-        assertEquals(USER_ONE, result.getJSONObject("authority").get("userName"));
+        assertEquals(USER_ONE, result.get("authority").get("userName"));
 
         // USER_ONE is no longer a site manager
         // USER_ONE tries to access "{siteName}/cm:surf-config" children

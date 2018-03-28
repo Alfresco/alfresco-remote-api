@@ -29,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,8 +55,8 @@ import org.alfresco.rest.api.tests.client.data.SiteRole;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.HttpStatus;
-import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -194,22 +195,22 @@ public class TestActivities extends EnterpriseTestApi
 			public Void doWork() throws Exception
 			{
 				// ensure at least 3 activities
-				JSONObject activityData = new JSONObject();
+				ObjectNode activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
 				
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
 				
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
 
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite1.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite1.getSiteId(), activityData);
@@ -225,17 +226,17 @@ public class TestActivities extends EnterpriseTestApi
 			public Void doWork() throws Exception
 			{
 				// ensure at least 3 activities
-				JSONObject activityData = new JSONObject();
+				ObjectNode activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
 				
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
 				
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
@@ -268,17 +269,17 @@ public class TestActivities extends EnterpriseTestApi
 			public Void doWork() throws Exception
 			{
 				// ensure at least 3 activities
-				JSONObject activityData = new JSONObject();
+				ObjectNode activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
 				
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
 				
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite.getSiteId(), activityData);
@@ -294,17 +295,17 @@ public class TestActivities extends EnterpriseTestApi
 			public Void doWork() throws Exception
 			{
 				// ensure at least 3 activities
-				JSONObject activityData = new JSONObject();
+                ObjectNode activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite2.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite2.getSiteId(), activityData);
 				
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite2.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite2.getSiteId(), activityData);
 				
-				activityData = new JSONObject();
+				activityData = AlfrescoDefaultObjectMapper.createObjectNode();
 				activityData.put("title", GUID.generate());
 				activityData.put("nodeRef", testSite2.getContainerNodeRef("documentLibrary").toString());
 				repoService.postActivity("org.alfresco.documentlibrary.file-added", testSite2.getSiteId(), activityData);

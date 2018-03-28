@@ -32,6 +32,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,8 +86,8 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
 import org.alfresco.util.Pair;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.HttpStatus;
-import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -575,9 +576,9 @@ public class TestFavourites extends AbstractBaseApiTest
             {
                 @SuppressWarnings("unchecked")
                 @Override
-                public JSONObject toJSON()
+                public ObjectNode toJSON()
                 {
-                    JSONObject json = new JSONObject();
+                    ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
                     json.put("guid", guid);
                     return json;
                 }
@@ -1773,7 +1774,7 @@ public class TestFavourites extends AbstractBaseApiTest
                 }
                 case SITE:
                 {
-                    JSONObject siteJsonObject = fav.getTarget().toJSON();
+                    ObjectNode siteJsonObject = fav.getTarget().toJSON();
                     assertNotNull("There should be a site JSON object.", siteJsonObject);
                     assertNull("Path info should not be returned for sites.", siteJsonObject.get("path"));
                     break;
@@ -1807,7 +1808,7 @@ public class TestFavourites extends AbstractBaseApiTest
                 }
                 case SITE:
                 {
-                    JSONObject siteJsonObject = fav.getTarget().toJSON();
+                    ObjectNode siteJsonObject = fav.getTarget().toJSON();
                     assertNotNull("There should be a site JSON object.", siteJsonObject);
                     assertNull("Path info should not be returned for sites.", siteJsonObject.get("path"));
                     break;
@@ -1864,7 +1865,7 @@ public class TestFavourites extends AbstractBaseApiTest
         // Favourite the public site
         Favourite siteFavourite = makeSiteFavourite(publicSite);
         siteFavourite = favouritesProxy.createFavourite(person12Id, siteFavourite);
-        JSONObject siteJsonObject = siteFavourite.getTarget().toJSON();
+        ObjectNode siteJsonObject = siteFavourite.getTarget().toJSON();
         assertNotNull("There should be a site JSON object.", siteJsonObject);
         assertNull("Path info should not be returned for sites.", siteJsonObject.get("path"));
 

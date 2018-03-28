@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.remoteconnector;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -51,8 +52,6 @@ import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 import org.springframework.extensions.webscripts.Authenticator;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer;
@@ -254,9 +253,9 @@ public class LocalWebScriptConnectorServiceImpl implements RemoteConnectorServic
      * Executes the given request, requesting a JSON response, and
      *  returns the parsed JSON received back
      *  
-     * @throws ParseException If the response is not valid JSON
+     * @throws IOException If the response is not valid JSON
      */
-    public JSONObject executeJSONRequest(RemoteConnectorRequest request) throws ParseException, IOException, AuthenticationException
+    public JsonNode executeJSONRequest(RemoteConnectorRequest request) throws IOException, AuthenticationException
     {
         return RemoteConnectorServiceImpl.doExecuteJSONRequest(request, this);
     }

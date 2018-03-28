@@ -25,9 +25,10 @@
  */
 package org.alfresco.rest.api.tests.client.data;
 
-import static org.junit.Assert.assertTrue;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
-import org.json.simple.JSONObject;
+import static org.junit.Assert.assertTrue;
 
 public class Company extends org.alfresco.rest.api.model.Company implements ExpectedComparison
 {
@@ -46,9 +47,9 @@ public class Company extends org.alfresco.rest.api.model.Company implements Expe
 	}
 
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject companyJson = new JSONObject();
+		ObjectNode companyJson = AlfrescoDefaultObjectMapper.createObjectNode();
 		companyJson.put("organization", getOrganization());
 		companyJson.put("address1", getAddress1());
 		companyJson.put("address2", getAddress2());

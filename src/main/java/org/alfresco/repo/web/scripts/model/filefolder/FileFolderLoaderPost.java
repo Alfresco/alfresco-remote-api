@@ -25,14 +25,14 @@
  */
 package org.alfresco.repo.web.scripts.model.filefolder;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.OutputStream;
 
 import org.alfresco.repo.model.filefolder.FileFolderLoader;
 import org.alfresco.service.cmr.model.FileNotFoundException;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -83,8 +83,8 @@ public class FileFolderLoaderPost extends AbstractWebScript implements Applicati
         String folderPath = "";
         try
         {
-            JSONObject json = new JSONObject(new JSONTokener(req.getContent().getContent()));
-            folderPath = json.getString(KEY_FOLDER_PATH);
+            JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
+            folderPath = json.get(KEY_FOLDER_PATH).textValue();
             if (folderPath == null)
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, KEY_FOLDER_PATH + " not supplied.");
@@ -92,42 +92,42 @@ public class FileFolderLoaderPost extends AbstractWebScript implements Applicati
             int fileCount = 100;
             if (json.has(KEY_FILE_COUNT))
             {
-                fileCount = json.getInt(KEY_FILE_COUNT);
+                fileCount = json.get(KEY_FILE_COUNT).intValue();
             }
             int filesPerTxn = DEFAULT_FILES_PER_TXN;
             if (json.has(KEY_FILES_PER_TXN))
             {
-                filesPerTxn = json.getInt(KEY_FILES_PER_TXN);
+                filesPerTxn = json.get(KEY_FILES_PER_TXN).intValue();
             }
             long minFileSize = DEFAULT_MIN_FILE_SIZE;
             if (json.has(KEY_MIN_FILE_SIZE))
             {
-                minFileSize = json.getInt(KEY_MIN_FILE_SIZE);
+                minFileSize = json.get(KEY_MIN_FILE_SIZE).intValue();
             }
             long maxFileSize = DEFAULT_MAX_FILE_SIZE;
             if (json.has(KEY_MAX_FILE_SIZE))
             {
-                maxFileSize = json.getInt(KEY_MAX_FILE_SIZE);
+                maxFileSize = json.get(KEY_MAX_FILE_SIZE).intValue();
             }
             long maxUniqueDocuments = DEFAULT_MAX_UNIQUE_DOCUMENTS;
             if (json.has(KEY_MAX_UNIQUE_DOCUMENTS))
             {
-                maxUniqueDocuments = json.getInt(KEY_MAX_UNIQUE_DOCUMENTS);
+                maxUniqueDocuments = json.get(KEY_MAX_UNIQUE_DOCUMENTS).intValue();
             }
             boolean forceBinaryStorage = DEFAULT_FORCE_BINARY_STORAGE;
             if (json.has(KEY_FORCE_BINARY_STORAGE))
             {
-                forceBinaryStorage = json.getBoolean(KEY_FORCE_BINARY_STORAGE);
+                forceBinaryStorage = json.get(KEY_FORCE_BINARY_STORAGE).booleanValue();
             }
             int descriptionCount = DEFAULT_DESCRIPTION_COUNT;
             if (json.has(KEY_DESCRIPTION_COUNT))
             {
-                descriptionCount = json.getInt(KEY_DESCRIPTION_COUNT);
+                descriptionCount = json.get(KEY_DESCRIPTION_COUNT).intValue();
             }
             long descriptionSize = DEFAULT_DESCRIPTION_SIZE;
             if (json.has(KEY_DESCRIPTION_SIZE))
             {
-                descriptionSize = json.getLong(KEY_DESCRIPTION_SIZE);
+                descriptionSize = json.get(KEY_DESCRIPTION_SIZE).longValue();
             }
             
             // Perform the load
@@ -147,19 +147,15 @@ public class FileFolderLoaderPost extends AbstractWebScript implements Applicati
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from req.", iox);
         }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from req.", je);
-        }
         // Write the response
         OutputStream os = res.getOutputStream();
         try
         {
-            JSONObject json = new JSONObject();
+            ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
             json.put(KEY_COUNT, count);
-            os.write(json.toString().getBytes("UTF-8"));
+            AlfrescoDefaultObjectMapper.getWriter().writeValue(os, json);
         }
-        catch (JSONException e)
+        catch (IOException e)
         {
             throw new WebScriptException(Status.STATUS_INTERNAL_SERVER_ERROR, "Failed to write JSON", e);
         }

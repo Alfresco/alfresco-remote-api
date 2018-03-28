@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.tenant;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -40,9 +41,9 @@ import java.net.URL;
 
 import junit.framework.TestCase;
 
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Base64;
 
 /**
@@ -103,7 +104,7 @@ public class TenantAdminSystemTest extends TestCase
     
     protected static void createTenant(String tenantDomain, String ticket) throws Exception
     {
-        JSONObject tenant = new JSONObject();
+        ObjectNode tenant = AlfrescoDefaultObjectMapper.createObjectNode();
         tenant.put("tenantDomain", tenantDomain);
         tenant.put("tenantAdminPassword", tenantDomain);
         

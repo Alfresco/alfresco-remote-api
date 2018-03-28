@@ -25,9 +25,10 @@
  */
 package org.alfresco.repo.web.scripts.blogs;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.util.Map;
-
 import org.alfresco.repo.activities.post.lookup.PostLookup;
 import org.alfresco.repo.blog.BlogServiceImpl;
 import org.alfresco.repo.content.MimetypeMap;
@@ -41,13 +42,9 @@ import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.repository.StoreRef;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONStringer;
-import org.json.JSONWriter;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -126,8 +123,8 @@ public abstract class AbstractBlogWebScript extends DeclarativeWebScript
      * @param json json
      * @param nodeRef NodeRef
      */
-    protected void addActivityEntry(String event, BlogPostInfo blog, 
-          SiteInfo site, WebScriptRequest req, JSONObject json, NodeRef nodeRef)
+    protected void addActivityEntry(String event, BlogPostInfo blog,
+                                    SiteInfo site, WebScriptRequest req, JsonNode json, NodeRef nodeRef)
     {
        // We can only add activities against a site
        if (site == null)
@@ -140,9 +137,9 @@ public abstract class AbstractBlogWebScript extends DeclarativeWebScript
        String page = req.getParameter("page");
        if (page == null && json != null)
        {
-          if (json.containsKey("page"))
+          if (json.has("page"))
           {
-             page = (String)json.get("page");
+             page = json.get("page").textValue();
           }
        }
        if (page == null)
@@ -160,19 +157,16 @@ public abstract class AbstractBlogWebScript extends DeclarativeWebScript
        
        try
        {
-          JSONWriter jsonWriter = new JSONStringer()
-              .object()
-                  .key(TITLE).value(title)
-                  .key(PAGE).value(page);
-          
-          if (nodeRef != null)
-          {
-              // ALF-10182: the nodeRef needs to be included in the activity
-              // post to ensure read permissions are respected.
-              jsonWriter.key(PostLookup.JSON_NODEREF).value(nodeRef.toString());
-          }
-          
-          String data = jsonWriter.endObject().toString();
+           ObjectNode objectNode = AlfrescoDefaultObjectMapper.createObjectNode();
+           objectNode.put(TITLE, title);
+           objectNode.put(PAGE, page);
+           if (nodeRef != null)
+           {
+               // ALF-10182: the nodeRef needs to be included in the activity
+               // post to ensure read permissions are respected.
+               objectNode.put(PostLookup.JSON_NODEREF, nodeRef.toString());
+           }
+           String data = AlfrescoDefaultObjectMapper.writeValueAsString(objectNode);
           
           activityService.postActivity(
                 "org.alfresco.blog.post-" + event,
@@ -198,7 +192,7 @@ public abstract class AbstractBlogWebScript extends DeclarativeWebScript
        
        
        // Parse the JSON, if supplied
-       JSONObject json = null;
+       JsonNode json = null;
        String contentType = req.getContentType();
        if (contentType != null && contentType.indexOf(';') != -1)
        {
@@ -206,18 +200,13 @@ public abstract class AbstractBlogWebScript extends DeclarativeWebScript
        }
        if (MimetypeMap.MIMETYPE_JSON.equals(contentType))
        {
-          JSONParser parser = new JSONParser();
           try
           {
-             json = (JSONObject)parser.parse(req.getContent().getContent());
+             json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
           }
           catch (IOException io)
           {
              throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + io.getMessage());
-          }
-          catch (ParseException pe)
-          {
-             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Invalid JSON: " + pe.getMessage());
           }
        }
        
@@ -307,5 +296,5 @@ public abstract class AbstractBlogWebScript extends DeclarativeWebScript
     
     protected abstract Map<String, Object> executeImpl(SiteInfo site,
           NodeRef nodeRef, BlogPostInfo blog, WebScriptRequest req, 
-          JSONObject json, Status status, Cache cache);
+          JsonNode json, Status status, Cache cache);
 }

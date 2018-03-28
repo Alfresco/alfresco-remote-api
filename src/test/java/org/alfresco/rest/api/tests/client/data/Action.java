@@ -27,10 +27,14 @@ package org.alfresco.rest.api.tests.client.data;
 
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
-
-import org.json.simple.JSONObject;
+import java.util.stream.Collectors;
+import org.alfresco.util.json.JsonUtil;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 public class Action extends org.alfresco.rest.api.model.Action implements Serializable, ExpectedComparison
 {
@@ -49,9 +53,9 @@ public class Action extends org.alfresco.rest.api.model.Action implements Serial
     }
 
     @SuppressWarnings("unchecked")
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject jsonObject = new JSONObject();
+        ObjectNode jsonObject = AlfrescoDefaultObjectMapper.createObjectNode();
         if (getId() != null)
         {
             jsonObject.put("id", getId());
@@ -66,19 +70,21 @@ public class Action extends org.alfresco.rest.api.model.Action implements Serial
 
         if (getParams() != null)
         {
-            jsonObject.put("params", getParams());
+            jsonObject.set("params", AlfrescoDefaultObjectMapper.convertValue(getParams(), ObjectNode.class));
         }
 
         return jsonObject;
     }
 
     @SuppressWarnings("unchecked")
-    public static Action parseAction(JSONObject jsonObject)
+    public static Action parseAction(JsonNode jsonObject) throws IOException
     {
-        String id = (String) jsonObject.get("id");
-        String actionDefinitionId = (String) jsonObject.get("actionDefinitionId");
-        String targetId = (String) jsonObject.get("targetId");
-        Map<String, String> params = (Map<String, String>) jsonObject.get("params");
+        String id = jsonObject.get("id").textValue();
+        String actionDefinitionId = jsonObject.get("actionDefinitionId").textValue();
+        String targetId = jsonObject.get("targetId").textValue();
+        Map<String, String> params = JsonUtil
+                .convertJSONObjectToMap((ObjectNode) jsonObject.get("params"))
+                .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue()));
 
         Action action = new Action();
         action.setId(id);

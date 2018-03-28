@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.discussion;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -37,7 +38,6 @@ import org.alfresco.service.cmr.discussion.TopicInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.util.Pair;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -56,7 +56,7 @@ public class ForumTopicsHotGet extends AbstractDiscussionWebScript
    
    @Override
    protected Map<String, Object> executeImpl(SiteInfo site, NodeRef nodeRef,
-         TopicInfo topic, PostInfo post, WebScriptRequest req, JSONObject json,
+         TopicInfo topic, PostInfo post, WebScriptRequest req, JsonNode json,
          Status status, Cache cache) 
    {
       // They shouldn't be trying to list of an existing Post or Topic

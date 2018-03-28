@@ -28,6 +28,8 @@ package org.alfresco.rest.api.tests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.*;
 
 import org.alfresco.repo.tenant.TenantUtil;
@@ -44,9 +46,8 @@ import org.alfresco.rest.api.tests.client.RequestContext;
 import org.alfresco.rest.api.tests.client.data.*;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.util.GUID;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.HttpStatus;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -439,13 +440,13 @@ public class TestSites extends EnterpriseTestApi
             String siteNodeId = sitesProxy.createSite(site).getGuid();
 
             // try to update to invalid site visibility
-            JSONObject prop = new JSONObject();
+            ObjectNode prop = AlfrescoDefaultObjectMapper.createObjectNode();
             prop.put("st:siteVisibility","INVALID");
-            JSONObject properties = new JSONObject();
-            properties.put("properties", new JSONObject(prop));
+            ObjectNode properties = AlfrescoDefaultObjectMapper.createObjectNode();
+            properties.put("properties", prop);
             try
             {
-                sitesProxy.update("nodes", siteNodeId, null, null, properties.toJSONString(), null);
+                sitesProxy.update("nodes", siteNodeId, null, null, AlfrescoDefaultObjectMapper.writeValueAsString(properties), null);
                 fail();
             } catch (PublicApiException e)
             {
@@ -461,7 +462,7 @@ public class TestSites extends EnterpriseTestApi
             sites.add(new SiteImpl(null, "siteA1", null, "siteA1", null, SiteVisibility.PRIVATE.toString(), null, null));
             sites.add(new SiteImpl(null, "siteB1", null, "siteB1", null, SiteVisibility.PRIVATE.toString(), null, null));
             
-            sitesProxy.create("sites", null, null, null, JSONArray.toJSONString(sites), null, 405);
+            sitesProxy.create("sites", null, null, null, AlfrescoDefaultObjectMapper.writeValueAsString(sites), null, 405);
         }
 
         // -ve tests - belts-and-braces for unsupported methods
@@ -526,7 +527,7 @@ public class TestSites extends EnterpriseTestApi
             // Update the site details
             HttpResponse response = sitesProxy.update("sites", site.getSiteId(), null, null, updateJSON, "Failed to update site " + site.getSiteId());
 
-            Site updatedSite = SiteImpl.parseSite((JSONObject) response.getJsonResponse().get("entry"));
+            Site updatedSite = SiteImpl.parseSite(response.getJsonResponse().get("entry"));
             Site expectedUpdate = new SiteImpl(null, "initial-title", site.getGuid(), "Updated Title", "This is an updated description for the site", SiteVisibility.PUBLIC.toString(), null, SiteRole.SiteManager);
             // Check the updated site is as expected.
             expectedUpdate.expected(updatedSite);
@@ -1214,9 +1215,9 @@ public class TestSites extends EnterpriseTestApi
 
         @SuppressWarnings("unchecked")
         @Override
-        public JSONObject toJSON()
+        public ObjectNode toJSON()
         {
-            JSONObject json = new JSONObject();
+            ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
 
             if (siteUpdate.getTitle() != null)
             {
@@ -1235,11 +1236,11 @@ public class TestSites extends EnterpriseTestApi
             return json;
         }
 
-        public static SiteUpdate parseSiteUpdate(JSONObject jsonObject)
+        public static SiteUpdate parseSiteUpdate(JsonNode jsonObject)
         {
-            String title = (String) jsonObject.get("title");
-            String description = (String) jsonObject.get("description");
-            SiteVisibility visibility = SiteVisibility.valueOf((String) jsonObject.get("visibility"));
+            String title = jsonObject.get("title").textValue();
+            String description = jsonObject.get("description").textValue();
+            SiteVisibility visibility = SiteVisibility.valueOf(jsonObject.get("visibility").textValue());
 
             return new SiteUpdate(title, description, visibility);
         }

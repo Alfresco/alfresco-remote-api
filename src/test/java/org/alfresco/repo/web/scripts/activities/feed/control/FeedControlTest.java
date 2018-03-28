@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.activities.feed.control;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
@@ -32,14 +34,13 @@ import org.alfresco.repo.web.scripts.BaseWebScriptTest;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  * Unit test the Activity Service's User Feed Control Web Script API
@@ -116,7 +117,7 @@ public class FeedControlTest extends BaseWebScriptTest
     protected void createFeedControl(String siteId, String appToolId) throws Exception
     {
         // Set (create) feed control
-        JSONObject feedControl = new JSONObject();
+        ObjectNode feedControl = AlfrescoDefaultObjectMapper.createObjectNode();
         feedControl.put("siteId", siteId);
         feedControl.put("appToolId", appToolId);
         
@@ -134,7 +135,7 @@ public class FeedControlTest extends BaseWebScriptTest
         // Get (retrieve) feed controls
         int expectedStatus = 200;
         Response response = sendRequest(new GetRequest(URL_CONTROLS), expectedStatus);        
-        JSONArray result = new JSONArray(response.getContentAsString());
+        ArrayNode result = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         if (logger.isDebugEnabled())
         {
@@ -142,7 +143,7 @@ public class FeedControlTest extends BaseWebScriptTest
         }
         
         assertNotNull(result);
-        assertEquals(3, result.length());
+        assertEquals(3, result.size());
     }
     
     public void testDeleteFeedControls() throws Exception

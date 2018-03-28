@@ -31,6 +31,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -67,8 +70,7 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.test_category.OwnJVMTestsCategory;
 import org.alfresco.util.ISO8601DateFormat;
 import org.alfresco.util.Pair;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
@@ -95,9 +97,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
 
         ProcessesClient processesClient = publicApiClient.processesClient();
         
-        JSONObject createProcessObject = new JSONObject();
+        ObjectNode createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
         createProcessObject.put("processDefinitionId", processDefinition.getId());
-        final JSONObject variablesObject = new JSONObject();
+        final ObjectNode variablesObject = AlfrescoDefaultObjectMapper.createObjectNode();
         variablesObject.put("bpm_dueDate", ISO8601DateFormat.format(new Date()));
         variablesObject.put("bpm_priority", 1);
         variablesObject.put("bpm_description", "test description");
@@ -114,7 +116,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         createProcessObject.put("variables", variablesObject);
         
-        ProcessInfo processRest = processesClient.createProcess(createProcessObject.toJSONString());
+        ProcessInfo processRest = processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
         assertNotNull(processRest);
         assertNotNull(processRest.getId());
         
@@ -145,7 +147,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         String tenantAdmin = AuthenticationUtil.getAdminUserName() + "@" + requestContext.getNetworkId();
         publicApiClient.setRequestContext(new RequestContext(requestContext.getNetworkId(), tenantAdmin));
         
-        processRest = processesClient.createProcess(createProcessObject.toJSONString());
+        processRest = processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
         assertNotNull(processRest);
         
         variables = activitiProcessEngine.getRuntimeService().getVariables(processRest.getId());
@@ -157,11 +159,11 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         // Try with unexisting process definition ID
         publicApiClient.setRequestContext(requestContext);
-        createProcessObject = new JSONObject();
+        createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
         createProcessObject.put("processDefinitionId", "unexisting");
         try 
         {
-            processesClient.createProcess(createProcessObject.toJSONString());
+            processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
             fail();
         } 
         catch(PublicApiException e)
@@ -180,9 +182,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         ProcessesClient processesClient = publicApiClient.processesClient();
         
-        JSONObject createProcessObject = new JSONObject();
+        ObjectNode createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
         createProcessObject.put("processDefinitionKey", "activitiAdhoc");
-        final JSONObject variablesObject = new JSONObject();
+        final ObjectNode variablesObject = AlfrescoDefaultObjectMapper.createObjectNode();
         variablesObject.put("bpm_dueDate", "2013-09-30T00:00:00.000+0300");
         variablesObject.put("bpm_priority", 1);
         variablesObject.put("bpm_description", "test description");
@@ -197,9 +199,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         }, requestContext.getRunAsUser(), requestContext.getNetworkId());
         
         
-        createProcessObject.put("variables", variablesObject);
+        createProcessObject.set("variables", variablesObject);
         
-        ProcessInfo processRest = processesClient.createProcess(createProcessObject.toJSONString());
+        ProcessInfo processRest = processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
         assertNotNull(processRest);
         
         Map<String, Object> variables = activitiProcessEngine.getRuntimeService().getVariables(processRest.getId());
@@ -213,7 +215,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         String tenantAdmin = AuthenticationUtil.getAdminUserName() + "@" + requestContext.getNetworkId();
         publicApiClient.setRequestContext(new RequestContext(requestContext.getNetworkId(), tenantAdmin));
         
-        processRest = processesClient.createProcess(createProcessObject.toJSONString());
+        processRest = processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
         assertNotNull(processRest);
         
         variables = activitiProcessEngine.getRuntimeService().getVariables(processRest.getId());
@@ -225,12 +227,12 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         // Test create process with wrong key
         publicApiClient.setRequestContext(requestContext);
-        createProcessObject = new JSONObject();
+        createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
         createProcessObject.put("processDefinitionKey", "activitiAdhoc2");
         
         try 
         {
-            processRest = processesClient.createProcess(createProcessObject.toJSONString());
+            processRest = processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
             fail();
         } 
         catch(PublicApiException e)
@@ -248,10 +250,10 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         ProcessesClient processesClient = publicApiClient.processesClient();
         
-        JSONObject createProcessObject = new JSONObject();
+        ObjectNode createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
         try
         {
-            processesClient.createProcess(createProcessObject.toJSONString());
+            processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
             fail("Exception excpected");
         }
         catch (PublicApiException e)
@@ -343,9 +345,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         ProcessesClient processesClient = publicApiClient.processesClient();
         
-        JSONObject createProcessObject = new JSONObject();
+        ObjectNode createProcessObject = AlfrescoDefaultObjectMapper.createObjectNode();
         createProcessObject.put("processDefinitionId", processDefinition.getId());
-        final JSONObject variablesObject = new JSONObject();
+        final ObjectNode variablesObject = AlfrescoDefaultObjectMapper.createObjectNode();
         variablesObject.put("bpm_dueDate", ISO8601DateFormat.format(new Date()));
         variablesObject.put("bpm_priority", 1);
         variablesObject.put("bpm_description", "test description");
@@ -364,7 +366,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         try
         {
-            processesClient.createProcess(createProcessObject.toJSONString());
+            processesClient.createProcess(AlfrescoDefaultObjectMapper.writeValueAsString(createProcessObject));
         }
         catch (PublicApiException e)
         {
@@ -929,37 +931,37 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             // Test with existing processDefinitionId
             Map<String, String> params = new HashMap<String, String>();
             params.put("processDefinitionId", process1.getProcessDefinitionId());
-            JSONObject processListJSONObject = processesClient.getProcessesJSON(params);
-            assertNotNull(processListJSONObject);
-            JSONObject paginationJSON = (JSONObject) processListJSONObject.get("pagination");
+            JsonNode processListJsonNode = processesClient.getProcessesJSON(params);
+            assertNotNull(processListJsonNode);
+            JsonNode paginationJSON = processListJsonNode.get("pagination");
             assertEquals(3l, paginationJSON.get("count"));
             assertEquals(3l, paginationJSON.get("totalItems"));
             assertEquals(0l, paginationJSON.get("skipCount"));
             assertEquals(false, paginationJSON.get("hasMoreItems"));
-            JSONArray jsonEntries = (JSONArray) processListJSONObject.get("entries");
+            ArrayNode jsonEntries = (ArrayNode) processListJsonNode.get("entries");
             assertEquals(3, jsonEntries.size());
             
             // Test with existing processDefinitionId and max items
             params.clear();
             params.put("maxItems", "2");
             params.put("processDefinitionId",  process1.getProcessDefinitionId());
-            processListJSONObject = processesClient.getProcessesJSON(params);
-            assertNotNull(processListJSONObject);
-            paginationJSON = (JSONObject) processListJSONObject.get("pagination");
+            processListJsonNode = processesClient.getProcessesJSON(params);
+            assertNotNull(processListJsonNode);
+            paginationJSON = processListJsonNode.get("pagination");
             assertEquals(2l, paginationJSON.get("count"));
             assertEquals(3l, paginationJSON.get("totalItems"));
             assertEquals(0l, paginationJSON.get("skipCount"));
             assertEquals(true, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) processListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) processListJsonNode.get("entries");
             assertEquals(2, jsonEntries.size());
             
             // Test with existing processDefinitionId and skip count
             params.clear();
             params.put("skipCount", "1");
             params.put("processDefinitionId", process1.getProcessDefinitionId());
-            processListJSONObject = processesClient.getProcessesJSON(params);
-            assertNotNull(processListJSONObject);
-            paginationJSON = (JSONObject) processListJSONObject.get("pagination");
+            processListJsonNode = processesClient.getProcessesJSON(params);
+            assertNotNull(processListJsonNode);
+            paginationJSON = processListJsonNode.get("pagination");
             assertEquals(2l, paginationJSON.get("count"));
             assertEquals(3l, paginationJSON.get("totalItems"));
             assertEquals(1l, paginationJSON.get("skipCount"));
@@ -967,7 +969,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             // MNT-10977: Workflow process retrieval returns incorrect hasMoreItems value
             // Repository must answer 'false' for 'hasMoreItems' since the total number of items is 3, 2 items are requested and 1 is skipped
             assertEquals(false, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) processListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) processListJsonNode.get("entries");
             assertEquals(2, jsonEntries.size());
             
             // Test with existing processDefinitionId and max items and skip count
@@ -975,9 +977,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             params.put("maxItems", "3");
             params.put("skipCount", "2");
             params.put("processDefinitionId", process1.getProcessDefinitionId());
-            processListJSONObject = processesClient.getProcessesJSON(params);
-            assertNotNull(processListJSONObject);
-            paginationJSON = (JSONObject) processListJSONObject.get("pagination");
+            processListJsonNode = processesClient.getProcessesJSON(params);
+            assertNotNull(processListJsonNode);
+            paginationJSON = processListJsonNode.get("pagination");
             assertEquals(1l, paginationJSON.get("count"));
             assertEquals(3l, paginationJSON.get("totalItems"));
             assertEquals(2l, paginationJSON.get("skipCount"));
@@ -985,7 +987,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             // MNT-10977: Workflow process retrieval returns incorrect hasMoreItems value
             // Repository must answer 'false' for 'hasMoreItems' since the total number of items is 3 and 2 items are skipped
             assertEquals(false, paginationJSON.get("hasMoreItems"));
-            jsonEntries = (JSONArray) processListJSONObject.get("entries");
+            jsonEntries = (ArrayNode) processListJsonNode.get("entries");
             assertEquals(1, jsonEntries.size());
         } 
         finally
@@ -1103,28 +1105,28 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         {
             ProcessesClient processesClient = publicApiClient.processesClient();
             Map<String, String> paramMap = new HashMap<String, String>();
-            JSONObject tasksJSON = processesClient.getTasks(process1.getId(), paramMap);
+            JsonNode tasksJSON = processesClient.getTasks(process1.getId(), paramMap);
             assertNotNull(tasksJSON);
-            JSONArray entriesJSON = (JSONArray) tasksJSON.get("entries");
+            ArrayNode entriesJSON = (ArrayNode) tasksJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 1);
-            JSONObject taskJSONObject = (JSONObject) ((JSONObject) entriesJSON.get(0)).get("entry");
-            assertNotNull(taskJSONObject.get("id"));
-            assertEquals(process1.getId(), taskJSONObject.get("processId"));
-            assertEquals(process1.getProcessDefinitionId(), taskJSONObject.get("processDefinitionId"));
-            assertEquals("adhocTask", taskJSONObject.get("activityDefinitionId"));
-            assertEquals("Adhoc Task", taskJSONObject.get("name"));
-            assertEquals(requestContext.getRunAsUser(), taskJSONObject.get("assignee"));
-            assertEquals(2l, taskJSONObject.get("priority"));
-            assertEquals("wf:adhocTask", taskJSONObject.get("formResourceKey"));
-            assertNull(taskJSONObject.get("endedAt"));
-            assertNull(taskJSONObject.get("durationInMs"));
+            JsonNode taskJsonNode = (entriesJSON.get(0)).get("entry");
+            assertNotNull(taskJsonNode.get("id"));
+            assertEquals(process1.getId(), taskJsonNode.get("processId"));
+            assertEquals(process1.getProcessDefinitionId(), taskJsonNode.get("processDefinitionId"));
+            assertEquals("adhocTask", taskJsonNode.get("activityDefinitionId"));
+            assertEquals("Adhoc Task", taskJsonNode.get("name"));
+            assertEquals(requestContext.getRunAsUser(), taskJsonNode.get("assignee"));
+            assertEquals(2l, taskJsonNode.get("priority"));
+            assertEquals("wf:adhocTask", taskJsonNode.get("formResourceKey"));
+            assertNull(taskJsonNode.get("endedAt"));
+            assertNull(taskJsonNode.get("durationInMs"));
             
             paramMap = new HashMap<String, String>();
             paramMap.put("status", "active");
             tasksJSON = processesClient.getTasks(process1.getId(), paramMap);
             assertNotNull(tasksJSON);
-            entriesJSON = (JSONArray) tasksJSON.get("entries");
+            entriesJSON = (ArrayNode) tasksJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 1);
             
@@ -1132,7 +1134,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             paramMap.put("status", "completed");
             tasksJSON = processesClient.getTasks(process1.getId(), paramMap);
             assertNotNull(tasksJSON);
-            entriesJSON = (JSONArray) tasksJSON.get("entries");
+            entriesJSON = (ArrayNode) tasksJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 0);
             
@@ -1150,7 +1152,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             paramMap = new HashMap<String, String>();
             tasksJSON = processesClient.getTasks(process1.getId(), paramMap);
             assertNotNull(tasksJSON);
-            entriesJSON = (JSONArray) tasksJSON.get("entries");
+            entriesJSON = (ArrayNode) tasksJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 1);
             
@@ -1191,7 +1193,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             paramMap = new HashMap<String, String>();
             tasksJSON = processesClient.getTasks(process1.getId(), paramMap);
             assertNotNull(tasksJSON);
-            entriesJSON = (JSONArray) tasksJSON.get("entries");
+            entriesJSON = (ArrayNode) tasksJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 1);
             
@@ -1211,7 +1213,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             paramMap.put("status", "any");
             tasksJSON = processesClient.getTasks(process1.getId(), paramMap);
             assertNotNull(tasksJSON);
-            entriesJSON = (JSONArray) tasksJSON.get("entries");
+            entriesJSON = (ArrayNode) tasksJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             
@@ -1220,7 +1222,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             paramMap.put("status", "any");
             tasksJSON = processesClient.getTasks(process1.getId(), paramMap);
             assertNotNull(tasksJSON);
-            entriesJSON = (JSONArray) tasksJSON.get("entries");
+            entriesJSON = (ArrayNode) tasksJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             
@@ -1249,44 +1251,45 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         {
             ProcessesClient processesClient = publicApiClient.processesClient();
             Map<String, String> paramMap = new HashMap<String, String>();
-            JSONObject activitiesJSON = processesClient.getActivities(process1.getId(), paramMap);
+            JsonNode activitiesJSON = processesClient.getActivities(process1.getId(), paramMap);
             assertNotNull(activitiesJSON);
-            JSONArray entriesJSON = (JSONArray) activitiesJSON.get("entries");
+            ArrayNode entriesJSON = (ArrayNode) activitiesJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             
-            Map<String, JSONObject> activitiesMap = new HashMap<String, JSONObject>();
-            for (Object entry : entriesJSON) {
-                JSONObject jsonEntry = (JSONObject) entry;
-                JSONObject activityJSONObject = (JSONObject) jsonEntry.get("entry");
-                activitiesMap.put((String) activityJSONObject.get("activityDefinitionId"), activityJSONObject);
+            Map<String, JsonNode> activitiesMap = new HashMap<String, JsonNode>();
+            for (JsonNode entry : entriesJSON)
+            {
+                JsonNode jsonEntry = entry;
+                JsonNode activityJsonNode = jsonEntry.get("entry");
+                activitiesMap.put(activityJsonNode.get("activityDefinitionId").textValue(), activityJsonNode);
             }
             
-            JSONObject activityJSONObject = activitiesMap.get("start");
-            assertNotNull(activityJSONObject);
-            assertNotNull(activityJSONObject.get("id"));
-            assertEquals("start", activityJSONObject.get("activityDefinitionId"));
-            assertNull(activityJSONObject.get("activityDefinitionName"));
-            assertEquals("startEvent", activityJSONObject.get("activityDefinitionType"));
-            assertNotNull(activityJSONObject.get("startedAt"));
-            assertNotNull(activityJSONObject.get("endedAt"));
-            assertNotNull(activityJSONObject.get("durationInMs"));
+            JsonNode activityJsonNode = activitiesMap.get("start");
+            assertNotNull(activityJsonNode);
+            assertNotNull(activityJsonNode.get("id"));
+            assertEquals("start", activityJsonNode.get("activityDefinitionId"));
+            assertNull(activityJsonNode.get("activityDefinitionName"));
+            assertEquals("startEvent", activityJsonNode.get("activityDefinitionType"));
+            assertNotNull(activityJsonNode.get("startedAt"));
+            assertNotNull(activityJsonNode.get("endedAt"));
+            assertNotNull(activityJsonNode.get("durationInMs"));
             
-            activityJSONObject = activitiesMap.get("adhocTask");
-            assertNotNull(activityJSONObject);
-            assertNotNull(activityJSONObject.get("id"));
-            assertEquals("adhocTask", activityJSONObject.get("activityDefinitionId"));
-            assertEquals("Adhoc Task", activityJSONObject.get("activityDefinitionName"));
-            assertEquals("userTask", activityJSONObject.get("activityDefinitionType"));
-            assertNotNull(activityJSONObject.get("startedAt"));
-            assertNull(activityJSONObject.get("endedAt"));
-            assertNull(activityJSONObject.get("durationInMs"));
+            activityJsonNode = activitiesMap.get("adhocTask");
+            assertNotNull(activityJsonNode);
+            assertNotNull(activityJsonNode.get("id"));
+            assertEquals("adhocTask", activityJsonNode.get("activityDefinitionId"));
+            assertEquals("Adhoc Task", activityJsonNode.get("activityDefinitionName"));
+            assertEquals("userTask", activityJsonNode.get("activityDefinitionType"));
+            assertNotNull(activityJsonNode.get("startedAt"));
+            assertNull(activityJsonNode.get("endedAt"));
+            assertNull(activityJsonNode.get("durationInMs"));
             
             paramMap = new HashMap<String, String>();
             paramMap.put("status", "active");
             activitiesJSON = processesClient.getActivities(process1.getId(), paramMap);
             assertNotNull(activitiesJSON);
-            entriesJSON = (JSONArray) activitiesJSON.get("entries");
+            entriesJSON = (ArrayNode) activitiesJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 1);
             
@@ -1294,7 +1297,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             paramMap.put("status", "completed");
             activitiesJSON = processesClient.getActivities(process1.getId(), paramMap);
             assertNotNull(activitiesJSON);
-            entriesJSON = (JSONArray) activitiesJSON.get("entries");
+            entriesJSON = (ArrayNode) activitiesJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 1);
             
@@ -1312,7 +1315,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             paramMap = new HashMap<String, String>();
             activitiesJSON = processesClient.getActivities(process1.getId(), paramMap);
             assertNotNull(activitiesJSON);
-            entriesJSON = (JSONArray) activitiesJSON.get("entries");
+            entriesJSON = (ArrayNode) activitiesJSON.get("entries");
             assertNotNull(entriesJSON);
             assertTrue(entriesJSON.size() == 2);
             
@@ -1405,20 +1408,21 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
 
         // getting process items by workflow initiator
         ProcessesClient processesClient = publicApiClient.processesClient();
-        JSONObject initiatorItems = processesClient.findProcessItems(processId);
+        JsonNode initiatorItems = processesClient.findProcessItems(processId);
 
         // getting unclaimed process items by user in group
         requestContext = new RequestContext(currentNetwork.getId(), persons.get(0).getId());
         publicApiClient.setRequestContext(requestContext);
-        JSONObject items1 = processesClient.findProcessItems(processId);
-        assertEquals(initiatorItems.toJSONString(), items1.toJSONString());
+        JsonNode items1 = processesClient.findProcessItems(processId);
+        assertEquals(AlfrescoDefaultObjectMapper.writeValueAsString(initiatorItems),
+                AlfrescoDefaultObjectMapper.writeValueAsString(items1));
 
         // getting unclaimed process items by user not in group
         requestContext = new RequestContext(currentNetwork.getId(), persons.get(2).getId());
         publicApiClient.setRequestContext(requestContext);
         try
         {
-            JSONObject items2 = processesClient.findProcessItems(processId);
+            JsonNode items2 = processesClient.findProcessItems(processId);
             fail("User not from group should not see items.");
         }
         catch (PublicApiException e)
@@ -1436,15 +1440,15 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         // getting claimed process items by assignee
         requestContext = new RequestContext(currentNetwork.getId(), assignee.getId());
         publicApiClient.setRequestContext(requestContext);
-        JSONObject items3 = processesClient.findProcessItems(processId);
-        assertEquals(initiatorItems.toJSONString(), items3.toJSONString());
+        JsonNode items3 = processesClient.findProcessItems(processId);
+        assertEquals(AlfrescoDefaultObjectMapper.writeValueAsString(initiatorItems), AlfrescoDefaultObjectMapper.writeValueAsString(items3));
 
         // getting claimed process items by user in group
         requestContext = new RequestContext(currentNetwork.getId(), persons.get(0).getId());
         publicApiClient.setRequestContext(requestContext);
         try
         {
-            JSONObject items4 = processesClient.findProcessItems(processId);
+            JsonNode items4 = processesClient.findProcessItems(processId);
             fail("User from group should not see items for claimed task by another user.");
         }
         catch (PublicApiException e)
@@ -1469,17 +1473,17 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         final String newProcessInstanceId = processRest.getId();
         ProcessesClient processesClient = publicApiClient.processesClient();
-        JSONObject itemsJSON = processesClient.findProcessItems(newProcessInstanceId);
+        JsonNode itemsJSON = processesClient.findProcessItems(newProcessInstanceId);
         assertNotNull(itemsJSON);
-        JSONArray entriesJSON = (JSONArray) itemsJSON.get("entries");
+        ArrayNode entriesJSON = (ArrayNode) itemsJSON.get("entries");
         assertNotNull(entriesJSON);
         assertTrue(entriesJSON.size() == 2);
         boolean doc1Found = false;
         boolean doc2Found = false;
-        for (Object entryObject : entriesJSON)
+        for (JsonNode entryObject : entriesJSON)
         {
-            JSONObject entryObjectJSON = (JSONObject) entryObject;
-            JSONObject entryJSON = (JSONObject) entryObjectJSON.get("entry");
+            JsonNode entryObjectJSON = entryObject;
+            JsonNode entryJSON = entryObjectJSON.get("entry");
             if (entryJSON.get("name").equals("Test Doc1")) {
                 doc1Found = true;
                 assertEquals(docNodeRefs[0].getId(), entryJSON.get("id"));
@@ -1533,7 +1537,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         
         final String newProcessInstanceId = processRest.getId();
         ProcessesClient processesClient = publicApiClient.processesClient();
-        JSONObject itemJSON = processesClient.findProcessItem(newProcessInstanceId, docNodeRefs[0].getId());
+        JsonNode itemJSON = processesClient.findProcessItem(newProcessInstanceId, docNodeRefs[0].getId());
         assertNotNull(itemJSON);
         
         assertEquals(docNodeRefs[0].getId(), itemJSON.get("id"));
@@ -1565,14 +1569,14 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             final String newProcessInstanceId = processRest.getId();
             ProcessesClient processesClient = publicApiClient.processesClient();
             
-            JSONObject createItemObject = new JSONObject();
+            ObjectNode createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", docNodeRefs[0].getId());
             
             // Add the item
-            processesClient.addProcessItem(newProcessInstanceId, createItemObject.toJSONString());
+            processesClient.addProcessItem(newProcessInstanceId, AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
             
             // Fetching the item
-            JSONObject itemJSON = publicApiClient.processesClient().findProcessItem(newProcessInstanceId, docNodeRefs[0].getId());
+            JsonNode itemJSON = publicApiClient.processesClient().findProcessItem(newProcessInstanceId, docNodeRefs[0].getId());
             assertEquals(docNodeRefs[0].getId(), itemJSON.get("id"));
             assertEquals("Test Doc1", itemJSON.get("name"));
             assertEquals("Test Doc1 Title", itemJSON.get("title"));
@@ -1585,13 +1589,13 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(itemJSON.get("mimeType"));
             
             // add non existing item
-            createItemObject = new JSONObject();
+            createItemObject = AlfrescoDefaultObjectMapper.createObjectNode();
             createItemObject.put("id", "blablabla");
             
             // Add the item
             try
             {
-                processesClient.addProcessItem(newProcessInstanceId, createItemObject.toJSONString());
+                processesClient.addProcessItem(newProcessInstanceId, AlfrescoDefaultObjectMapper.writeValueAsString(createItemObject));
                 fail("not found expected");
             }
             catch (PublicApiException e)
@@ -1745,7 +1749,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(processRest);
             String processInstanceId = processRest.getId();
             
-            JSONObject processvariables = publicApiClient.processesClient().getProcessvariables(processInstanceId);
+            JsonNode processvariables = publicApiClient.processesClient().getProcessvariables(processInstanceId);
             assertNotNull(processvariables);
             validateVariablesResponse(processvariables, requestContext.getRunAsUser());
             
@@ -1784,24 +1788,24 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         }
     }
     
-    protected void validateVariablesResponse(JSONObject processvariables, String user) 
+    protected void validateVariablesResponse(JsonNode processvariables, String user) 
     {
         // Add process variables to map for easy lookup
-        Map<String, JSONObject> variablesByName = new HashMap<String, JSONObject>();
-        JSONObject entry = null;
-        JSONArray entries = (JSONArray) processvariables.get("entries");
+        Map<String, JsonNode> variablesByName = new HashMap<String, JsonNode>();
+        JsonNode entry = null;
+        ArrayNode entries = (ArrayNode) processvariables.get("entries");
         assertNotNull(entries);
         for(int i=0; i<entries.size(); i++) 
         {
-            entry = (JSONObject) entries.get(i);
+            entry = entries.get(i);
             assertNotNull(entry);
-            entry = (JSONObject) entry.get("entry");
+            entry = entry.get("entry");
             assertNotNull(entry);
-            variablesByName.put((String) entry.get("name"), entry);
+            variablesByName.put(entry.get("name").textValue(), entry);
         }
         
         // Test some well-known variables
-        JSONObject variable = variablesByName.get("bpm_description");
+        JsonNode variable = variablesByName.get("bpm_description");
         assertNotNull(variable);
         assertEquals("d:text", variable.get("type"));
         assertNull(variable.get("value"));
@@ -1836,30 +1840,30 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         ProcessInfo processInstance = startAdhocProcess(requestContext, null);
         try
         {
-            JSONArray variablesArray = new JSONArray();
-            JSONObject variableBody = new JSONObject();
+            ArrayNode variablesArray = AlfrescoDefaultObjectMapper.createArrayNode();
+            ObjectNode variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "bpm_percentComplete");
             variableBody.put("value", 20);
             variableBody.put("type", "d:int");
             variablesArray.add(variableBody);
-            variableBody = new JSONObject();
+            variableBody = AlfrescoDefaultObjectMapper.createObjectNode();
             variableBody.put("name", "bpm_workflowPriority");
             variableBody.put("value", 50);
             variableBody.put("type", "d:int");
             variablesArray.add(variableBody);
             
-            JSONObject result = publicApiClient.processesClient().createVariables(processInstance.getId(), variablesArray);
+            JsonNode result = publicApiClient.processesClient().createVariables(processInstance.getId(), variablesArray);
             assertNotNull(result);
-            JSONObject resultObject = (JSONObject) result.get("list");
-            JSONArray resultList = (JSONArray) resultObject.get("entries");
+            JsonNode resultObject = result.get("list");
+            ArrayNode resultList = (ArrayNode) resultObject.get("entries");
             assertEquals(2, resultList.size());
-            JSONObject firstResultObject = (JSONObject) ((JSONObject) resultList.get(0)).get("entry");
+            JsonNode firstResultObject = (resultList.get(0)).get("entry");
             assertEquals("bpm_percentComplete", firstResultObject.get("name"));
             assertEquals(20L, firstResultObject.get("value"));
             assertEquals("d:int", firstResultObject.get("type"));
             assertEquals(20, activitiProcessEngine.getRuntimeService().getVariable(processInstance.getId(), "bpm_percentComplete"));
             
-            JSONObject secondResultObject = (JSONObject) ((JSONObject) resultList.get(1)).get("entry");
+            JsonNode secondResultObject = (resultList.get(1)).get("entry");
             assertEquals("bpm_workflowPriority", secondResultObject.get("name"));
             assertEquals(50L, secondResultObject.get("value"));
             assertEquals("d:int", secondResultObject.get("type"));
@@ -1888,14 +1892,14 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             String processId = processRest.getId();
             
             // Update an unexisting variable, creates a new one using explicit typing (d:long)
-            JSONObject variableJson = new JSONObject();
+            ObjectNode variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "newVariable");
             variableJson.put("value", 1234L);
             variableJson.put("type", "d:long");
             
-            JSONObject resultEntry = publicApiClient.processesClient().updateVariable(processId, "newVariable", variableJson);
+            JsonNode resultEntry = publicApiClient.processesClient().updateVariable(processId, "newVariable", variableJson);
             assertNotNull(resultEntry);
-            JSONObject result = (JSONObject) resultEntry.get("entry");
+            JsonNode result = resultEntry.get("entry");
             
             assertEquals("newVariable", result.get("name"));
             assertEquals(1234L, result.get("value"));
@@ -1903,13 +1907,13 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(1234L, activitiProcessEngine.getRuntimeService().getVariable(processId, "newVariable"));
             
             // Update an unexisting variable, creates a new one using no tying
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "stringVariable");
             variableJson.put("value", "This is a string value");
             
             resultEntry = publicApiClient.processesClient().updateVariable(processId, "stringVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("stringVariable", result.get("name"));
             assertEquals("This is a string value", result.get("value"));
@@ -1917,32 +1921,33 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals("This is a string value", activitiProcessEngine.getRuntimeService().getVariable(processId, "stringVariable"));
             
             // Update an existing variable, creates a new one using explicit typing (d:long)
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "newVariable");
             variableJson.put("value", 4567L);
             variableJson.put("type", "d:long");
             
             resultEntry = publicApiClient.processesClient().updateVariable(processId, "newVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("newVariable", result.get("name"));
             assertEquals(4567L, result.get("value"));
             assertEquals("d:long", result.get("type"));
             assertEquals(4567L, activitiProcessEngine.getRuntimeService().getVariable(processId, "newVariable"));
             
-            JSONObject processvariables = publicApiClient.processesClient().getProcessvariables(processId);
+            JsonNode processvariables = publicApiClient.processesClient().getProcessvariables(processId);
             assertNotNull(processvariables);
-            JSONObject newVariableEntry = null;
-            JSONArray entries = (JSONArray) processvariables.get("entries");
+            JsonNode newVariableEntry = null;
+            ArrayNode entries = (ArrayNode) processvariables.get("entries");
             assertNotNull(entries);
             for(int i=0; i<entries.size(); i++) 
             {
-                JSONObject entry = (JSONObject) entries.get(i);
+                JsonNode entry = entries.get(i);
                 assertNotNull(entry);
-                entry = (JSONObject) entry.get("entry");
+                entry = entry.get("entry");
                 assertNotNull(entry);
-                if ("newVariable".equals((String) entry.get("name"))) {
+                if ("newVariable".equals(entry.get("name").textValue()))
+                {
                     newVariableEntry = entry;
                 }
             }
@@ -1951,13 +1956,13 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(4567L, newVariableEntry.get("value"));
             
             // Update an existing variable, creates a new one using no explicit typing 
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "stringVariable");
             variableJson.put("value", "Updated string variable");
             
             resultEntry = publicApiClient.processesClient().updateVariable(processId, "stringVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("stringVariable", result.get("name"));
             assertEquals("Updated string variable", result.get("value"));
@@ -1965,7 +1970,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals("Updated string variable", activitiProcessEngine.getRuntimeService().getVariable(processId, "stringVariable"));
             
             // Update an unexisting variable with wrong variable data
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "newLongVariable");
             variableJson.put("value", "text");
             variableJson.put("type", "d:long");
@@ -1981,13 +1986,13 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // Update an unexisting variable with no variable data
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "newNoValueVariable");
             variableJson.put("type", "d:datetime");
             
             resultEntry = publicApiClient.processesClient().updateVariable(processId, "newNoValueVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("newNoValueVariable", result.get("name"));
             assertNotNull(result.get("value"));
@@ -1996,14 +2001,14 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // Test update variable with admin user
             publicApiClient.setRequestContext(adminContext);
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "newVariable");
             variableJson.put("value", 1234L);
             variableJson.put("type", "d:long");
             
             resultEntry = publicApiClient.processesClient().updateVariable(processId, "newVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("newVariable", result.get("name"));
             assertEquals(1234L, result.get("value"));
@@ -2025,14 +2030,14 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             String processId = processRest.getId();
             
             // Update an unexisting variable, creates a new one using explicit typing (d:long)
-            JSONObject variableJson = new JSONObject();
+            ObjectNode variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "newVariable");
             variableJson.put("value", 1234L);
             variableJson.put("type", "d:long");
             
-            JSONObject resultEntry = publicApiClient.processesClient().updateVariable(processId, "newVariable", variableJson);
+            JsonNode resultEntry = publicApiClient.processesClient().updateVariable(processId, "newVariable", variableJson);
             assertNotNull(resultEntry);
-            JSONObject result = (JSONObject) resultEntry.get("entry");
+            JsonNode result = resultEntry.get("entry");
             
             assertEquals("newVariable", result.get("name"));
             assertEquals(1234L, result.get("value"));
@@ -2075,7 +2080,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             String processId = processRest.getId();
 
             // Update initiator variable to "admin"
-            JSONObject variableJson = new JSONObject();
+            ObjectNode variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "initiator");
             variableJson.put("type", "d:noderef");
 
@@ -2091,9 +2096,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
                 }
             }, adminContext.getRunAsUser(), adminContext.getNetworkId());
 
-            JSONObject resultEntry = publicApiClient.processesClient().updateVariable(processId, "initiator", variableJson);
+            JsonNode resultEntry = publicApiClient.processesClient().updateVariable(processId, "initiator", variableJson);
             assertNotNull(resultEntry);
-            final JSONObject updateInitiatorResult = (JSONObject) resultEntry.get("entry");
+            final JsonNode updateInitiatorResult = resultEntry.get("entry");
 
             assertEquals("initiator", updateInitiatorResult.get("name"));
             assertEquals("d:noderef", updateInitiatorResult.get("type"));
@@ -2112,18 +2117,18 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         }
     }
 
-    protected void validateVariableField(JSONObject processvariables, String name, String value)
+    protected void validateVariableField(JsonNode processvariables, String name, String value)
     {
-        JSONObject entry = null;
-        JSONArray entries = (JSONArray) processvariables.get("entries");
+        JsonNode entry = null;
+        ArrayNode entries = (ArrayNode) processvariables.get("entries");
         assertNotNull(entries);
 
         int i = 0;
         do
         {
-            entry = (JSONObject) ((JSONObject) entries.get(i)).get("entry");
+            entry = (entries.get(i)).get("entry");
             i++;
-        } while (!entry.containsValue(name) && i < entries.size());
+        } while (!entry.has(name) && i < entries.size());
 
         // Test variable value
         assertEquals(value, entry.get("value"));
@@ -2143,7 +2148,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             String processId = processRest.getId();
             
             // Update an existing variable with wrong type
-            JSONObject variableJson = new JSONObject();
+            ObjectNode variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "wf_requiredApprovePercent");
             variableJson.put("value", 55.99);
             variableJson.put("type", "d:double");
@@ -2158,51 +2163,51 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
                 assertEquals(HttpStatus.BAD_REQUEST.value(), e.getHttpResponse().getStatusCode());
             }
             
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "wf_requiredApprovePercent");
             variableJson.put("value", 55.99);
             variableJson.put("type", "d:int");
             
-            JSONObject resultEntry = publicApiClient.processesClient().updateVariable(processId, "wf_requiredApprovePercent", variableJson);
+            JsonNode resultEntry = publicApiClient.processesClient().updateVariable(processId, "wf_requiredApprovePercent", variableJson);
             assertNotNull(resultEntry);
-            JSONObject result = (JSONObject) resultEntry.get("entry");
+            JsonNode result = resultEntry.get("entry");
             
             assertEquals("wf_requiredApprovePercent", result.get("name"));
             assertEquals(55l, result.get("value"));
             assertEquals("d:int", result.get("type"));
             assertEquals(55, activitiProcessEngine.getRuntimeService().getVariable(processId, "wf_requiredApprovePercent"));
             
-            JSONObject processvariables = publicApiClient.processesClient().getProcessvariables(processId);
+            JsonNode processvariables = publicApiClient.processesClient().getProcessvariables(processId);
             assertNotNull(processvariables);
             
             // Add process variables to map for easy lookup
-            Map<String, JSONObject> variablesByName = new HashMap<String, JSONObject>();
-            JSONObject entry = null;
-            JSONArray entries = (JSONArray) processvariables.get("entries");
+            Map<String, JsonNode> variablesByName = new HashMap<String, JsonNode>();
+            JsonNode entry = null;
+            ArrayNode entries = (ArrayNode) processvariables.get("entries");
             assertNotNull(entries);
             for(int i=0; i<entries.size(); i++) 
             {
-                entry = (JSONObject) entries.get(i);
+                entry = entries.get(i);
                 assertNotNull(entry);
-                entry = (JSONObject) entry.get("entry");
+                entry = entry.get("entry");
                 assertNotNull(entry);
-                variablesByName.put((String) entry.get("name"), entry);
+                variablesByName.put(entry.get("name").textValue(), entry);
             }
             
-            JSONObject approvePercentObject = variablesByName.get("wf_requiredApprovePercent");
+            JsonNode approvePercentObject = variablesByName.get("wf_requiredApprovePercent");
             assertNotNull(approvePercentObject);
             assertEquals(55l, approvePercentObject.get("value"));
             assertEquals("d:int", approvePercentObject.get("type"));
             
             // set a new variable
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "testVariable");
             variableJson.put("value", "text");
             variableJson.put("type", "d:text");
             
             resultEntry = publicApiClient.processesClient().updateVariable(processId, "testVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("testVariable", result.get("name"));
             assertEquals("text", result.get("value"));
@@ -2210,14 +2215,14 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals("text", activitiProcessEngine.getRuntimeService().getVariable(processId, "testVariable"));
             
             // change the variable value and type (should be working because no content model type)
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "testVariable");
             variableJson.put("value", 123);
             variableJson.put("type", "d:int");
             
             resultEntry = publicApiClient.processesClient().updateVariable(processId, "testVariable", variableJson);
             assertNotNull(resultEntry);
-            result = (JSONObject) resultEntry.get("entry");
+            result = resultEntry.get("entry");
             
             assertEquals("testVariable", result.get("name"));
             assertEquals(123l, result.get("value"));
@@ -2225,7 +2230,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals(123, activitiProcessEngine.getRuntimeService().getVariable(processId, "testVariable"));
             
             // change the variable value for a list of noderefs (bpm_assignees)
-            final JSONObject updateAssigneesJson = new JSONObject();
+            final ObjectNode updateAssigneesJson = AlfrescoDefaultObjectMapper.createObjectNode();
             updateAssigneesJson.put("name", "bpm_assignees");
             updateAssigneesJson.put("type", "d:noderef");
             
@@ -2234,16 +2239,16 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
                 @Override
                 public Void doWork() throws Exception
                 {
-                    JSONArray assigneeArray = new JSONArray();
+                    ArrayNode assigneeArray = AlfrescoDefaultObjectMapper.createArrayNode();
                     assigneeArray.add(requestContext.getRunAsUser());
-                    updateAssigneesJson.put("value", assigneeArray);
+                    updateAssigneesJson.set("value", assigneeArray);
                     return null;
                 }
             }, requestContext.getRunAsUser(), requestContext.getNetworkId());
             
             resultEntry = publicApiClient.processesClient().updateVariable(processId, "bpm_assignees", updateAssigneesJson);
             assertNotNull(resultEntry);
-            final JSONObject updateAssigneeResult = (JSONObject) resultEntry.get("entry");
+            final JsonNode updateAssigneeResult = resultEntry.get("entry");
             
             assertEquals("bpm_assignees", updateAssigneeResult.get("name"));
             TenantUtil.runAsUserTenant(new TenantRunAsWork<Void>()
@@ -2251,7 +2256,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
                 @Override
                 public Void doWork() throws Exception
                 {
-                    JSONArray assigneeArray = (JSONArray) updateAssigneeResult.get("value");
+                    ArrayNode assigneeArray = (ArrayNode) updateAssigneeResult.get("value");
                     assertNotNull(assigneeArray);
                     assertEquals(1, assigneeArray.size());
                     return null;
@@ -2261,7 +2266,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertEquals("d:noderef", updateAssigneeResult.get("type"));
             
             // update the bpm_assignees with a single entry, should result in an error
-            final JSONObject updateAssigneeJson = new JSONObject();
+            final ObjectNode updateAssigneeJson = AlfrescoDefaultObjectMapper.createObjectNode();
             updateAssigneeJson.put("name", "bpm_assignees");
             updateAssigneeJson.put("type", "d:noderef");
             
@@ -2286,9 +2291,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             // change the variable value with a non-existing person
-            variableJson = new JSONObject();
+            variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
             variableJson.put("name", "bpm_assignees");
-            JSONArray assigneeArray = new JSONArray();
+            ArrayNode assigneeArray = AlfrescoDefaultObjectMapper.createArrayNode();
             assigneeArray.add("nonExistingPerson");
             variableJson.put("value", assigneeArray);
             variableJson.put("type", "d:noderef");

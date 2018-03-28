@@ -25,6 +25,26 @@
  */
 package org.alfresco.rest.api.tests;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EmptyStackException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import javax.mail.internet.MimeMessage;
+import javax.servlet.http.HttpServletResponse;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.content.ContentLimitProvider;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
@@ -60,30 +80,12 @@ import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.GUID;
 import org.alfresco.util.email.EmailUtil;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.HttpStatus;
-import org.json.simple.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
-
-import javax.mail.internet.MimeMessage;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EmptyStackException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.alfresco.repo.security.authentication.ResetPasswordServiceImplTest.getWorkflowIdAndKeyFromUrl;
 import static org.junit.Assert.assertEquals;
@@ -357,7 +359,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     @Test
-    public void testCreatePerson_canCreateDisabledPerson() throws PublicApiException
+    public void testCreatePerson_canCreateDisabledPerson() throws PublicApiException, IOException
     {
         // Person disabled
         {
@@ -627,7 +629,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     @Test
-    public void testGetPerson_withCustomProps() throws PublicApiException
+    public void testGetPerson_withCustomProps() throws PublicApiException, IOException
     {
         // Create the person directly using the Java services - we don't want to test
         // the REST API's "create person" function here, so we're isolating this test from it.
@@ -751,7 +753,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     // Create a person for use in the testing of updating custom aspects/props
-    private Person createTestUpdatePerson() throws PublicApiException
+    private Person createTestUpdatePerson() throws PublicApiException, IOException
     {
         Person person = new Person();
         String personId = UUID.randomUUID().toString()+"@"+account1.getId();
@@ -987,9 +989,9 @@ public class TestPeople extends AbstractBaseApiTest
         }
 
         @Override
-        public JSONObject toJSON()
+        public ObjectNode toJSON()
         {
-            JSONObject personJson = new JSONObject();
+            ObjectNode personJson = AlfrescoDefaultObjectMapper.createObjectNode();
 
             if (personUpdate.getUserName() != null)
             {
@@ -1017,8 +1019,8 @@ public class TestPeople extends AbstractBaseApiTest
             personJson.put("enabled", personUpdate.isEnabled());
             personJson.put("emailNotificationsEnabled", personUpdate.isEmailNotificationsEnabled());
             personJson.put("password", personUpdate.getPassword());
-            personJson.put("properties", personUpdate.getProperties());
-            personJson.put("aspectNames", personUpdate.getAspectNames());
+            personJson.set("properties", AlfrescoDefaultObjectMapper.convertValue(personUpdate.getProperties(), ObjectNode.class));
+            personJson.set("aspectNames", AlfrescoDefaultObjectMapper.convertValue(personUpdate.getAspectNames(), ArrayNode.class));
             return personJson;
         }
     }
@@ -1034,7 +1036,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
     
     @Test
-    public  void testUpdatePersonNonSelfAndNonAdminDisallowed() throws PublicApiException
+    public  void testUpdatePersonNonSelfAndNonAdminDisallowed() throws PublicApiException, IOException
     {
         // TODO: this is bad, it seems that the test fixture isn't unique per test!?
         final String personId = account1PersonIt.next();
@@ -1049,7 +1051,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     @Test
-    public  void testUpdatePersonCanUpdateThemself() throws PublicApiException
+    public  void testUpdatePersonCanUpdateThemself() throws PublicApiException, IOException
     {
         final String personId = account1PersonIt.next();
         publicApiClient.setRequestContext(new RequestContext(account1.getId(), personId));
@@ -1088,7 +1090,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     @Test
-    public void testUpdatePersonUsingPartialUpdate() throws PublicApiException
+    public void testUpdatePersonUsingPartialUpdate() throws PublicApiException, IOException
     {
         final String personId = account3.createUser().getId();
 
@@ -1099,13 +1101,13 @@ public class TestPeople extends AbstractBaseApiTest
         HttpResponse response = people.update("people", personId, null, null, "{\n" + "  \"firstName\": \"" + updatedFirstName + "\"\n" + "}", null,
                 "Expected 200 response when updating " + personId, 200);
 
-        Person updatedPerson = Person.parsePerson((JSONObject) response.getJsonResponse().get("entry"));
+        Person updatedPerson = Person.parsePerson(response.getJsonResponse().get("entry"));
 
         assertEquals(updatedFirstName, updatedPerson.getFirstName());
     }
 
     @Test
-    public  void testUpdatePersonWithRestrictedResponseFields() throws PublicApiException
+    public  void testUpdatePersonWithRestrictedResponseFields() throws PublicApiException, IOException
     {
         final String personId = account3.createUser().getId();
 
@@ -1119,7 +1121,7 @@ public class TestPeople extends AbstractBaseApiTest
         HttpResponse response = people.update("people", personId, null, null, "{\n" + "  \"firstName\": \"" + updatedFirstName + "\"\n" + "}", params,
                 "Expected 200 response when updating " + personId, 200);
 
-        Person updatedPerson = Person.parsePerson((JSONObject) response.getJsonResponse().get("entry"));
+        Person updatedPerson = Person.parsePerson(response.getJsonResponse().get("entry"));
 
         assertNotNull(updatedPerson.getId());
         assertEquals(updatedFirstName, updatedPerson.getFirstName());
@@ -1186,7 +1188,7 @@ public class TestPeople extends AbstractBaseApiTest
                         + "}", params,
                 "Expected 200 response when updating " + personId, 200);
 
-        Person updatedPerson = Person.parsePerson((JSONObject) response.getJsonResponse().get("entry"));
+        Person updatedPerson = Person.parsePerson(response.getJsonResponse().get("entry"));
 
         assertNotNull(updatedPerson.getId());
         assertEquals(firstName, updatedPerson.getFirstName());
@@ -1235,7 +1237,7 @@ public class TestPeople extends AbstractBaseApiTest
                         + "}", params,
                 "Expected 200 response when updating " + personId, 200);
 
-        updatedPerson = Person.parsePerson((JSONObject) response.getJsonResponse().get("entry"));
+        updatedPerson = Person.parsePerson(response.getJsonResponse().get("entry"));
 
         assertNotNull(updatedPerson.getId());
         assertNull(updatedPerson.getLastName());
@@ -1268,7 +1270,7 @@ public class TestPeople extends AbstractBaseApiTest
                         + "}", params,
                 "Expected 200 response when updating " + personId, 200);
 
-        updatedPerson = Person.parsePerson((JSONObject) response.getJsonResponse().get("entry"));
+        updatedPerson = Person.parsePerson(response.getJsonResponse().get("entry"));
 
         // note: empty company object is returned for backwards compatibility (with pre-existing getPerson API <= 5.1)
         assertNotNull(updatedPerson.getCompany());
@@ -1285,7 +1287,7 @@ public class TestPeople extends AbstractBaseApiTest
                         + "}", params,
                 "Expected 200 response when updating " + personId, 200);
 
-        updatedPerson = Person.parsePerson((JSONObject) response.getJsonResponse().get("entry"));
+        updatedPerson = Person.parsePerson(response.getJsonResponse().get("entry"));
 
         assertNotNull(updatedPerson.getCompany());
         assertEquals(updatedOrgName, updatedPerson.getCompany().getOrganization());
@@ -1297,7 +1299,7 @@ public class TestPeople extends AbstractBaseApiTest
                         + "}", params,
                 "Expected 200 response when updating " + personId, 200);
 
-        updatedPerson = Person.parsePerson((JSONObject) response.getJsonResponse().get("entry"));
+        updatedPerson = Person.parsePerson(response.getJsonResponse().get("entry"));
 
         // note: empty company object is returned for backwards compatibility (with pre-existing getPerson API <= 5.1)
         assertNotNull(updatedPerson.getCompany());
@@ -1314,7 +1316,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     @Test
-    public  void testUpdatePersonEnabled() throws PublicApiException
+    public  void testUpdatePersonEnabled() throws PublicApiException, IOException
     {
         // Non-admin user ID
         final String personId = account3.createUser().getId();
@@ -1374,7 +1376,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     @Test
-    public void testUpdatePersonPasswordByThemself() throws PublicApiException
+    public void testUpdatePersonPasswordByThemself() throws PublicApiException, IOException
     {
         publicApiClient.setRequestContext(new RequestContext(account1.getId(), account1Admin, "admin"));
         Person me = new Person();
@@ -1412,7 +1414,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     @Test
-    public  void testUpdatePersonPasswordByAdmin() throws PublicApiException
+    public  void testUpdatePersonPasswordByAdmin() throws PublicApiException, IOException
     {
         final String personId = account3.createUser().getId();
         final String networkId = account3.getId();
@@ -1497,10 +1499,10 @@ public class TestPeople extends AbstractBaseApiTest
         return listPeople(createParams(paging, params), statusCode);
     }
 
-    private PublicApiClient.ListResponse<Person> listPeople(Map<String, String> parameters, int expectedStatusCode) throws PublicApiException
+    private PublicApiClient.ListResponse<Person> listPeople(Map<String, String> parameters, int expectedStatusCode) throws PublicApiException, IOException
     {
         HttpResponse response = people.getAll("people", null, null, null, parameters, "Failed to get people", expectedStatusCode);
-        JSONObject jsonList = (JSONObject) response.getJsonResponse().get("list");
+        JsonNode jsonList = response.getJsonResponse().get("list");
         if (jsonList == null)
         {
             return null;
@@ -1510,7 +1512,7 @@ public class TestPeople extends AbstractBaseApiTest
     }
 
     @Test
-    public void testListPeopleWithAspectNamesAndProperties() throws PublicApiException
+    public void testListPeopleWithAspectNamesAndProperties() throws PublicApiException, IOException
     {
         publicApiClient.setRequestContext(new RequestContext(account3.getId(), account3Admin, "admin"));
         personBob = new Person();

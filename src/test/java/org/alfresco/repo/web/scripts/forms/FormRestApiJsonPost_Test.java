@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.forms;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -37,10 +38,9 @@ import org.alfresco.service.cmr.repository.ChildAssociationRef;
 import org.alfresco.service.cmr.repository.ContentData;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.namespace.RegexQNamePattern;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
 {
@@ -53,7 +53,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
     private static final String ASSOC_SYS_CHILDREN_ADDED = "assoc_sys_children_added";
     private static final String ASSOC_SYS_CHILDREN_REMOVED = "assoc_sys_children_removed";
 
-    public void testSimpleJsonPostRequest() throws IOException, JSONException
+    public void testSimpleJsonPostRequest() throws IOException
     {
         // Retrieve and store the original property value.
         Serializable originalDescription =
@@ -69,7 +69,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         }
         
         // Construct some JSON to represent a new value.
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         final String proposedNewDescription = "Modified Description";
         jsonPostData.put(PROP_CM_DESCRIPTION, proposedNewDescription);
         jsonPostData.put(PROP_MIMETYPE, MimetypeMap.MIMETYPE_HTML);
@@ -95,11 +95,11 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         // The Rest API should also give us the modified property.
         /*
         Response response = sendRequest(new GetRequest(referencingNodeUpdateUrl), 200);
-        JSONObject jsonGetResponse = new JSONObject(response.getContentAsString());
-        JSONObject jsonDataObj = (JSONObject)jsonGetResponse.get("data");
+        ObjectNode jsonGetResponse = new ObjectNode(response.getContentAsString());
+        ObjectNode jsonDataObj = (ObjectNode)jsonGetResponse.get("data");
         assertNotNull(jsonDataObj);
 
-        JSONObject formData = (JSONObject)jsonDataObj.get("formData");
+        ObjectNode formData = (ObjectNode)jsonDataObj.get("formData");
         assertNotNull(formData);
         String retrievedValue = (String)formData.get(PROP_CM_DESCRIPTION);
         assertEquals(modifiedDescription, retrievedValue);
@@ -116,7 +116,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         checkOriginalAssocsBeforeChanges();
         
         // Add three additional associations
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         String assocsToAdd = associatedDoc_C + "," + associatedDoc_D + "," + associatedDoc_E;
         jsonPostData.put(ASSOC_CM_REFERENCES_ADDED, assocsToAdd);
         String jsonPostString = jsonPostData.toString();
@@ -143,11 +143,11 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         // The Rest API should also give us the modified assocs.
         /*Response response = sendRequest(new GetRequest(referencingNodeUpdateUrl), 200);
         String jsonRspString = response.getContentAsString();
-        JSONObject jsonGetResponse = new JSONObject(jsonRspString);
-        JSONObject jsonData = (JSONObject)jsonGetResponse.get("data");
+        ObjectNode jsonGetResponse = new ObjectNode(jsonRspString);
+        ObjectNode jsonData = (ObjectNode)jsonGetResponse.get("data");
         assertNotNull(jsonData);
 
-        JSONObject jsonFormData = (JSONObject)jsonData.get("formData");
+        ObjectNode jsonFormData = (ObjectNode)jsonData.get("formData");
         assertNotNull(jsonFormData);
         
         String jsonAssocs = (String)jsonFormData.get(ASSOC_CM_REFERENCES);
@@ -170,7 +170,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         checkOriginalAssocsBeforeChanges();
 
         // Remove an association
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         String assocsToRemove = associatedDoc_B.toString();
         jsonPostData.put(ASSOC_CM_REFERENCES_REMOVED, assocsToRemove);
         String jsonPostString = jsonPostData.toString();
@@ -193,11 +193,11 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         // The Rest API should also give us the modified assocs.
         /*Response response = sendRequest(new GetRequest(referencingNodeUpdateUrl), 200);
         String jsonRspString = response.getContentAsString();
-        JSONObject jsonGetResponse = new JSONObject(jsonRspString);
-        JSONObject jsonData = (JSONObject)jsonGetResponse.get("data");
+        ObjectNode jsonGetResponse = new ObjectNode(jsonRspString);
+        ObjectNode jsonData = (ObjectNode)jsonGetResponse.get("data");
         assertNotNull(jsonData);
 
-        JSONObject jsonFormData = (JSONObject)jsonData.get("formData");
+        ObjectNode jsonFormData = (ObjectNode)jsonData.get("formData");
         assertNotNull(jsonFormData);
         
         String jsonAssocs = (String)jsonFormData.get(ASSOC_CM_REFERENCES);
@@ -220,7 +220,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         checkOriginalAssocsBeforeChanges();
 
         // Add an association
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         String assocsToAdd = associatedDoc_C.toString();
         jsonPostData.put(ASSOC_CM_REFERENCES_ADDED, assocsToAdd);
         String jsonPostString = jsonPostData.toString();
@@ -241,7 +241,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         checkOriginalAssocsBeforeChanges();
 
         // Remove a non-existent association
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         String assocsToRemove = associatedDoc_E.toString();
         jsonPostData.put(ASSOC_CM_REFERENCES_REMOVED, assocsToRemove);
         String jsonPostString = jsonPostData.toString();
@@ -258,7 +258,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         checkOriginalChildAssocsBeforeChanges();
         
         // Add three additional associations
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         String assocsToAdd = childDoc_C + "," + childDoc_D + "," + childDoc_E;
         jsonPostData.put(ASSOC_SYS_CHILDREN_ADDED, assocsToAdd);
         String jsonPostString = jsonPostData.toString();
@@ -286,11 +286,11 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         /*Response response = sendRequest(new GetRequest(containingNodeUpdateUrl), 200);
         String jsonRspString = response.getContentAsString();
         
-        JSONObject jsonGetResponse = new JSONObject(jsonRspString);
-        JSONObject jsonData = (JSONObject)jsonGetResponse.get("data");
+        ObjectNode jsonGetResponse = new ObjectNode(jsonRspString);
+        ObjectNode jsonData = (ObjectNode)jsonGetResponse.get("data");
         assertNotNull(jsonData);
 
-        JSONObject jsonFormData = (JSONObject)jsonData.get("formData");
+        ObjectNode jsonFormData = (ObjectNode)jsonData.get("formData");
         assertNotNull(jsonFormData);
         
         String jsonAssocs = (String)jsonFormData.get(ASSOC_SYS_CHILDREN);
@@ -315,7 +315,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         checkOriginalChildAssocsBeforeChanges();
 
         // Remove an association
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         String assocsToRemove = childDoc_B.toString();
         jsonPostData.put(ASSOC_SYS_CHILDREN_REMOVED, assocsToRemove);
         String jsonPostString = jsonPostData.toString();
@@ -338,11 +338,11 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         // The Rest API should also give us the modified assocs.
         /*Response response = sendRequest(new GetRequest(containingNodeUpdateUrl), 200);
         String jsonRspString = response.getContentAsString();
-        JSONObject jsonGetResponse = new JSONObject(jsonRspString);
-        JSONObject jsonData = (JSONObject)jsonGetResponse.get("data");
+        ObjectNode jsonGetResponse = new ObjectNode(jsonRspString);
+        ObjectNode jsonData = (ObjectNode)jsonGetResponse.get("data");
         assertNotNull(jsonData);
 
-        JSONObject jsonFormData = (JSONObject)jsonData.get("formData");
+        ObjectNode jsonFormData = (ObjectNode)jsonData.get("formData");
         assertNotNull(jsonFormData);
         
         String jsonAssocs = (String)jsonFormData.get(ASSOC_SYS_CHILDREN);
@@ -365,7 +365,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         checkOriginalChildAssocsBeforeChanges();
 
         // Add an association
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         String assocsToAdd = this.childDoc_C.toString();
         jsonPostData.put(ASSOC_SYS_CHILDREN_ADDED, assocsToAdd);
         String jsonPostString = jsonPostData.toString();
@@ -386,7 +386,7 @@ public class FormRestApiJsonPost_Test extends AbstractTestFormRestApi
         checkOriginalChildAssocsBeforeChanges();
 
         // Remove a non-existent child association
-        JSONObject jsonPostData = new JSONObject();
+        ObjectNode jsonPostData = AlfrescoDefaultObjectMapper.createObjectNode();
         String assocsToRemove = childDoc_E.toString();
         jsonPostData.put(ASSOC_SYS_CHILDREN_REMOVED, assocsToRemove);
         String jsonPostString = jsonPostData.toString();

@@ -25,6 +25,9 @@
  */
 package org.alfresco.repo.web.scripts.links;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -55,10 +58,9 @@ import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.GUID;
 import org.alfresco.util.ISO8601DateFormat;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
@@ -220,7 +222,7 @@ public class LinksRestApiTest extends BaseWebScriptTest
     
     // Test helper methods
     
-    private JSONObject getLinks(String filter, String username) throws Exception
+    private JsonNode getLinks(String filter, String username) throws Exception
     {
        String origUser = this.authenticationComponent.getCurrentUserName();
        if (username != null)
@@ -238,7 +240,7 @@ public class LinksRestApiTest extends BaseWebScriptTest
        url += "&startIndex=0&page=1&pageSize=4";
        
        Response response = sendRequest(new GetRequest(url), 200);
-       JSONObject result = new JSONObject(response.getContentAsString());
+       JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
        
        if (username != null)
        {
@@ -248,15 +250,15 @@ public class LinksRestApiTest extends BaseWebScriptTest
        return result;
     }
     
-    private JSONObject getLink(String name, int expectedStatus) throws Exception
+    private JsonNode getLink(String name, int expectedStatus) throws Exception
     {
        Response response = sendRequest(new GetRequest(URL_LINKS_FETCH + name), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = new JSONObject(response.getContentAsString());
+          JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
           if (result.has("item"))
           {
-             return result.getJSONObject("item");
+             return result.get("item");
           }
           return result;
        }
@@ -269,10 +271,10 @@ public class LinksRestApiTest extends BaseWebScriptTest
     /**
      * Creates a single link based on the supplied details
      */
-    private JSONObject createLink(String title, String description, String url,
+    private JsonNode createLink(String title, String description, String url,
           boolean internal, int expectedStatus) throws Exception
     {
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("site", SITE_SHORT_NAME_LINKS);
        json.put("title", title);
        json.put("description", description);
@@ -287,10 +289,10 @@ public class LinksRestApiTest extends BaseWebScriptTest
        Response response = sendRequest(new PostRequest(URL_LINKS_CREATE, json.toString(), "application/json"), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = new JSONObject(response.getContentAsString());
+          JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
           if (result.has("link"))
           {
-             return result.getJSONObject("link");
+             return result.get("link");
           }
           return result;
        }
@@ -303,10 +305,10 @@ public class LinksRestApiTest extends BaseWebScriptTest
     /**
      * Updates the link with the new details
      */
-    private JSONObject updateLink(String name, String title, String description, String url,
+    private JsonNode updateLink(String name, String title, String description, String url,
           boolean internal, int expectedStatus) throws Exception
     {
-       JSONObject json = new JSONObject();
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
        json.put("site", SITE_SHORT_NAME_LINKS);
        json.put("title", title);
        json.put("description", description);
@@ -318,10 +320,10 @@ public class LinksRestApiTest extends BaseWebScriptTest
        Response response = sendRequest(new PutRequest(URL_LINKS_UPDATE + name, json.toString(), "application/json"), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = new JSONObject(response.getContentAsString());
+          JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
           if (result.has("links"))
           {
-             return result.getJSONObject("links");
+             return result.get("links");
           }
           return result;
        }
@@ -334,12 +336,12 @@ public class LinksRestApiTest extends BaseWebScriptTest
     /**
      * Deletes the link
      */
-    private JSONObject deleteLink(String name, int expectedStatus) throws Exception
+    private JsonNode deleteLink(String name, int expectedStatus) throws Exception
     {
        Response response = sendRequest(new DeleteRequest(URL_LINKS_FETCH+name), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = new JSONObject(response.getContentAsString());
+          JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
           return result;
        }
        else
@@ -351,21 +353,21 @@ public class LinksRestApiTest extends BaseWebScriptTest
     /**
      * Deletes the links
      */
-    private JSONObject deleteLinks(List<String> names, int expectedStatus) throws Exception
+    private JsonNode deleteLinks(List<String> names, int expectedStatus) throws Exception
     {
-       JSONArray items = new JSONArray();
+       ArrayNode items = AlfrescoDefaultObjectMapper.createArrayNode();
        for (String name : names)
        {
-          items.put(name);
+          items.add(name);
        }
        
-       JSONObject json = new JSONObject();
-       json.put("items", items);
+       ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
+       json.set("items", items);
        
        Response response = sendRequest(new PostRequest(URL_LINKS_DELETE, json.toString(), "application/json"), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = new JSONObject(response.getContentAsString());
+          JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
           return result;
        }
        else
@@ -402,14 +404,14 @@ public class LinksRestApiTest extends BaseWebScriptTest
     /**
      * Gets the link name (link- timestamp based) from a returned link
      */
-    private String getNameFromLink(JSONObject link) throws Exception
+    private String getNameFromLink(JsonNode link) throws Exception
     {
        if (! link.has("name"))
        {
           throw new IllegalArgumentException("No name in " + link.toString());
        }
        
-       return link.getString("name");
+       return link.get("name").textValue();
     }
     
     
@@ -420,16 +422,16 @@ public class LinksRestApiTest extends BaseWebScriptTest
      */
     public void testCreateEditDeleteEntry() throws Exception
     {
-       JSONObject link;
-       JSONObject author;
-       JSONObject permissions;
+       JsonNode link;
+       JsonNode author;
+       JsonNode permissions;
        String name;
        
        
        // None to start with
        link = getLinks(null, null);
        assertEquals("Incorrect JSON: " + link.toString(), true, link.has("total"));
-       assertEquals(0, link.getInt("total"));
+       assertEquals(0, link.get("total").intValue());
        
        
        // Won't be there to start with
@@ -442,46 +444,46 @@ public class LinksRestApiTest extends BaseWebScriptTest
        assertEquals("Incorrect JSON: " + link.toString(), true, link.has("name"));
        name = getNameFromLink(link);
        
-       assertEquals(name, link.getString("name"));
-       assertEquals(name, link.getString("message"));
+       assertEquals(name, link.get("name").textValue());
+       assertEquals(name, link.get("message").textValue());
 
        
        // Fetch
        link = getLink(name, Status.STATUS_OK);
        
        assertEquals("Error found " + link.toString(), false, link.has("error"));
-       assertEquals(LINK_TITLE_ONE, link.getString("title"));
-       assertEquals("Thing 1", link.getString("description"));
-       assertEquals(LINK_URL_ONE, link.getString("url"));
-       assertEquals(false, link.getBoolean("internal"));
-       assertEquals(0, link.getJSONArray("tags").length());
+       assertEquals(LINK_TITLE_ONE, link.get("title"));
+       assertEquals("Thing 1", link.get("description"));
+       assertEquals(LINK_URL_ONE, link.get("url"));
+       assertEquals(false, link.get("internal"));
+       assertEquals(0, link.get("tags").size());
        
        assertEquals(true, link.has("author"));
-       author = link.getJSONObject("author");
-       assertEquals(USER_ONE, author.getString("username"));
-       assertEquals(USERDETAILS_FIRSTNAME, author.getString("firstName"));
-       assertEquals(USERDETAILS_LASTNAME, author.getString("lastName"));
+       author = link.get("author");
+       assertEquals(USER_ONE, author.get("username"));
+       assertEquals(USERDETAILS_FIRSTNAME, author.get("firstName"));
+       assertEquals(USERDETAILS_LASTNAME, author.get("lastName"));
        
        // Check the permissions
        assertEquals(true, link.has("permissions"));
-       permissions = link.getJSONObject("permissions");
-       assertEquals(true, permissions.getBoolean("edit"));
-       assertEquals(true, permissions.getBoolean("delete"));
+       permissions = link.get("permissions");
+       assertEquals(true, permissions.get("edit"));
+       assertEquals(true, permissions.get("delete"));
        
        // Check the noderef
-       NodeRef nodeRef = new NodeRef(link.getString("nodeRef"));
+       NodeRef nodeRef = new NodeRef(link.get("nodeRef").textValue());
        assertEquals(true, nodeService.exists(nodeRef));
        assertEquals(name, nodeService.getProperty(nodeRef, ContentModel.PROP_NAME));
        
        // Check the comments url
        assertEquals(
              "/node/workspace/" + nodeRef.getStoreRef().getIdentifier() + "/" + nodeRef.getId() + "/comments",
-             link.getString("commentsUrl"));
+             link.get("commentsUrl"));
        
        // Check the created date: compare two java.util.Date objects.
        assertEquals(
              nodeService.getProperty(nodeRef, ContentModel.PROP_CREATED),
-             ISO8601DateFormat.parse(link.getJSONObject("createdOnDate").getString("iso8601")));
+             ISO8601DateFormat.parse(link.get("createdOnDate").get("iso8601").textValue()));
        
        // Edit
        // We should get a simple message
@@ -491,24 +493,24 @@ public class LinksRestApiTest extends BaseWebScriptTest
              true, link.has("message"));
        assertEquals(
              "Incorrect JSON: " + link.toString(), 
-             true, link.getString("message").contains("updated"));
+             true, link.get("message").has("updated"));
        
        
        // Fetch
        link = getLink(name, Status.STATUS_OK);
        
        assertEquals("Error found " + link.toString(), false, link.has("error"));
-       assertEquals(LINK_TITLE_ONE, link.getString("title"));
-       assertEquals("More Thing 1", link.getString("description"));
-       assertEquals(LINK_URL_ONE, link.getString("url"));
-       assertEquals(true, link.getBoolean("internal"));
-       assertEquals(0, link.getJSONArray("tags").length());
+       assertEquals(LINK_TITLE_ONE, link.get("title"));
+       assertEquals("More Thing 1", link.get("description"));
+       assertEquals(LINK_URL_ONE, link.get("url"));
+       assertEquals(true, link.get("internal"));
+       assertEquals(0, link.get("tags").size());
        
        assertEquals(true, link.has("author"));
-       author = link.getJSONObject("author");
-       assertEquals(USER_ONE, author.getString("username"));
-       assertEquals(USERDETAILS_FIRSTNAME, author.getString("firstName"));
-       assertEquals(USERDETAILS_LASTNAME, author.getString("lastName"));
+       author = link.get("author");
+       assertEquals(USER_ONE, author.get("username"));
+       assertEquals(USERDETAILS_FIRSTNAME, author.get("firstName"));
+       assertEquals(USERDETAILS_LASTNAME, author.get("lastName"));
        
        
        // Fetch as a different user, permissions different
@@ -516,17 +518,17 @@ public class LinksRestApiTest extends BaseWebScriptTest
        link = getLink(name, Status.STATUS_OK);
        
        // Check the basics
-       assertEquals(LINK_TITLE_ONE, link.getString("title"));
-       assertEquals("More Thing 1", link.getString("description"));
-       assertEquals(LINK_URL_ONE, link.getString("url"));
-       assertEquals(true, link.getBoolean("internal"));
-       assertEquals(0, link.getJSONArray("tags").length());
+       assertEquals(LINK_TITLE_ONE, link.get("title"));
+       assertEquals("More Thing 1", link.get("description"));
+       assertEquals(LINK_URL_ONE, link.get("url"));
+       assertEquals(true, link.get("internal"));
+       assertEquals(0, link.get("tags").size());
        
        // Different user in the site, can edit but not delete
        assertEquals(true, link.has("permissions"));
-       permissions = link.getJSONObject("permissions");
-       assertEquals(true, permissions.getBoolean("edit"));
-       assertEquals(false, permissions.getBoolean("delete"));
+       permissions = link.get("permissions");
+       assertEquals(true, permissions.get("edit"));
+       assertEquals(false, permissions.get("delete"));
        
        this.authenticationComponent.setCurrentUser(USER_ONE);
 
@@ -539,7 +541,7 @@ public class LinksRestApiTest extends BaseWebScriptTest
        
        assertEquals(
              "Incorrect JSON: " + link.toString(), 
-             true, link.getString("message").contains("deleted"));
+             true, link.get("message").has("deleted"));
 
        
        // Fetch, will have gone
@@ -593,7 +595,7 @@ public class LinksRestApiTest extends BaseWebScriptTest
         mapForCheck.put("BODY onload!#$%&()*~+-_.,:;?@[/|\\]^`=alert(\"XSS\")>", Status.STATUS_BAD_REQUEST);
         mapForCheck.put("onload54(dd)fg`=df", Status.STATUS_BAD_REQUEST);
 
-        JSONObject link;
+        JsonNode link;
 
         link = createLink(LINK_TITLE, "Link desc", LINK_URL, false, Status.STATUS_OK);
         String name = getNameFromLink(link);
@@ -610,14 +612,14 @@ public class LinksRestApiTest extends BaseWebScriptTest
      */
     public void testOverallListing() throws Exception
     {
-       JSONObject links;
-       JSONArray entries;
+       JsonNode links;
+       ArrayNode entries;
        
        // Initially, there are no events
        links = getLinks(null, null);
        assertEquals("Incorrect JSON: " + links.toString(), true, links.has("total"));
-       assertEquals(0, links.getInt("total"));
-       assertEquals(0, links.getInt("itemCount"));
+       assertEquals(0, links.get("total"));
+       assertEquals(0, links.get("itemCount"));
        
        
        // Add two links to get started with
@@ -629,19 +631,19 @@ public class LinksRestApiTest extends BaseWebScriptTest
        
        // Should have two links
        assertEquals("Incorrect JSON: " + links.toString(), true, links.has("total"));
-       assertEquals(2, links.getInt("total"));
-       assertEquals(2, links.getInt("itemCount"));
+       assertEquals(2, links.get("total"));
+       assertEquals(2, links.get("itemCount"));
      
-       entries = links.getJSONArray("items");
-       assertEquals(2, entries.length());
+       entries = (ArrayNode) links.get("items");
+       assertEquals(2, entries.size());
        // Sorted by newest created first
-       assertEquals(LINK_TITLE_TWO, entries.getJSONObject(0).getString("title"));
-       assertEquals(LINK_TITLE_ONE, entries.getJSONObject(1).getString("title"));
+       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title"));
+       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title"));
        
        
        // Add a third, which is internal, and created by the other user
        this.authenticationComponent.setCurrentUser(USER_TWO);
-       JSONObject link3 = createLink(LINK_TITLE_THREE, "Thing 3", LINK_URL_THREE, true, Status.STATUS_OK);
+       JsonNode link3 = createLink(LINK_TITLE_THREE, "Thing 3", LINK_URL_THREE, true, Status.STATUS_OK);
        String name3 = getNameFromLink(link3);
        updateLink(name3, LINK_TITLE_THREE, "More Where 3", LINK_URL_THREE, false, Status.STATUS_OK);
        this.authenticationComponent.setCurrentUser(USER_ONE);
@@ -649,58 +651,58 @@ public class LinksRestApiTest extends BaseWebScriptTest
        
        // Check now, should have three links
        links = getLinks(null, null);
-       assertEquals(3, links.getInt("total"));
-       assertEquals(3, links.getInt("itemCount"));
+       assertEquals(3, links.get("total"));
+       assertEquals(3, links.get("itemCount"));
        
-       entries = links.getJSONArray("items");
-       assertEquals(3, entries.length());
-       assertEquals(LINK_TITLE_THREE, entries.getJSONObject(0).getString("title"));
-       assertEquals(LINK_TITLE_TWO, entries.getJSONObject(1).getString("title"));
-       assertEquals(LINK_TITLE_ONE, entries.getJSONObject(2).getString("title"));
+       entries = (ArrayNode) links.get("items");
+       assertEquals(3, entries.size());
+       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title"));
+       assertEquals(LINK_TITLE_TWO, entries.get(1).get("title"));
+       assertEquals(LINK_TITLE_ONE, entries.get(2).get("title"));
        
        
        // Ask for filtering by user
        links = getLinks(null, USER_ONE);
-       assertEquals(2, links.getInt("total"));
-       assertEquals(2, links.getInt("itemCount"));
+       assertEquals(2, links.get("total"));
+       assertEquals(2, links.get("itemCount"));
        
-       entries = links.getJSONArray("items");
-       assertEquals(2, entries.length());
-       assertEquals(LINK_TITLE_TWO, entries.getJSONObject(0).getString("title"));
-       assertEquals(LINK_TITLE_ONE, entries.getJSONObject(1).getString("title"));
+       entries = (ArrayNode) links.get("items");
+       assertEquals(2, entries.size());
+       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title"));
+       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title"));
        
        links = getLinks(null, USER_TWO);
-       assertEquals(1, links.getInt("total"));
-       assertEquals(1, links.getInt("itemCount"));
+       assertEquals(1, links.get("total"));
+       assertEquals(1, links.get("itemCount"));
        
-       entries = links.getJSONArray("items");
-       assertEquals(1, entries.length());
-       assertEquals(LINK_TITLE_THREE, entries.getJSONObject(0).getString("title"));
+       entries = (ArrayNode) links.get("items");
+       assertEquals(1, entries.size());
+       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title"));
 
        
        // Ask for filtering by recent docs
        links = getLinks("recent", null);
-       assertEquals(3, links.getInt("total"));
-       assertEquals(3, links.getInt("itemCount"));
+       assertEquals(3, links.get("total"));
+       assertEquals(3, links.get("itemCount"));
        
-       entries = links.getJSONArray("items");
-       assertEquals(3, entries.length());
-       assertEquals(LINK_TITLE_THREE, entries.getJSONObject(0).getString("title"));
-       assertEquals(LINK_TITLE_TWO, entries.getJSONObject(1).getString("title"));
-       assertEquals(LINK_TITLE_ONE, entries.getJSONObject(2).getString("title"));
+       entries = (ArrayNode) links.get("items");
+       assertEquals(3, entries.size());
+       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title"));
+       assertEquals(LINK_TITLE_TWO, entries.get(1).get("title"));
+       assertEquals(LINK_TITLE_ONE, entries.get(2).get("title"));
        
        
        // Push the 3rd event back, it'll fall off
        pushLinkCreatedDateBack(name3, 10);
        
        links = getLinks("recent", null);
-       assertEquals(2, links.getInt("total"));
-       assertEquals(2, links.getInt("itemCount"));
+       assertEquals(2, links.get("total"));
+       assertEquals(2, links.get("itemCount"));
        
-       entries = links.getJSONArray("items");
-       assertEquals(2, entries.length());
-       assertEquals(LINK_TITLE_TWO, entries.getJSONObject(0).getString("title"));
-       assertEquals(LINK_TITLE_ONE, entries.getJSONObject(1).getString("title"));
+       entries = (ArrayNode) links.get("items");
+       assertEquals(2, entries.size());
+       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title"));
+       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title"));
        
        
        
@@ -709,15 +711,15 @@ public class LinksRestApiTest extends BaseWebScriptTest
        createLink(LINK_TITLE_THREE+"z", "Thing 5", LINK_URL_THREE, true, Status.STATUS_OK);
        
        links = getLinks(null, null);
-       assertEquals(5, links.getInt("total"));
-       assertEquals(4, links.getInt("itemCount"));
+       assertEquals(5, links.get("total"));
+       assertEquals(4, links.get("itemCount"));
        
-       entries = links.getJSONArray("items");
-       assertEquals(4, entries.length());
-       assertEquals(LINK_TITLE_THREE+"z", entries.getJSONObject(0).getString("title"));
-       assertEquals(LINK_TITLE_THREE+"a", entries.getJSONObject(1).getString("title"));
-       assertEquals(LINK_TITLE_TWO, entries.getJSONObject(2).getString("title"));
-       assertEquals(LINK_TITLE_ONE, entries.getJSONObject(3).getString("title"));
+       entries = (ArrayNode) links.get("items");
+       assertEquals(4, entries.size());
+       assertEquals(LINK_TITLE_THREE+"z", entries.get(0).get("title"));
+       assertEquals(LINK_TITLE_THREE+"a", entries.get(1).get("title"));
+       assertEquals(LINK_TITLE_TWO, entries.get(2).get("title"));
+       assertEquals(LINK_TITLE_ONE, entries.get(3).get("title"));
        // THREE is now the oldest, as we pushed it back in time, so it's on page two
        
        
@@ -780,28 +782,28 @@ public class LinksRestApiTest extends BaseWebScriptTest
         url += "?filter=" + "all";
         url += "&startIndex=0&page=1&pageSize=4";
         Response response = sendRequest(new GetRequest(url), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
-        assertTrue("The user sould have permission to create a new link.", result.getJSONObject("metadata").getJSONObject("linkPermissions").getBoolean("create"));
+        assertTrue("The user sould have permission to create a new link.", result.get("metadata").get("linkPermissions").get("create").booleanValue());
     }
 
     public void testCommentLink() throws Exception
     {
         AuthenticationUtil.setAdminUserAsFullyAuthenticatedUser();
-        JSONObject link = createLink(LINK_TITLE_ONE, "commented link", LINK_URL_ONE, false, Status.STATUS_OK);
+        JsonNode link = createLink(LINK_TITLE_ONE, "commented link", LINK_URL_ONE, false, Status.STATUS_OK);
         postLookup.execute();
         feedGenerator.execute();
         int activityNumStart = activityService.getSiteFeedEntries(SITE_SHORT_NAME_LINKS).size();
         String name = getNameFromLink(link);
         link = getLink(name, Status.STATUS_OK);
-        String nodeRef = link.getString("nodeRef");
-        JSONObject commentOne = createComment(nodeRef, "comment", "content", 200);
+        String nodeRef = link.get("nodeRef").textValue();
+        JsonNode commentOne = createComment(nodeRef, "comment", "content", 200);
         postLookup.execute();
         feedGenerator.execute();
         int activityNumNext = activityService.getSiteFeedEntries(SITE_SHORT_NAME_LINKS).size();
         assertEquals("The activity feeds were not generated after adding a comment", activityNumStart + 1, activityNumNext);
         activityNumStart = activityNumNext;
-        NodeRef commentNodeRef = new NodeRef(commentOne.getString("nodeRef"));
+        NodeRef commentNodeRef = new NodeRef(commentOne.get("nodeRef").textValue());
         sendRequest(new DeleteRequest(getDeleteCommentUrl(commentNodeRef)), 200);
         postLookup.execute();
         feedGenerator.execute();
@@ -809,10 +811,10 @@ public class LinksRestApiTest extends BaseWebScriptTest
         assertEquals("The activity feeds were not generated after deleting a comment", activityNumStart + 1, activityNumNext);
     }
 
-    private JSONObject createComment(String nodeRef, String title, String content, int expectedStatus)
+    private JsonNode createComment(String nodeRef, String title, String content, int expectedStatus)
             throws Exception
     {
-        JSONObject comment = new JSONObject();
+        ObjectNode comment = AlfrescoDefaultObjectMapper.createObjectNode();
         comment.put("title", title);
         comment.put("content", content);
         comment.put("site", SITE_SHORT_NAME_LINKS);
@@ -824,8 +826,8 @@ public class LinksRestApiTest extends BaseWebScriptTest
         }
 
         //logger.debug("Comment created: " + response.getContentAsString());
-        JSONObject result = new JSONObject(response.getContentAsString());
-        return result.getJSONObject("item");
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        return result.get("item");
     }
 
     private String getCommentsUrl(String nodeRef)

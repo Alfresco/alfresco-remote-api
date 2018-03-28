@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.calendar;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -45,7 +46,6 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.security.AccessStatus;
 import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -85,8 +85,12 @@ public class UserCalendarEntriesGet extends AbstractCalendarListingWebScript
    }
    
    @Override
-   protected Map<String, Object> executeImpl(SiteInfo singleSite, String eventName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+   protected Map<String, Object> executeImpl(SiteInfo singleSite,
+                                             String eventName,
+                                             WebScriptRequest req,
+                                             JsonNode json,
+                                             Status status,
+                                             Cache cache)
    {
       // Did they restrict by date?
       Date fromDate = parseDate(req.getParameter("from"));

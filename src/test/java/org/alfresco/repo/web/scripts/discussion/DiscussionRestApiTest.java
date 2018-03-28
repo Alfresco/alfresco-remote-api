@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.discussion;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -57,10 +59,9 @@ import org.alfresco.service.namespace.RegexQNamePattern;
 import org.alfresco.service.transaction.TransactionService;
 import org.alfresco.util.GUID;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
@@ -248,7 +249,7 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
     /**
      * Creates a new topic+post in the test site
      */
-    private JSONObject createSitePost(String title, String content, int expectedStatus)
+    private JsonNode createSitePost(String title, String content, int expectedStatus)
     throws Exception
     {
        return doCreatePost(URL_FORUM_SITE_POSTS, title, content, expectedStatus);
@@ -257,16 +258,16 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
     /**
      * Creates a new topic+post under the given node
      */
-    private JSONObject createNodePost(NodeRef nodeRef, String title, String content, 
+    private JsonNode createNodePost(NodeRef nodeRef, String title, String content, 
           int expectedStatus) throws Exception
     {
        return doCreatePost(getPostsUrl(nodeRef), title, content, expectedStatus);
     }
     
-    private JSONObject doCreatePost(String url, String title, String content, 
+    private JsonNode doCreatePost(String url, String title, String content, 
           int expectedStatus) throws Exception
     {
-       JSONObject post = new JSONObject();
+       ObjectNode post = AlfrescoDefaultObjectMapper.createObjectNode();
        post.put("title", title);
        post.put("content", content);
        Response response = sendRequest(new PostRequest(url, post.toString(), "application/json"), expectedStatus);
@@ -276,28 +277,28 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
           return null;
        }
 
-       JSONObject result = new JSONObject(response.getContentAsString());
-       JSONObject item = result.getJSONObject("item");
-       posts.add(item.getString("name"));
+       JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+       JsonNode item = result.get("item");
+       posts.add(item.get("name").textValue());
        return item;
     }
 
-    private JSONObject updatePost(NodeRef nodeRef, String title, String content, 
+    private JsonNode updatePost(NodeRef nodeRef, String title, String content, 
           int expectedStatus) throws Exception
     {
        return doUpdatePost(getPostUrl(nodeRef), title, content, expectedStatus);
     }
     
-    private JSONObject updatePost(String name, String title, String content, 
+    private JsonNode updatePost(String name, String title, String content, 
           int expectedStatus) throws Exception
     {
        return doUpdatePost(URL_FORUM_SITE_POST + name, title, content, expectedStatus);
     }
     
-    private JSONObject doUpdatePost(String url, String title, String content, 
+    private JsonNode doUpdatePost(String url, String title, String content, 
           int expectedStatus) throws Exception
     {
-       JSONObject post = new JSONObject();
+       ObjectNode post = AlfrescoDefaultObjectMapper.createObjectNode();
        post.put("title", title);
        post.put("content", content);
        Response response = sendRequest(new PutRequest(url, post.toString(), "application/json"), expectedStatus);
@@ -307,27 +308,27 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
           return null;
        }
 
-       JSONObject result = new JSONObject(response.getContentAsString());
-       return result.getJSONObject("item");
+       JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+       return result.get("item");
     }
     
-    private JSONObject getPost(String name, int expectedStatus) throws Exception
+    private JsonNode getPost(String name, int expectedStatus) throws Exception
     {
        return doGetPost(URL_FORUM_SITE_POST + name, expectedStatus);
     }
     
-    private JSONObject getPost(NodeRef nodeRef, int expectedStatus) throws Exception
+    private JsonNode getPost(NodeRef nodeRef, int expectedStatus) throws Exception
     {
        return doGetPost(getPostUrl(nodeRef), expectedStatus);
     }
     
-    private JSONObject doGetPost(String url, int expectedStatus) throws Exception
+    private JsonNode doGetPost(String url, int expectedStatus) throws Exception
     {
        Response response = sendRequest(new GetRequest(url), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = new JSONObject(response.getContentAsString());
-          return result.getJSONObject("item");
+          JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+          return result.get("item");
        }
        else
        {
@@ -335,22 +336,22 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
        }
     }
     
-    private JSONObject getReplies(String name, int expectedStatus) throws Exception
+    private JsonNode getReplies(String name, int expectedStatus) throws Exception
     {
        return doGetReplies(getRepliesUrl(name), expectedStatus);
     }
     
-    private JSONObject getReplies(NodeRef nodeRef, int expectedStatus) throws Exception
+    private JsonNode getReplies(NodeRef nodeRef, int expectedStatus) throws Exception
     {
        return doGetReplies(getRepliesUrl(nodeRef), expectedStatus);
     }
     
-    private JSONObject doGetReplies(String url, int expectedStatus) throws Exception
+    private JsonNode doGetReplies(String url, int expectedStatus) throws Exception
     {
        Response response = sendRequest(new GetRequest(url), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = new JSONObject(response.getContentAsString());
+          JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
           return result;
        }
        else
@@ -359,17 +360,17 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
        }
     }
     
-    private JSONObject getPosts(String type, int expectedStatus) throws Exception
+    private JsonNode getPosts(String type, int expectedStatus) throws Exception
     {
        return doGetPosts(URL_FORUM_SITE_POSTS, type, expectedStatus);
     }
     
-    private JSONObject getPosts(NodeRef nodeRef, String type, int expectedStatus) throws Exception
+    private JsonNode getPosts(NodeRef nodeRef, String type, int expectedStatus) throws Exception
     {
        return doGetPosts(getPostsUrl(nodeRef), type, expectedStatus);
     }
     
-    private JSONObject doGetPosts(String baseUrl, String type, int expectedStatus) throws Exception
+    private JsonNode doGetPosts(String baseUrl, String type, int expectedStatus) throws Exception
     {
        String url = null;
        if (type == null)
@@ -400,7 +401,7 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
        Response response = sendRequest(new GetRequest(url), expectedStatus);
        if (expectedStatus == Status.STATUS_OK)
        {
-          JSONObject result = new JSONObject(response.getContentAsString());
+          JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
           return result;
        }
        else
@@ -409,22 +410,22 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
        }
     }
     
-    private JSONObject deletePost(String name, int expectedStatus) throws Exception
+    private JsonNode deletePost(String name, int expectedStatus) throws Exception
     {
        return doDeletePost(URL_FORUM_SITE_POST + name, expectedStatus);
     }
     
-    private JSONObject deletePost(NodeRef nodeRef, int expectedStatus) throws Exception
+    private JsonNode deletePost(NodeRef nodeRef, int expectedStatus) throws Exception
     {
        return doDeletePost(getPostUrl(nodeRef), expectedStatus);
     }
     
-    private JSONObject doDeletePost(String url, int expectedStatus) throws Exception
+    private JsonNode doDeletePost(String url, int expectedStatus) throws Exception
     {
        Response response = sendRequest(new DeleteRequest(url), Status.STATUS_OK);
        if (expectedStatus == Status.STATUS_OK)
        {
-          return new JSONObject(response.getContentAsString());
+          return AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
        }
        else
        {
@@ -452,10 +453,10 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
        return URL_FORUM_NODE_POSTS_BASE + nodeRef.toString().replace("://", "/") + "/posts";
     }
     
-    private JSONObject createReply(NodeRef nodeRef, String title, String content, int expectedStatus)
+    private JsonNode createReply(NodeRef nodeRef, String title, String content, int expectedStatus)
     throws Exception
     {
-       JSONObject reply = new JSONObject();
+       ObjectNode reply = AlfrescoDefaultObjectMapper.createObjectNode();
        reply.put("title", title);
        reply.put("content", content);
        Response response = sendRequest(new PostRequest(getRepliesUrl(nodeRef), reply.toString(), "application/json"), expectedStatus);
@@ -465,14 +466,14 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
           return null;
        }
 
-       JSONObject result = new JSONObject(response.getContentAsString());
-       return result.getJSONObject("item");
+       JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+       return result.get("item");
     }
     
-    private JSONObject updateComment(NodeRef nodeRef, String title, String content, 
-          int expectedStatus) throws Exception
+    private JsonNode updateComment(NodeRef nodeRef, String title, String content,
+                                   int expectedStatus) throws Exception
     {
-       JSONObject comment = new JSONObject();
+       ObjectNode comment = AlfrescoDefaultObjectMapper.createObjectNode();
        comment.put("title", title);
        comment.put("content", content);
        Response response = sendRequest(new PutRequest(getPostUrl(nodeRef), comment.toString(), "application/json"), expectedStatus);
@@ -483,8 +484,8 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
        }
 
        //logger.debug("Comment updated: " + response.getContentAsString());
-       JSONObject result = new JSONObject(response.getContentAsString());
-       return result.getJSONObject("item");
+       JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+       return result.get("item");
     }
 
     /**
@@ -530,12 +531,12 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
     {
         String title = "test";
         String content = "test";
-        JSONObject item = createSitePost(title, content, Status.STATUS_OK);
+        JsonNode item = createSitePost(title, content, Status.STATUS_OK);
         
         // Check that the values in the response are correct
-        assertEquals(title, item.get("title"));
-        assertEquals(content, item.get("content"));
-        assertEquals(0, item.get("replyCount"));
+        assertEquals(title, item.get("title").textValue());
+        assertEquals(content, item.get("content").textValue());
+        assertEquals(0, item.get("replyCount").intValue());
         assertEquals("Invalid JSON " + item, true, item.has("createdOn"));
         assertEquals("Invalid JSON " + item, true, item.has("modifiedOn"));
         assertEquals("Invalid JSON " + item, true, item.has("author"));
@@ -545,16 +546,16 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
         assertEquals("Invalid JSON " + item, true, item.has("nodeRef"));
           
         // Save some details
-        String name = item.getString("name");
-        NodeRef nodeRef = new NodeRef(item.getString("nodeRef"));
+        String name = item.get("name").textValue();
+        NodeRef nodeRef = new NodeRef(item.get("nodeRef").textValue());
 
       
       // Fetch the post by name and check
       item = getPost(name, Status.STATUS_OK);
 
-      assertEquals(title, item.get("title"));
-      assertEquals(content, item.get("content"));
-      assertEquals(0, item.get("replyCount"));
+      assertEquals(title, item.get("title").textValue());
+      assertEquals(content, item.get("content").textValue());
+      assertEquals(0, item.get("replyCount").intValue());
       assertEquals("Invalid JSON " + item, true, item.has("createdOn"));
       assertEquals("Invalid JSON " + item, true, item.has("modifiedOn"));
       assertEquals("Invalid JSON " + item, true, item.has("author"));
@@ -567,9 +568,9 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
       // Fetch the post by noderef and check
       item = getPost(nodeRef, Status.STATUS_OK);
       
-      assertEquals(title, item.get("title"));
-      assertEquals(content, item.get("content"));
-      assertEquals(0, item.get("replyCount"));
+      assertEquals(title, item.get("title").textValue());
+      assertEquals(content, item.get("content").textValue());
+      assertEquals(0, item.get("replyCount").intValue());
       assertEquals("Invalid JSON " + item, true, item.has("createdOn"));
       assertEquals("Invalid JSON " + item, true, item.has("modifiedOn"));
       assertEquals("Invalid JSON " + item, true, item.has("author"));
@@ -584,46 +585,46 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
       content = "By Node Content";
       item = createNodePost(FORUM_NODE, title, content, Status.STATUS_OK);
       
-      assertEquals(title, item.get("title"));
-      assertEquals(content, item.get("content"));
-      assertEquals(0, item.get("replyCount"));
+      assertEquals(title, item.get("title").textValue());
+      assertEquals(content, item.get("content").textValue());
+      assertEquals(0, item.get("replyCount").intValue());
       
       // Check it by noderef
-      nodeRef = new NodeRef(item.getString("nodeRef"));
+      nodeRef = new NodeRef(item.get("nodeRef").textValue());
       item = getPost(nodeRef, Status.STATUS_OK);
       
-      assertEquals(title, item.get("title"));
-      assertEquals(content, item.get("content"));
-      assertEquals(0, item.get("replyCount"));
+      assertEquals(title, item.get("title").textValue());
+      assertEquals(content, item.get("content").textValue());
+      assertEquals(0, item.get("replyCount").intValue());
     }
     
     public void testUpdateForumPost() throws Exception
     {
         String title = "test";
         String content = "test";
-        JSONObject item = createSitePost(title, content, 200);
+        JsonNode item = createSitePost(title, content, 200);
 
         // check that the values
-        assertEquals(title, item.get("title"));
-        assertEquals(content, item.get("content"));
-        assertEquals(false, item.getBoolean("isUpdated"));
+        assertEquals(title, item.get("title").textValue());
+        assertEquals(content, item.get("content").textValue());
+        assertEquals(false, item.get("isUpdated").booleanValue());
         
         assertEquals(true, item.has("name"));
-        String name = item.getString("name");
+        String name = item.get("name").textValue();
         assertEquals(true, item.has("nodeRef"));
-        NodeRef nodeRef = new NodeRef(item.getString("nodeRef"));
+        NodeRef nodeRef = new NodeRef(item.get("nodeRef").textValue());
 
         // fetch the post by name
-        item = getPost(item.getString("name"), 200);
-        assertEquals(title, item.get("title"));
-        assertEquals(content, item.get("content"));
-        assertEquals(false, item.getBoolean("isUpdated"));
+        item = getPost(item.get("name").textValue(), 200);
+        assertEquals(title, item.get("title").textValue());
+        assertEquals(content, item.get("content").textValue());
+        assertEquals(false, item.get("isUpdated").booleanValue());
 
         // Fetch the post by noderef
         item = getPost(nodeRef, 200);
-        assertEquals(title, item.get("title"));
-        assertEquals(content, item.get("content"));
-        assertEquals(false, item.getBoolean("isUpdated"));
+        assertEquals(title, item.get("title").textValue());
+        assertEquals(content, item.get("content").textValue());
+        assertEquals(false, item.get("isUpdated").booleanValue());
 
       
         // Update it by name
@@ -632,19 +633,19 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
         item = updatePost(name, title2, content2, 200);
       
         // Check the response
-        assertEquals(title2, item.get("title"));
-        assertEquals(content2, item.get("content"));
-        assertEquals(name, item.get("name"));
-        assertEquals(nodeRef.toString(), item.get("nodeRef"));
-        assertEquals(true, item.getBoolean("isUpdated"));
+        assertEquals(title2, item.get("title").textValue());
+        assertEquals(content2, item.get("content").textValue());
+        assertEquals(name, item.get("name").textValue());
+        assertEquals(nodeRef.toString(), item.get("nodeRef").textValue());
+        assertEquals(true, item.get("isUpdated").booleanValue());
       
         // Fetch and check
         item = getPost(nodeRef, 200);
-        assertEquals(title2, item.get("title"));
-        assertEquals(content2, item.get("content"));
-        assertEquals(name, item.get("name"));
-        assertEquals(nodeRef.toString(), item.get("nodeRef"));
-        assertEquals(true, item.getBoolean("isUpdated"));
+        assertEquals(title2, item.get("title").textValue());
+        assertEquals(content2, item.get("content").textValue());
+        assertEquals(name, item.get("name").textValue());
+        assertEquals(nodeRef.toString(), item.get("nodeRef").textValue());
+        assertEquals(true, item.get("isUpdated").booleanValue());
 
       
         // Update it again, this time by noderef
@@ -653,19 +654,19 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
         item = updatePost(nodeRef, title3, content3, 200);
     
         // Check that the values returned are correct
-        assertEquals(title3, item.get("title"));
-        assertEquals(content3, item.get("content"));
-        assertEquals(name, item.get("name"));
-        assertEquals(nodeRef.toString(), item.get("nodeRef"));
-        assertEquals(true, item.getBoolean("isUpdated"));
+        assertEquals(title3, item.get("title").textValue());
+        assertEquals(content3, item.get("content").textValue());
+        assertEquals(name, item.get("name").textValue());
+        assertEquals(nodeRef.toString(), item.get("nodeRef").textValue());
+        assertEquals(true, item.get("isUpdated").booleanValue());
         
         // Fetch and re-check
         item = getPost(nodeRef, 200);
-        assertEquals(title3, item.get("title"));
-        assertEquals(content3, item.get("content"));
-        assertEquals(name, item.get("name"));
-        assertEquals(nodeRef.toString(), item.get("nodeRef"));
-        assertEquals(true, item.getBoolean("isUpdated"));
+        assertEquals(title3, item.get("title").textValue());
+        assertEquals(content3, item.get("content").textValue());
+        assertEquals(name, item.get("name").textValue());
+        assertEquals(nodeRef.toString(), item.get("nodeRef").textValue());
+        assertEquals(true, item.get("isUpdated").booleanValue());
     }
     
     /**
@@ -675,40 +676,40 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
     public void testPermissions() throws Exception
     {
        // Create a post, and check the details on it
-       JSONObject item = createSitePost("test", "test", Status.STATUS_OK);
-       String name = item.getString("name");
+       JsonNode item = createSitePost("test", "test", Status.STATUS_OK);
+       String name = item.get("name").textValue();
        
-       JSONObject perms = item.getJSONObject("permissions");
-       assertEquals(true, perms.getBoolean("edit"));
-       assertEquals(true, perms.getBoolean("reply"));
-       assertEquals(true, perms.getBoolean("delete"));
+       JsonNode perms = item.get("permissions");
+       assertEquals(true, perms.get("edit").booleanValue());
+       assertEquals(true, perms.get("reply").booleanValue());
+       assertEquals(true, perms.get("delete").booleanValue());
        
        // Check on a fetch too
        item = getPost(name, Status.STATUS_OK);
-       perms = item.getJSONObject("permissions");
-       assertEquals(true, perms.getBoolean("edit"));
-       assertEquals(true, perms.getBoolean("reply"));
-       assertEquals(true, perms.getBoolean("delete"));
+       perms = item.get("permissions");
+       assertEquals(true, perms.get("edit").booleanValue());
+       assertEquals(true, perms.get("reply").booleanValue());
+       assertEquals(true, perms.get("delete").booleanValue());
        
        
        // Switch to another user, see what they see
        this.authenticationComponent.setCurrentUser(USER_TWO);
        
        item = getPost(name, Status.STATUS_OK);
-       perms = item.getJSONObject("permissions");
-       assertEquals(false, perms.getBoolean("edit"));
-       assertEquals(true, perms.getBoolean("reply"));
-       assertEquals(false, perms.getBoolean("delete"));
+       perms = item.get("permissions");
+       assertEquals(false, perms.get("edit").booleanValue());
+       assertEquals(true, perms.get("reply").booleanValue());
+       assertEquals(false, perms.get("delete").booleanValue());
        
        
        // Remove the user from the site, see the change
        this.siteService.removeMembership(SITE_SHORT_NAME_DISCUSSION, USER_TWO);
        
        item = getPost(name, Status.STATUS_OK);
-       perms = item.getJSONObject("permissions");
-       assertEquals(false, perms.getBoolean("edit"));
-       assertEquals(false, perms.getBoolean("reply"));
-       assertEquals(false, perms.getBoolean("delete"));
+       perms = item.get("permissions");
+       assertEquals(false, perms.get("edit").booleanValue());
+       assertEquals(false, perms.get("reply").booleanValue());
+       assertEquals(false, perms.get("delete").booleanValue());
        
        
        // Make the site private, will vanish
@@ -728,9 +729,9 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
     public void testViewReplyByDeletedUser() throws Exception
     {
        // Create a post
-       JSONObject item = createSitePost("test", "test", Status.STATUS_OK);
-       String name = item.getString("name");
-       NodeRef topicNodeRef = new NodeRef(item.getString("nodeRef"));
+       JsonNode item = createSitePost("test", "test", Status.STATUS_OK);
+       String name = item.get("name").textValue();
+       NodeRef topicNodeRef = new NodeRef(item.get("nodeRef").textValue());
        
        // Now create a reply as a different user
        this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -738,7 +739,7 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
        
        // Should see the reply
        item = getReplies(name, Status.STATUS_OK);
-       assertEquals(1, item.getJSONArray("items").length());
+       assertEquals(1, item.get("items").size());
        
        // Delete the user, check that the reply still shows
        this.authenticationComponent.setCurrentUser(AuthenticationUtil.getAdminUserName());
@@ -746,27 +747,27 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
        this.authenticationComponent.setCurrentUser(USER_ONE);
        
        item = getReplies(name, Status.STATUS_OK);
-       assertEquals(1, item.getJSONArray("items").length());
+       assertEquals(1, item.get("items").size());
     }
     
     public void testAddReply() throws Exception
     {
         // Create a root post
-        JSONObject item = createSitePost("test", "test", Status.STATUS_OK);
-        String topicName = item.getString("name");
-        NodeRef topicNodeRef = new NodeRef(item.getString("nodeRef"));
+        JsonNode item = createSitePost("test", "test", Status.STATUS_OK);
+        String topicName = item.get("name").textValue();
+        NodeRef topicNodeRef = new NodeRef(item.get("nodeRef").textValue());
 
         // Add a reply
-        JSONObject reply = createReply(topicNodeRef, "test", "test", Status.STATUS_OK);
-        NodeRef replyNodeRef = new NodeRef(reply.getString("nodeRef"));
-        assertEquals("test", reply.getString("title"));
-        assertEquals("test", reply.getString("content"));
+        JsonNode reply = createReply(topicNodeRef, "test", "test", Status.STATUS_OK);
+        NodeRef replyNodeRef = new NodeRef(reply.get("nodeRef").textValue());
+        assertEquals("test", reply.get("title").textValue());
+        assertEquals("test", reply.get("content").textValue());
         
         // Add a reply to the reply
-        JSONObject reply2 = createReply(replyNodeRef, "test2", "test2", 200);
-          NodeRef reply2NodeRef = new NodeRef(reply2.getString("nodeRef"));
-        assertEquals("test2", reply2.getString("title"));
-        assertEquals("test2", reply2.getString("content"));
+        JsonNode reply2 = createReply(replyNodeRef, "test2", "test2", 200);
+          NodeRef reply2NodeRef = new NodeRef(reply2.get("nodeRef").textValue());
+        assertEquals("test2", reply2.get("title").textValue());
+        assertEquals("test2", reply2.get("content").textValue());
         
         
         // Check things were correctly setup. These should all be siblings
@@ -788,69 +789,69 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
 
         
         // Fetch all replies for the post
-        JSONObject result = getReplies(topicNodeRef, Status.STATUS_OK);
+        JsonNode result = getReplies(topicNodeRef, Status.STATUS_OK);
         // check the number of replies
-        assertEquals(1, result.getJSONArray("items").length());
+        assertEquals(1, result.get("items").size());
         
         // Check the replies by name too
         result = getReplies(topicName, Status.STATUS_OK);
-        assertEquals(1, result.getJSONArray("items").length());
+        assertEquals(1, result.get("items").size());
 
         
         // Fetch the top level post again, and check the counts there
         // That post should have one direct reply, and one reply to it's reply
         item = getPost(topicName, Status.STATUS_OK);
-        assertEquals(2, item.getInt("totalReplyCount"));
-        assertEquals(1, item.getInt("replyCount"));
+        assertEquals(2, item.get("totalReplyCount").intValue());
+        assertEquals(1, item.get("replyCount").intValue());
     }
 
     public void testUpdateReply() throws Exception
     {
        // Create a root post
-       JSONObject item = createSitePost("test", "test", Status.STATUS_OK);
-       String postName = item.getString("name");
-       NodeRef postNodeRef = new NodeRef(item.getString("nodeRef"));
-       assertEquals("test", item.getString("title"));
-       assertEquals("test", item.getString("content"));
-       assertEquals(false, item.getBoolean("isUpdated"));
+       JsonNode item = createSitePost("test", "test", Status.STATUS_OK);
+       String postName = item.get("name").textValue();
+       NodeRef postNodeRef = new NodeRef(item.get("nodeRef").textValue());
+       assertEquals("test", item.get("title").textValue());
+       assertEquals("test", item.get("content").textValue());
+       assertEquals(false, item.get("isUpdated").booleanValue());
 
 
        // Add a reply to it
-       JSONObject reply = createReply(postNodeRef, "rtest", "rtest", Status.STATUS_OK);
-       NodeRef replyNodeRef = new NodeRef(reply.getString("nodeRef"));
-       assertEquals("rtest", reply.getString("title"));
-       assertEquals("rtest", reply.getString("content"));
-       assertEquals(false, reply.getBoolean("isUpdated"));
+       JsonNode reply = createReply(postNodeRef, "rtest", "rtest", Status.STATUS_OK);
+       NodeRef replyNodeRef = new NodeRef(reply.get("nodeRef").textValue());
+       assertEquals("rtest", reply.get("title").textValue());
+       assertEquals("rtest", reply.get("content").textValue());
+       assertEquals(false, reply.get("isUpdated").booleanValue());
 
 
        // Now update the reply
-       JSONObject reply2 = updatePost(replyNodeRef, "test2", "test2", Status.STATUS_OK);
-       assertEquals("test2", reply2.getString("title"));
-       assertEquals("test2", reply2.getString("content"));
-       assertEquals(true, reply2.getBoolean("isUpdated"));
+       JsonNode reply2 = updatePost(replyNodeRef, "test2", "test2", Status.STATUS_OK);
+       assertEquals("test2", reply2.get("title").textValue());
+       assertEquals("test2", reply2.get("content").textValue());
+       assertEquals(true, reply2.get("isUpdated").booleanValue());
 
        // Fetch it to check
        reply2 = getPost(replyNodeRef, Status.STATUS_OK);
-       assertEquals("test2", reply2.getString("title"));
-       assertEquals("test2", reply2.getString("content"));
-       assertEquals(true, reply2.getBoolean("isUpdated"));
+       assertEquals("test2", reply2.get("title").textValue());
+       assertEquals("test2", reply2.get("content").textValue());
+       assertEquals(true, reply2.get("isUpdated").booleanValue());
 
 
        // Ensure the original post wasn't changed
        item = getPost(postName, Status.STATUS_OK);
-       assertEquals("test", item.getString("title"));
-       assertEquals("test", item.getString("content"));
-       assertEquals(false, item.getBoolean("isUpdated"));
+       assertEquals("test", item.get("title").textValue());
+       assertEquals("test", item.get("content").textValue());
+       assertEquals(false, item.get("isUpdated").booleanValue());
     }
     
     public void testDeleteToplevelPost() throws Exception
     {
        // Create two posts
-       JSONObject item1 = createSitePost("test1", "test1", Status.STATUS_OK);
-       JSONObject item2 = createSitePost("test2", "test2", Status.STATUS_OK);
-       String name1 = item1.getString("name");
-       NodeRef nodeRef1 = new NodeRef(item1.getString("nodeRef"));
-       NodeRef nodeRef2 = new NodeRef(item2.getString("nodeRef"));
+       JsonNode item1 = createSitePost("test1", "test1", Status.STATUS_OK);
+       JsonNode item2 = createSitePost("test2", "test2", Status.STATUS_OK);
+       String name1 = item1.get("name").textValue();
+       NodeRef nodeRef1 = new NodeRef(item1.get("nodeRef").textValue());
+       NodeRef nodeRef2 = new NodeRef(item2.get("nodeRef").textValue());
 
        // The node references returned correspond to the topics
        assertEquals(ForumModel.TYPE_TOPIC, nodeService.getType(nodeRef1));
@@ -879,26 +880,26 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
     public void testDeleteReplyPost() throws Exception
     {
       // Create a root post
-      JSONObject item = createSitePost("test", "test", Status.STATUS_OK);
-      String postName = item.getString("name");
-      NodeRef postNodeRef = new NodeRef(item.getString("nodeRef"));
+      JsonNode item = createSitePost("test", "test", Status.STATUS_OK);
+      String postName = item.get("name").textValue();
+      NodeRef postNodeRef = new NodeRef(item.get("nodeRef").textValue());
       
       // It doesn't have any replies yet
-      assertEquals(0, item.getInt("totalReplyCount"));
-      assertEquals(0, item.getInt("replyCount"));
+      assertEquals(0, item.get("totalReplyCount").intValue());
+      assertEquals(0, item.get("replyCount").intValue());
       
       
       // Add a reply
-      JSONObject reply = createReply(postNodeRef, "testR", "testR", Status.STATUS_OK);
-      NodeRef replyNodeRef = new NodeRef(reply.getString("nodeRef"));
-      String replyName = reply.getString("name");
-      assertEquals("testR", reply.getString("title"));
-      assertEquals("testR", reply.getString("content"));
+      JsonNode reply = createReply(postNodeRef, "testR", "testR", Status.STATUS_OK);
+      NodeRef replyNodeRef = new NodeRef(reply.get("nodeRef").textValue());
+      String replyName = reply.get("name").textValue();
+      assertEquals("testR", reply.get("title").textValue());
+      assertEquals("testR", reply.get("content").textValue());
       
       // Fetch the reply and check
       reply = getPost(replyNodeRef, Status.STATUS_OK);
-      assertEquals("testR", reply.getString("title"));
-      assertEquals("testR", reply.getString("content"));
+      assertEquals("testR", reply.get("title").textValue());
+      assertEquals("testR", reply.get("content").textValue());
       
       // Note - you can't fetch a reply by name, only by noderef
       // It only works for primary posts as they share the topic name
@@ -907,8 +908,8 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
       
       // Check the main post, ensure the replies show up
       item = getPost(postName, Status.STATUS_OK);
-      assertEquals(1, item.getInt("totalReplyCount"));
-      assertEquals(1, item.getInt("replyCount"));
+      assertEquals(1, item.get("totalReplyCount").intValue());
+      assertEquals(1, item.get("replyCount").intValue());
 
       
       // Delete the reply
@@ -918,16 +919,16 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
       // Due to threading, we just add special marker text
       // TODO Really we should probably delete posts with no attached replies
       reply = getPost(replyNodeRef, Status.STATUS_OK);
-      assertEquals(DELETED_REPLY_POST_MARKER, reply.get("title"));
-      assertEquals(DELETED_REPLY_POST_MARKER, reply.get("content"));
+      assertEquals(DELETED_REPLY_POST_MARKER, reply.get("title").textValue());
+      assertEquals(DELETED_REPLY_POST_MARKER, reply.get("content").textValue());
       
       
       // Fetch the top level post again, replies stay because they
       //  haven't really been deleted...
       // TODO Really we should probably delete posts with no attached replies
       item = getPost(postName, Status.STATUS_OK);
-      assertEquals(1, item.getInt("totalReplyCount"));
-      assertEquals(1, item.getInt("replyCount"));
+      assertEquals(1, item.get("totalReplyCount").intValue());
+      assertEquals(1, item.get("replyCount").intValue());
     }
     
     /**
@@ -936,181 +937,181 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
      */
     public void testListings() throws Exception
     {
-      JSONObject result;
-      JSONObject item;
+      JsonNode result;
+      JsonNode item;
       
       
       // Check all of the listings, none should have anything yet
       result = getPosts(null, Status.STATUS_OK);
-      assertEquals(0, result.getInt("total"));
-      assertEquals(0, result.getInt("itemCount"));
-      assertEquals(0, result.getJSONArray("items").length());
+      assertEquals(0, result.get("total").intValue());
+      assertEquals(0, result.get("itemCount").intValue());
+      assertEquals(0, result.get("items").size());
       
       result = getPosts("hot", Status.STATUS_OK);
-      assertEquals(0, result.getInt("total"));
-      assertEquals(0, result.getInt("itemCount"));
-      assertEquals(0, result.getJSONArray("items").length());
+      assertEquals(0, result.get("total").intValue());
+      assertEquals(0, result.get("itemCount").intValue());
+      assertEquals(0, result.get("items").size());
 
       result = getPosts("mine", Status.STATUS_OK);
-      assertEquals(0, result.getInt("total"));
-      assertEquals(0, result.getInt("itemCount"));
-      assertEquals(0, result.getJSONArray("items").length());
+      assertEquals(0, result.get("total").intValue());
+      assertEquals(0, result.get("itemCount").intValue());
+      assertEquals(0, result.get("items").size());
 
       result = getPosts("new?numdays=100", Status.STATUS_OK);
-      assertEquals(0, result.getInt("total"));
-      assertEquals(0, result.getInt("itemCount"));
-      assertEquals(0, result.getJSONArray("items").length());
+      assertEquals(0, result.get("total").intValue());
+      assertEquals(0, result.get("itemCount").intValue());
+      assertEquals(0, result.get("items").size());
 
       
       // Check with a noderef too
       result = getPosts(FORUM_NODE, null, Status.STATUS_OK);
-      assertEquals(0, result.getInt("total"));
-      assertEquals(0, result.getInt("itemCount"));
-      assertEquals(0, result.getJSONArray("items").length());
+      assertEquals(0, result.get("total").intValue());
+      assertEquals(0, result.get("itemCount").intValue());
+      assertEquals(0, result.get("items").size());
       
       result = getPosts(FORUM_NODE, "hot", Status.STATUS_OK);
-      assertEquals(0, result.getInt("total"));
-      assertEquals(0, result.getInt("itemCount"));
-      assertEquals(0, result.getJSONArray("items").length());
+      assertEquals(0, result.get("total").intValue());
+      assertEquals(0, result.get("itemCount").intValue());
+      assertEquals(0, result.get("items").size());
 
       result = getPosts(FORUM_NODE, "mine", Status.STATUS_OK);
-      assertEquals(0, result.getInt("total"));
-      assertEquals(0, result.getInt("itemCount"));
-      assertEquals(0, result.getJSONArray("items").length());
+      assertEquals(0, result.get("total").intValue());
+      assertEquals(0, result.get("itemCount").intValue());
+      assertEquals(0, result.get("items").size());
 
       result = getPosts(FORUM_NODE, "new?numdays=100", Status.STATUS_OK);
-      assertEquals(0, result.getInt("total"));
-      assertEquals(0, result.getInt("itemCount"));
-      assertEquals(0, result.getJSONArray("items").length());
+      assertEquals(0, result.get("total").intValue());
+      assertEquals(0, result.get("itemCount").intValue());
+      assertEquals(0, result.get("items").size());
       
       
       // Now add a few topics with replies
       // Some of these will be created as different users
       item = createSitePost("SiteTitle1", "Content", Status.STATUS_OK);
-      NodeRef siteTopic1 = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteTopic1 = new NodeRef(item.get("nodeRef").textValue());
       this.authenticationComponent.setCurrentUser(USER_TWO);
       item = createSitePost("SiteTitle2", "Content", Status.STATUS_OK);
-      NodeRef siteTopic2 = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteTopic2 = new NodeRef(item.get("nodeRef").textValue());
       
       item = createNodePost(FORUM_NODE, "NodeTitle1", "Content", Status.STATUS_OK);
-      NodeRef nodeTopic1 = new NodeRef(item.getString("nodeRef"));
+      NodeRef nodeTopic1 = new NodeRef(item.get("nodeRef").textValue());
       this.authenticationComponent.setCurrentUser(USER_ONE);
       item = createNodePost(FORUM_NODE, "NodeTitle2", "Content", Status.STATUS_OK);
-      NodeRef nodeTopic2 = new NodeRef(item.getString("nodeRef"));
+      NodeRef nodeTopic2 = new NodeRef(item.get("nodeRef").textValue());
       item = createNodePost(FORUM_NODE, "NodeTitle3", "Content", Status.STATUS_OK);
-      NodeRef nodeTopic3 = new NodeRef(item.getString("nodeRef"));
+      NodeRef nodeTopic3 = new NodeRef(item.get("nodeRef").textValue());
       
       item = createReply(siteTopic1, "Reply1a", "Content", Status.STATUS_OK);
-      NodeRef siteReply1A = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteReply1A = new NodeRef(item.get("nodeRef").textValue());
       item = createReply(siteTopic1, "Reply1b", "Content", Status.STATUS_OK);
-      NodeRef siteReply1B = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteReply1B = new NodeRef(item.get("nodeRef").textValue());
       
       this.authenticationComponent.setCurrentUser(USER_TWO);
       item = createReply(siteTopic2, "Reply2a", "Content", Status.STATUS_OK);
-      NodeRef siteReply2A = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteReply2A = new NodeRef(item.get("nodeRef").textValue());
       item = createReply(siteTopic2, "Reply2b", "Content", Status.STATUS_OK);
-      NodeRef siteReply2B = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteReply2B = new NodeRef(item.get("nodeRef").textValue());
       item = createReply(siteTopic2, "Reply2c", "Content", Status.STATUS_OK);
-      NodeRef siteReply2C = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteReply2C = new NodeRef(item.get("nodeRef").textValue());
 
       item = createReply(siteReply2A, "Reply2aa", "Content", Status.STATUS_OK);
-      NodeRef siteReply2AA = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteReply2AA = new NodeRef(item.get("nodeRef").textValue());
       item = createReply(siteReply2A, "Reply2ab", "Content", Status.STATUS_OK);
-      NodeRef siteReply2AB = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteReply2AB = new NodeRef(item.get("nodeRef").textValue());
       this.authenticationComponent.setCurrentUser(USER_ONE);
       item = createReply(siteReply2AA, "Reply2aaa", "Content", Status.STATUS_OK);
-      NodeRef siteReply2AAA = new NodeRef(item.getString("nodeRef"));
+      NodeRef siteReply2AAA = new NodeRef(item.get("nodeRef").textValue());
       
       item = createReply(nodeTopic1, "ReplyN1a", "Content", Status.STATUS_OK);
-      NodeRef nodeReply1A = new NodeRef(item.getString("nodeRef"));
+      NodeRef nodeReply1A = new NodeRef(item.get("nodeRef").textValue());
       item = createReply(nodeReply1A, "ReplyN1aa", "Content", Status.STATUS_OK);
-      NodeRef nodeReply1AA = new NodeRef(item.getString("nodeRef"));
+      NodeRef nodeReply1AA = new NodeRef(item.get("nodeRef").textValue());
       item = createReply(nodeReply1AA, "ReplyN1aaa", "Content", Status.STATUS_OK);
-      NodeRef nodeReply1AAA = new NodeRef(item.getString("nodeRef"));
+      NodeRef nodeReply1AAA = new NodeRef(item.get("nodeRef").textValue());
       
       
       // Check for totals
       // We should get all the topics
       result = getPosts(null, Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(2, result.getInt("itemCount"));
-      assertEquals(2, result.getJSONArray("items").length());
-      assertEquals("SiteTitle1", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals("SiteTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(2, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
-      assertEquals(3, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(2, result.get("itemCount").intValue());
+      assertEquals(2, result.get("items").size());
+      assertEquals("SiteTitle1", result.get("items").get(1).get("title").textValue());
+      assertEquals("SiteTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals(2, result.get("items").get(1).get("replyCount").intValue());
+      assertEquals(3, result.get("items").get(0).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, null, Status.STATUS_OK);
-      assertEquals(3, result.getInt("total"));
-      assertEquals(3, result.getInt("itemCount"));
-      assertEquals(3, result.getJSONArray("items").length());
-      assertEquals("NodeTitle1", result.getJSONArray("items").getJSONObject(2).getString("title"));
-      assertEquals("NodeTitle2", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals("NodeTitle3", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(1, result.getJSONArray("items").getJSONObject(2).getInt("replyCount"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(3, result.get("total").intValue());
+      assertEquals(3, result.get("itemCount").intValue());
+      assertEquals(3, result.get("items").size());
+      assertEquals("NodeTitle1", result.get("items").get(2).get("title").textValue());
+      assertEquals("NodeTitle2", result.get("items").get(1).get("title").textValue());
+      assertEquals("NodeTitle3", result.get("items").get(0).get("title").textValue());
+      assertEquals(1, result.get("items").get(2).get("replyCount").intValue());
+      assertEquals(0, result.get("items").get(1).get("replyCount").intValue());
+      assertEquals(0, result.get("items").get(0).get("replyCount").intValue());
       
       
       // Check for "mine"
       // User 1 has Site 1, and Nodes 2 + 3
       result = getPosts("mine", Status.STATUS_OK);
-      assertEquals(1, result.getInt("total"));
-      assertEquals(1, result.getInt("itemCount"));
-      assertEquals(1, result.getJSONArray("items").length());
-      assertEquals("SiteTitle1", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(2, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(1, result.get("total").intValue());
+      assertEquals(1, result.get("itemCount").intValue());
+      assertEquals(1, result.get("items").size());
+      assertEquals("SiteTitle1", result.get("items").get(0).get("title").textValue());
+      assertEquals(2, result.get("items").get(0).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, "mine", Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(2, result.getInt("itemCount"));
-      assertEquals(2, result.getJSONArray("items").length());
-      assertEquals("NodeTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals("NodeTitle3", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(2, result.get("itemCount").intValue());
+      assertEquals(2, result.get("items").size());
+      assertEquals("NodeTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals("NodeTitle3", result.get("items").get(1).get("title").textValue());
+      assertEquals(0, result.get("items").get(0).get("replyCount").intValue());
+      assertEquals(0, result.get("items").get(1).get("replyCount").intValue());
       
       
       // Check for recent (new)
       // We should get all the topics, with the newest one first (rather than last as with others)
       result = getPosts("new?numdays=2", Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(2, result.getInt("itemCount"));
-      assertEquals(2, result.getJSONArray("items").length());
-      assertEquals("SiteTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals("SiteTitle1", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals(3, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
-      assertEquals(2, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(2, result.get("itemCount").intValue());
+      assertEquals(2, result.get("items").size());
+      assertEquals("SiteTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals("SiteTitle1", result.get("items").get(1).get("title").textValue());
+      assertEquals(3, result.get("items").get(0).get("replyCount").intValue());
+      assertEquals(2, result.get("items").get(1).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, "new?numdays=2", Status.STATUS_OK);
-      assertEquals(3, result.getInt("total"));
-      assertEquals(3, result.getInt("itemCount"));
-      assertEquals(3, result.getJSONArray("items").length());
-      assertEquals("NodeTitle3", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals("NodeTitle2", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals("NodeTitle1", result.getJSONArray("items").getJSONObject(2).getString("title"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
-      assertEquals(1, result.getJSONArray("items").getJSONObject(2).getInt("replyCount"));
+      assertEquals(3, result.get("total").intValue());
+      assertEquals(3, result.get("itemCount").intValue());
+      assertEquals(3, result.get("items").size());
+      assertEquals("NodeTitle3", result.get("items").get(0).get("title").textValue());
+      assertEquals("NodeTitle2", result.get("items").get(1).get("title").textValue());
+      assertEquals("NodeTitle1", result.get("items").get(2).get("title").textValue());
+      assertEquals(0, result.get("items").get(0).get("replyCount").intValue());
+      assertEquals(0, result.get("items").get(1).get("replyCount").intValue());
+      assertEquals(1, result.get("items").get(2).get("replyCount").intValue());
       
       
       // Check for hot
       // Will only show topics with replies. Sorting is by replies, not date
       result = getPosts("hot", Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(2, result.getInt("itemCount"));
-      assertEquals(2, result.getJSONArray("items").length());
-      assertEquals("SiteTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals("SiteTitle1", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals(3, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
-      assertEquals(2, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(2, result.get("itemCount").intValue());
+      assertEquals(2, result.get("items").size());
+      assertEquals("SiteTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals("SiteTitle1", result.get("items").get(1).get("title").textValue());
+      assertEquals(3, result.get("items").get(0).get("replyCount").intValue());
+      assertEquals(2, result.get("items").get(1).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, "hot", Status.STATUS_OK);
-      assertEquals(1, result.getInt("total"));
-      assertEquals(1, result.getInt("itemCount"));
-      assertEquals(1, result.getJSONArray("items").length());
-      assertEquals("NodeTitle1", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(1, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(1, result.get("total").intValue());
+      assertEquals(1, result.get("itemCount").intValue());
+      assertEquals(1, result.get("items").size());
+      assertEquals("NodeTitle1", result.get("items").get(0).get("title").textValue());
+      assertEquals(1, result.get("items").get(0).get("replyCount").intValue());
       
       
       // Shift some of the posts into the past
@@ -1125,101 +1126,101 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
       
       // Re-check totals, only ordering changes
       result = getPosts(null, Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(2, result.getInt("itemCount"));
-      assertEquals(2, result.getJSONArray("items").length());
-      assertEquals("SiteTitle1", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals("SiteTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(2, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
-      assertEquals(3, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(2, result.get("itemCount").intValue());
+      assertEquals(2, result.get("items").size());
+      assertEquals("SiteTitle1", result.get("items").get(1).get("title").textValue());
+      assertEquals("SiteTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals(2, result.get("items").get(1).get("replyCount").intValue());
+      assertEquals(3, result.get("items").get(0).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, null, Status.STATUS_OK);
-      assertEquals(3, result.getInt("total"));
-      assertEquals(3, result.getInt("itemCount"));
-      assertEquals(3, result.getJSONArray("items").length());
-      assertEquals("NodeTitle2", result.getJSONArray("items").getJSONObject(2).getString("title"));
-      assertEquals("NodeTitle3", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals("NodeTitle1", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(2).getInt("replyCount"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
-      assertEquals(1, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(3, result.get("total").intValue());
+      assertEquals(3, result.get("itemCount").intValue());
+      assertEquals(3, result.get("items").size());
+      assertEquals("NodeTitle2", result.get("items").get(2).get("title").textValue());
+      assertEquals("NodeTitle3", result.get("items").get(1).get("title").textValue());
+      assertEquals("NodeTitle1", result.get("items").get(0).get("title").textValue());
+      assertEquals(0, result.get("items").get(2).get("replyCount").intValue());
+      assertEquals(0, result.get("items").get(1).get("replyCount").intValue());
+      assertEquals(1, result.get("items").get(0).get("replyCount").intValue());
       
       
       // Re-check recent, old ones vanish
       result = getPosts("new?numdays=2", Status.STATUS_OK);
-      assertEquals(1, result.getInt("total"));
-      assertEquals(1, result.getInt("itemCount"));
-      assertEquals(1, result.getJSONArray("items").length());
-      assertEquals("SiteTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(3, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(1, result.get("total").intValue());
+      assertEquals(1, result.get("itemCount").intValue());
+      assertEquals(1, result.get("items").size());
+      assertEquals("SiteTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals(3, result.get("items").get(0).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, "new?numdays=6", Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(2, result.getInt("itemCount"));
-      assertEquals(2, result.getJSONArray("items").length());
-      assertEquals("NodeTitle1", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals("NodeTitle3", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals(1, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(2, result.get("itemCount").intValue());
+      assertEquals(2, result.get("items").size());
+      assertEquals("NodeTitle1", result.get("items").get(0).get("title").textValue());
+      assertEquals("NodeTitle3", result.get("items").get(1).get("title").textValue());
+      assertEquals(1, result.get("items").get(0).get("replyCount").intValue());
+      assertEquals(0, result.get("items").get(1).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, "new?numdays=2", Status.STATUS_OK);
-      assertEquals(1, result.getInt("total"));
-      assertEquals(1, result.getInt("itemCount"));
-      assertEquals(1, result.getJSONArray("items").length());
-      assertEquals("NodeTitle1", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(1, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(1, result.get("total").intValue());
+      assertEquals(1, result.get("itemCount").intValue());
+      assertEquals(1, result.get("items").size());
+      assertEquals("NodeTitle1", result.get("items").get(0).get("title").textValue());
+      assertEquals(1, result.get("items").get(0).get("replyCount").intValue());
       
       
       // Re-check "mine", no change except ordering
       result = getPosts("mine", Status.STATUS_OK);
-      assertEquals(1, result.getInt("total"));
-      assertEquals(1, result.getInt("itemCount"));
-      assertEquals(1, result.getJSONArray("items").length());
-      assertEquals("SiteTitle1", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(2, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(1, result.get("total").intValue());
+      assertEquals(1, result.get("itemCount").intValue());
+      assertEquals(1, result.get("items").intValue());
+      assertEquals("SiteTitle1", result.get("items").get(0).get("title").textValue());
+      assertEquals(2, result.get("items").get(0).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, "mine", Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(2, result.getInt("itemCount"));
-      assertEquals(2, result.getJSONArray("items").length());
-      assertEquals("NodeTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals("NodeTitle3", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
-      assertEquals(0, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(2, result.get("itemCount").intValue());
+      assertEquals(2, result.get("items").size());
+      assertEquals("NodeTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals("NodeTitle3", result.get("items").get(1).get("title").textValue());
+      assertEquals(0, result.get("items").get(0).get("replyCount").intValue());
+      assertEquals(0, result.get("items").get(1).get("replyCount").intValue());
       
       
       // Re-check hot, some old ones vanish
       result = getPosts("hot", Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(2, result.getInt("itemCount"));
-      assertEquals(2, result.getJSONArray("items").length());
-      assertEquals("SiteTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals("SiteTitle1", result.getJSONArray("items").getJSONObject(1).getString("title"));
-      assertEquals(3, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
-      assertEquals(2, result.getJSONArray("items").getJSONObject(1).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(2, result.get("itemCount").intValue());
+      assertEquals(2, result.get("items").intValue());
+      assertEquals("SiteTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals("SiteTitle1", result.get("items").get(1).get("title").textValue());
+      assertEquals(3, result.get("items").get(0).get("replyCount").intValue());
+      assertEquals(2, result.get("items").get(1).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, "hot", Status.STATUS_OK);
-      assertEquals(1, result.getInt("total"));
-      assertEquals(1, result.getInt("itemCount"));
-      assertEquals(1, result.getJSONArray("items").length());
-      assertEquals("NodeTitle1", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(1, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(1, result.get("total").intValue());
+      assertEquals(1, result.get("itemCount").intValue());
+      assertEquals(1, result.get("items").size());
+      assertEquals("NodeTitle1", result.get("items").get(0).get("title").textValue());
+      assertEquals(1, result.get("items").get(0).get("replyCount").intValue());
       
       
       // Check paging
       result = getPosts("limit", Status.STATUS_OK);
-      assertEquals(2, result.getInt("total"));
-      assertEquals(1, result.getInt("itemCount"));
-      assertEquals(1, result.getJSONArray("items").length());
-      assertEquals("SiteTitle2", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(3, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(2, result.get("total").intValue());
+      assertEquals(1, result.get("itemCount").intValue());
+      assertEquals(1, result.get("items").size());
+      assertEquals("SiteTitle2", result.get("items").get(0).get("title").textValue());
+      assertEquals(3, result.get("items").get(0).get("replyCount").intValue());
       
       result = getPosts(FORUM_NODE, "limit", Status.STATUS_OK);
-      assertEquals(3, result.getInt("total"));
-      assertEquals(1, result.getInt("itemCount"));
-      assertEquals(1, result.getJSONArray("items").length());
-      assertEquals("NodeTitle1", result.getJSONArray("items").getJSONObject(0).getString("title"));
-      assertEquals(1, result.getJSONArray("items").getJSONObject(0).getInt("replyCount"));
+      assertEquals(3, result.get("total").intValue());
+      assertEquals(1, result.get("itemCount").intValue());
+      assertEquals(1, result.get("items").size());
+      assertEquals("NodeTitle1", result.get("items").get(0).get("title").textValue());
+      assertEquals(1, result.get("items").get(0).get("replyCount").intValue());
     }
     
     /**
@@ -1229,27 +1230,27 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
     public void testContributorCanEditReply() throws Exception
     {
         authenticationComponent.setCurrentUser(USER_ONE);
-        JSONObject post = createSitePost("Can contributors edit replies?", "The title says it all", Status.STATUS_OK);
-        NodeRef postNodeRef = new NodeRef(post.getString("nodeRef"));
+        JsonNode post = createSitePost("Can contributors edit replies?", "The title says it all", Status.STATUS_OK);
+        NodeRef postNodeRef = new NodeRef(post.get("nodeRef").textValue());
 
         authenticationComponent.setCurrentUser(USER_TWO);
-        JSONObject reply = createReply(postNodeRef, "", "Let's see.", Status.STATUS_OK);
-        NodeRef replyNodeRef = new NodeRef(reply.getString("nodeRef"));
+        JsonNode reply = createReply(postNodeRef, "", "Let's see.", Status.STATUS_OK);
+        NodeRef replyNodeRef = new NodeRef(reply.get("nodeRef").textValue());
         updateComment(replyNodeRef, "", "Yes I can", Status.STATUS_OK);
         
         authenticationComponent.setCurrentUser(USER_ONE);
 
         post = getPost(postNodeRef, Status.STATUS_OK);
-        assertEquals("Can contributors edit replies?", post.getString("title"));
-        assertEquals("The title says it all", post.getString("content"));
-        assertEquals(1, post.getInt("replyCount"));
+        assertEquals("Can contributors edit replies?", post.get("title").textValue());
+        assertEquals("The title says it all", post.get("content").textValue());
+        assertEquals(1, post.get("replyCount").intValue());
         
-        JSONObject replies = getReplies(postNodeRef, Status.STATUS_OK);
-        JSONArray items = replies.getJSONArray("items");
-        assertEquals(1, items.length());
+        JsonNode replies = getReplies(postNodeRef, Status.STATUS_OK);
+        JsonNode items = replies.get("items");
+        assertEquals(1, items.size());
         
-        reply = items.getJSONObject(0);
-        assertEquals("Yes I can", reply.getString("content"));
+        reply = items.get(0);
+        assertEquals("Yes I can", reply.get("content"));
 
     }
     
@@ -1299,8 +1300,8 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
     {
         String url = "/api/forum/site/" + siteName + "/" + COMPONENT_DISCUSSION + "/posts";
         Response response = sendRequest(new GetRequest(url), 200);
-        JSONObject result = new JSONObject(response.getContentAsString());
+        JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
-        assertTrue("The user sould have permission to create a new discussion.", result.getJSONObject("forumPermissions").getBoolean("create"));
+        assertTrue("The user sould have permission to create a new discussion.", result.get("forumPermissions").get("create").booleanValue());
     }
 }

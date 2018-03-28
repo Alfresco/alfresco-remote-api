@@ -26,6 +26,7 @@
 
 package org.alfresco.repo.web.scripts.custommodel;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -61,12 +62,11 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.util.PropertyMap;
 import org.alfresco.util.TempFileProvider;
 import org.alfresco.util.XMLUtil;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
 import org.springframework.util.ResourceUtils;
@@ -179,12 +179,12 @@ public class CustomModelImportTest extends BaseWebScriptTest
         AuthenticationUtil.setFullyAuthenticatedUser(CUSTOM_MODEL_ADMIN);
         response = sendRequest(postRequest, 200);
 
-        JSONObject json = new JSONObject(new JSONTokener(response.getContentAsString()));
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-        String importedModelName = json.getString("modelName");
+        String importedModelName = json.get("modelName").textValue();
         importedModels.add(importedModelName);
 
-        String extModule = json.getString("shareExtModule");
+        String extModule = json.get("shareExtModule").textValue();
         Document document = XMLUtil.parse(extModule);
         NodeList nodes = document.getElementsByTagName("id");
         assertEquals(1, nodes.getLength());
@@ -202,8 +202,8 @@ public class CustomModelImportTest extends BaseWebScriptTest
         AuthenticationUtil.setFullyAuthenticatedUser(CUSTOM_MODEL_ADMIN);
         response = sendRequest(postRequest, 200);
 
-        JSONObject json = new JSONObject(new JSONTokener(response.getContentAsString()));
-        String importedModelName = json.getString("modelName");
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        String importedModelName = json.get("modelName").textValue();
         importedModels.add(importedModelName);
 
         assertFalse(json.has("shareExtModule"));
@@ -223,10 +223,10 @@ public class CustomModelImportTest extends BaseWebScriptTest
         AuthenticationUtil.setFullyAuthenticatedUser(CUSTOM_MODEL_ADMIN);
         response = sendRequest(postRequest, 200);
 
-        JSONObject json = new JSONObject(new JSONTokener(response.getContentAsString()));
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertFalse(json.has("modelName"));
 
-        String extModule = json.getString("shareExtModule");
+        String extModule = json.get("shareExtModule").textValue();
         Document document = XMLUtil.parse(extModule);
         NodeList nodes = document.getElementsByTagName("id");
         assertEquals(1, nodes.getLength());

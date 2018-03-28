@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.blogs.blog;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +38,6 @@ import org.alfresco.service.cmr.blog.BlogPostInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.namespace.QName;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -55,7 +55,7 @@ public class BlogPut extends AbstractBlogWebScript
 {
     @Override
     protected Map<String, Object> executeImpl(SiteInfo site, NodeRef containerNodeRef,
-         BlogPostInfo blog, WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+       BlogPostInfo blog, WebScriptRequest req, JsonNode json, Status status, Cache cache)
     {
        if (blog != null)
        {
@@ -86,7 +86,7 @@ public class BlogPut extends AbstractBlogWebScript
      * Creates a post inside the passed forum node.
      */
     @SuppressWarnings("deprecation")
-    private void updateBlog(NodeRef node, JSONObject json)
+    private void updateBlog(NodeRef node, JsonNode json)
     {
         Map<QName, Serializable> arr = BlogLibJs.getBlogPropertiesArray(json);
         

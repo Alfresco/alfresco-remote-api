@@ -25,13 +25,12 @@
  */
 package org.alfresco.repo.web.scripts.replication;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Map;
 
 import org.alfresco.service.cmr.replication.ReplicationDefinition;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -50,11 +49,9 @@ public class ReplicationDefinitionsPost extends AbstractReplicationWebscript
    {
        // Create our definition
        ReplicationDefinition replicationDefinition = null;
-       JSONObject json;
-       
        try 
        {
-           json = new JSONObject(new JSONTokener(req.getContent().getContent()));
+           JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
            
            // Check for the required parameters
            if(! json.has("name"))
@@ -63,7 +60,7 @@ public class ReplicationDefinitionsPost extends AbstractReplicationWebscript
               throw new WebScriptException(Status.STATUS_BAD_REQUEST, "description is required but wasn't supplied");
            
            // Ensure one doesn't already exist with that name
-           String name = json.getString("name"); 
+           String name = json.get("name").textValue();
            if(replicationService.loadReplicationDefinition(name) != null)
            {
               throw new WebScriptException(Status.STATUS_BAD_REQUEST, "A replication definition already exists with that name");
@@ -71,7 +68,7 @@ public class ReplicationDefinitionsPost extends AbstractReplicationWebscript
            
            // Create the definition
            replicationDefinition = replicationService.createReplicationDefinition(
-                 name, json.getString("description")
+                 name, json.get("description").textValue()
            );
            
            // Set the extra parts
@@ -83,10 +80,6 @@ public class ReplicationDefinitionsPost extends AbstractReplicationWebscript
        catch (IOException iox)
        {
            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not read content from request.", iox);
-       }
-       catch (JSONException je)
-       {
-           throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from request.", je);
        }
       
        // Return the details on it

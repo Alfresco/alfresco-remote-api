@@ -26,7 +26,6 @@
 package org.alfresco.repo.web.scripts.solr;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.alfresco.repo.solr.AlfrescoModel;
 import org.alfresco.repo.solr.SOLRTrackingComponent;
@@ -35,7 +34,6 @@ import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONException;
 import org.springframework.extensions.webscripts.AbstractWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -74,13 +72,9 @@ public class AlfrescoModelGet extends AbstractWebScript
         {
             throw new WebScriptException("IO exception parsing request", e);
         }
-        catch(JSONException e)
-        {
-            throw new WebScriptException("Invalid JSON", e);
-        }
     }
     
-    private void handle(WebScriptRequest req, WebScriptResponse res) throws JSONException, IOException
+    private void handle(WebScriptRequest req, WebScriptResponse res) throws IOException
     {
         // create map of template vars
         String modelQName = req.getParameter("modelQName");

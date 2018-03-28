@@ -25,11 +25,11 @@
  */
 package org.alfresco.repo.web.scripts.calendar;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
 
 import org.alfresco.service.cmr.calendar.CalendarEntry;
 import org.alfresco.service.cmr.site.SiteInfo;
-import org.json.simple.JSONObject;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -52,8 +52,12 @@ public class CalendarEntryDelete extends AbstractCalendarWebScript
    }
 
    @Override
-   protected Map<String, Object> executeImpl(SiteInfo site, String eventName,
-         WebScriptRequest req, JSONObject json, Status status, Cache cache) 
+   protected Map<String, Object> executeImpl(SiteInfo site,
+                                             String eventName,
+                                             WebScriptRequest req,
+                                             JsonNode json,
+                                             Status status,
+                                             Cache cache)
    {
       CalendarEntry entry = calendarService.getCalendarEntry(
             site.getShortName(), eventName);

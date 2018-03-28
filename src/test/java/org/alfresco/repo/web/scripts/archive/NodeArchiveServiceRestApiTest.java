@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.archive;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -49,12 +51,8 @@ import org.alfresco.service.cmr.security.MutableAuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.PropertyMap;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONStringer;
-import org.json.JSONTokener;
 import org.springframework.extensions.webscripts.TestWebScriptServer.DeleteRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PutRequest;
@@ -195,21 +193,21 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
     {
         AuthenticationUtil.setFullyAuthenticatedUser(AuthenticationUtil.getAdminUserName());
         
-        JSONObject jsonRsp = getArchivedNodes();
+        JsonNode jsonRsp = getArchivedNodes();
         
-        JSONObject dataObj = (JSONObject)jsonRsp.get(DATA);
+        JsonNode dataObj = jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
         
-        JSONArray deletedNodesArray = (JSONArray)dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
+        ArrayNode deletedNodesArray = (ArrayNode)dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
         assertNotNull("JSON 'deletedNodesArray' object was null", deletedNodesArray);
-        assertTrue("Unexpectedly found 0 items in archive store", 0 != deletedNodesArray.length());
+        assertTrue("Unexpectedly found 0 items in archive store", 0 != deletedNodesArray.size());
         
         // We'll identify a deleted item that we put in the archive during setUp().
         //Admin can retrieve all the users' deleted nodes
-        for (int i = 0; i < deletedNodesArray.length(); i++)
+        for (int i = 0; i < deletedNodesArray.size(); i++)
         {
-            JSONObject nextJSONObj = (JSONObject)deletedNodesArray.get(i);
-            String nodeRefString = nextJSONObj.getString(AbstractArchivedNodeWebScript.NODEREF);
+            JsonNode nextJSONObj = deletedNodesArray.get(i);
+            String nodeRefString = nextJSONObj.get(AbstractArchivedNodeWebScript.NODEREF).textValue();
             if (nodeRefString.equals(adminDeletedTestNode.toString()))
             {
                 doTest(nextJSONObj, AuthenticationUtil.getAdminUserName());  
@@ -225,10 +223,10 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         }        
         // Check that the results come back sorted by archivedDate (most recent first).
         Date previousDate = null;
-        for (int i = 0; i < deletedNodesArray.length(); i++)
+        for (int i = 0; i < deletedNodesArray.size(); i++)
         {
-            JSONObject nextJSONObj = deletedNodesArray.getJSONObject(i);
-            String nextArchivedDateString = nextJSONObj.getString(AbstractArchivedNodeWebScript.ARCHIVED_DATE);           
+            JsonNode nextJSONObj = deletedNodesArray.get(i);
+            String nextArchivedDateString = nextJSONObj.get(AbstractArchivedNodeWebScript.ARCHIVED_DATE).textValue();           
             
             //org.joda.time.DateTime default Chronology is ISOChronology (ISO8601 standard).
             Date nextArchivedDate = new DateTime(nextArchivedDateString).toDate();
@@ -242,20 +240,20 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         }       
     }
     
-    private void doTest(JSONObject deletedNodeToTest, String archivedBy) throws Exception
+    private void doTest(JsonNode deletedNodeToTest, String archivedBy) throws Exception
     {
         assertNotNull("Failed to find an expected NodeRef within the archive store.", deletedNodeToTest);
 
-        assertEquals(archivedBy, deletedNodeToTest.getString(AbstractArchivedNodeWebScript.ARCHIVED_BY));
-        assertEquals(TEST_TITLE, deletedNodeToTest.getString(AbstractArchivedNodeWebScript.TITLE));
-        assertEquals(TEST_DESCRIPTION, deletedNodeToTest.getString(AbstractArchivedNodeWebScript.DESCRIPTION));
-        assertNotNull(deletedNodeToTest.getString(AbstractArchivedNodeWebScript.NAME));
-        assertNotNull(deletedNodeToTest.getString(AbstractArchivedNodeWebScript.NODEREF));
-        assertNotNull(deletedNodeToTest.getString(AbstractArchivedNodeWebScript.DISPLAY_PATH));
-        assertNotNull(deletedNodeToTest.getString(AbstractArchivedNodeWebScript.ARCHIVED_DATE));
-        assertNotNull(deletedNodeToTest.getString(AbstractArchivedNodeWebScript.FIRST_NAME));
-        assertNotNull(deletedNodeToTest.getString(AbstractArchivedNodeWebScript.LAST_NAME));
-        assertNotNull(deletedNodeToTest.getString(AbstractArchivedNodeWebScript.NODE_TYPE));        
+        assertEquals(archivedBy, deletedNodeToTest.get(AbstractArchivedNodeWebScript.ARCHIVED_BY));
+        assertEquals(TEST_TITLE, deletedNodeToTest.get(AbstractArchivedNodeWebScript.TITLE));
+        assertEquals(TEST_DESCRIPTION, deletedNodeToTest.get(AbstractArchivedNodeWebScript.DESCRIPTION));
+        assertNotNull(deletedNodeToTest.get(AbstractArchivedNodeWebScript.NAME));
+        assertNotNull(deletedNodeToTest.get(AbstractArchivedNodeWebScript.NODEREF));
+        assertNotNull(deletedNodeToTest.get(AbstractArchivedNodeWebScript.DISPLAY_PATH));
+        assertNotNull(deletedNodeToTest.get(AbstractArchivedNodeWebScript.ARCHIVED_DATE));
+        assertNotNull(deletedNodeToTest.get(AbstractArchivedNodeWebScript.FIRST_NAME));
+        assertNotNull(deletedNodeToTest.get(AbstractArchivedNodeWebScript.LAST_NAME));
+        assertNotNull(deletedNodeToTest.get(AbstractArchivedNodeWebScript.NODE_TYPE));        
     }
 
     /**
@@ -265,45 +263,44 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
     {
         AuthenticationUtil.setFullyAuthenticatedUser(USER_ONE);
 
-        JSONObject jsonRsp = getArchivedNodes();
-        JSONObject dataObj = (JSONObject) jsonRsp.get(DATA);
+        JsonNode jsonRsp = getArchivedNodes();
+        JsonNode dataObj =  jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
 
-        JSONArray deletedNodesArray = (JSONArray) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
+        ArrayNode deletedNodesArray = (ArrayNode) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
         assertNotNull("JSON 'deletedNodesArray' object was null", deletedNodesArray);
         // User_One deleted only 1 node and he doesn't have permission to see other users' archived data.
-        assertTrue("Unexpectedly found more than 1 item in the archive store.", 1 == deletedNodesArray.length());
+        assertTrue("Unexpectedly found more than 1 item in the archive store.", 1 == deletedNodesArray.size());
 
-        JSONObject archivedNode = (JSONObject) deletedNodesArray.get(0);
-        assertEquals(USER_ONE, archivedNode.getString(AbstractArchivedNodeWebScript.ARCHIVED_BY));
+        JsonNode archivedNode =  deletedNodesArray.get(0);
+        assertEquals(USER_ONE, archivedNode.get(AbstractArchivedNodeWebScript.ARCHIVED_BY));
 
         // Now test, User_Two archived data
         AuthenticationUtil.setFullyAuthenticatedUser(USER_TWO);
 
         jsonRsp = getArchivedNodes();
-        dataObj = (JSONObject) jsonRsp.get(DATA);
+        dataObj =  jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
 
-        deletedNodesArray = (JSONArray) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
+        deletedNodesArray = (ArrayNode) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
         assertNotNull("JSON 'deletedNodesArray' object was null", deletedNodesArray);
         // User_Two deleted only 1 node and he doesn't have permission to see other users' archived data.
-        assertTrue("Unexpectedly found more than 1 item in the archive store.",1 == deletedNodesArray.length());
+        assertTrue("Unexpectedly found more than 1 item in the archive store.",1 == deletedNodesArray.size());
 
-        archivedNode = (JSONObject) deletedNodesArray.get(0);
-        assertEquals(USER_TWO, archivedNode.getString(AbstractArchivedNodeWebScript.ARCHIVED_BY));
+        archivedNode =  deletedNodesArray.get(0);
+        assertEquals(USER_TWO, archivedNode.get(AbstractArchivedNodeWebScript.ARCHIVED_BY));
     }
     
     
     /**
      * This method makes a REST call to get all the nodes currently in the archive store.
      */
-    private JSONObject getArchivedNodes() throws IOException, JSONException,
-            UnsupportedEncodingException
+    private JsonNode getArchivedNodes() throws IOException
     {
         String url = this.getArchiveUrl(nodesOriginalStoreRef);
         Response rsp = sendRequest(new GetRequest(url), 200);
 
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
         return jsonRsp;
     }
     
@@ -314,30 +311,30 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
     {
         AuthenticationUtil.setFullyAuthenticatedUser(AuthenticationUtil.getAdminUserName());
         
-        JSONObject archivedNodesJson = getArchivedNodes();
-        JSONObject dataJsonObj = archivedNodesJson.getJSONObject("data");
-        JSONArray archivedNodesArray = dataJsonObj.getJSONArray(AbstractArchivedNodeWebScript.DELETED_NODES);
+        JsonNode archivedNodesJson = getArchivedNodes();
+        JsonNode dataJsonObj = archivedNodesJson.get("data");
+        ArrayNode archivedNodesArray = (ArrayNode) dataJsonObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
         
-        int archivedNodesLength = archivedNodesArray.length();
+        int archivedNodesLength = archivedNodesArray.size();
         assertTrue("Insufficient archived nodes for test to run.", archivedNodesLength > 1);
         
         // Take a specific archived node and purge it.
-        JSONObject requiredNodeInArchive = null;
+        JsonNode requiredNodeInArchive = null;
         for (int i = 0; i < archivedNodesLength; i++)
         {
-            JSONObject archivedNode = archivedNodesArray.getJSONObject(i);
+            JsonNode archivedNode = archivedNodesArray.get(i);
             // We ensure in #setUp() that this NodeRef will be in the archive store.
-            if (archivedNode.getString(AbstractArchivedNodeWebScript.NODEREF).equals(adminDeletedTestNode.toString()))
+            if (archivedNode.get(AbstractArchivedNodeWebScript.NODEREF).equals(adminDeletedTestNode.toString()))
             {
                 requiredNodeInArchive = archivedNode;
                 break;
             }
-            else if (archivedNode.getString(AbstractArchivedNodeWebScript.NODEREF).equals(user1_DeletedTestNode.toString()))
+            else if (archivedNode.get(AbstractArchivedNodeWebScript.NODEREF).equals(user1_DeletedTestNode.toString()))
             {
                 requiredNodeInArchive = archivedNode;
                 break;
             }
-            else if (archivedNode.getString(AbstractArchivedNodeWebScript.NODEREF).equals(user2_DeletedTestNode.toString()))
+            else if (archivedNode.get(AbstractArchivedNodeWebScript.NODEREF).equals(user2_DeletedTestNode.toString()))
             {
                 requiredNodeInArchive = archivedNode;
                 break;
@@ -346,7 +343,7 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         assertNotNull("Expected node not found in archive", requiredNodeInArchive);
         
         // So we have identified a specific Node in the archive that we want to delete permanently (purge).
-        String nodeRefString = requiredNodeInArchive.getString(AbstractArchivedNodeWebScript.NODEREF);
+        String nodeRefString = requiredNodeInArchive.get(AbstractArchivedNodeWebScript.NODEREF).textValue();
         assertTrue("nodeRef string is invalid", NodeRef.isNodeRef(nodeRefString));
         NodeRef nodeRef = new NodeRef(nodeRefString);
         
@@ -359,20 +356,20 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         // Send the DELETE REST call.
         Response rsp = sendRequest(new DeleteRequest(deleteUrl), 200);
         
-        JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
-        JSONObject dataObj = jsonRsp.getJSONObject("data");
-        JSONArray purgedNodesArray = dataObj.getJSONArray(ArchivedNodesDelete.PURGED_NODES);
-        assertEquals("Only expected one NodeRef to have been purged.", 1, purgedNodesArray.length());
+        JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
+        JsonNode dataObj = jsonRsp.get("data");
+        ArrayNode purgedNodesArray = (ArrayNode) dataObj.get(ArchivedNodesDelete.PURGED_NODES);
+        assertEquals("Only expected one NodeRef to have been purged.", 1, purgedNodesArray.size());
         
         
         // Now we'll purge all the other nodes in the archive that came from the same StoreRef.
         String deleteAllUrl = getArchiveUrl(this.nodesOriginalStoreRef);
         
         rsp = sendRequest(new DeleteRequest(deleteAllUrl), 200);
-        jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
         
-        dataObj = jsonRsp.getJSONObject("data");
-        purgedNodesArray = dataObj.getJSONArray(ArchivedNodesDelete.PURGED_NODES);
+        dataObj = jsonRsp.get("data");
+        purgedNodesArray = (ArrayNode) dataObj.get(ArchivedNodesDelete.PURGED_NODES);
         
         // Now retrieve all items from the archive store. There should be none.
         assertEquals("Archive store was unexpectedly not empty", 0, getArchivedNodesCount());
@@ -393,16 +390,16 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         assertEquals(403, rsp.getStatus());
 
         // Now User_One gets his own archived node and tries to purge it
-        JSONObject jsonRsp = getArchivedNodes();
-        JSONObject dataObj = (JSONObject) jsonRsp.get(DATA);
-        JSONArray deletedNodesArray = (JSONArray) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
+        JsonNode jsonRsp = getArchivedNodes();
+        JsonNode dataObj =  jsonRsp.get(DATA);
+        ArrayNode deletedNodesArray = (ArrayNode) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
 
         // User_One deleted only 1 node and he doesn't have permission to see other users' archived data.
-        assertEquals("Unexpectedly found more than 1 item in the archive store.", 1, deletedNodesArray.length());
-        JSONObject archivedNode = (JSONObject) deletedNodesArray.get(0);
+        assertEquals("Unexpectedly found more than 1 item in the archive store.", 1, deletedNodesArray.size());
+        JsonNode archivedNode =  deletedNodesArray.get(0);
 
         // So we have identified a specific Node in the archive that we want to delete permanently (purge).
-        String nodeRefString = archivedNode.getString(AbstractArchivedNodeWebScript.NODEREF);
+        String nodeRefString = archivedNode.get(AbstractArchivedNodeWebScript.NODEREF).textValue();
         assertTrue("nodeRef string is invalid", NodeRef.isNodeRef(nodeRefString));
 
         NodeRef nodeRef = new NodeRef(nodeRefString);
@@ -413,11 +410,11 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         // Send the DELETE REST call.
         rsp = sendRequest(new DeleteRequest(deleteUrl), 200);
 
-        jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
-        dataObj = jsonRsp.getJSONObject("data");
-        JSONArray purgedNodesArray = dataObj.getJSONArray(ArchivedNodesDelete.PURGED_NODES);
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
+        dataObj = jsonRsp.get("data");
+        ArrayNode purgedNodesArray = (ArrayNode) dataObj.get(ArchivedNodesDelete.PURGED_NODES);
 
-        assertEquals("Only expected one NodeRef to have been purged.", 1, purgedNodesArray.length());
+        assertEquals("Only expected one NodeRef to have been purged.", 1, purgedNodesArray.size());
 
         // User_Two is authenticated
         AuthenticationUtil.setFullyAuthenticatedUser(USER_TWO);
@@ -427,36 +424,35 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         String deleteAllUrl = getArchiveUrl(this.nodesOriginalStoreRef);
 
         rsp = sendRequest(new DeleteRequest(deleteAllUrl), 200);
-        jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
+        jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(rsp.getContentAsString());
 
-        dataObj = jsonRsp.getJSONObject("data");
-        purgedNodesArray = dataObj.getJSONArray(ArchivedNodesDelete.PURGED_NODES);
+        dataObj = jsonRsp.get("data");
+        purgedNodesArray = (ArrayNode) dataObj.get(ArchivedNodesDelete.PURGED_NODES);
         // User_Two deleted only 1 node.
-        assertEquals("Only expected one NodeRef to have been purged.", 1, purgedNodesArray.length());
+        assertEquals("Only expected one NodeRef to have been purged.", 1, purgedNodesArray.size());
 
         // Test no other nodes have been deleted by User_Two 'Delete all archived nodes operation'.
         AuthenticationUtil.setFullyAuthenticatedUser(AuthenticationUtil.getAdminUserName());
 
         jsonRsp = getArchivedNodes();
-        dataObj = (JSONObject) jsonRsp.get(DATA);
+        dataObj =  jsonRsp.get(DATA);
         assertNotNull("JSON 'data' object was null", dataObj);
 
-        deletedNodesArray = (JSONArray) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
+        deletedNodesArray = (ArrayNode) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
         assertNotNull("JSON 'deletedNodesArray' object was null", deletedNodesArray);
-        assertEquals("There is 1 item in the archive store which was deleted by the Admin.", 1, deletedNodesArray.length());
+        assertEquals("There is 1 item in the archive store which was deleted by the Admin.", 1, deletedNodesArray.size());
     }
 
     /**
      * This method makes a REST call to retrieve the contents of the archive store, returning
      * the number of individual nodes contained in it.
      */
-    private int getArchivedNodesCount() throws IOException, JSONException,
-            UnsupportedEncodingException
+    private int getArchivedNodesCount() throws IOException
     {
-        JSONObject archiveContents = getArchivedNodes();
-        JSONObject datatObject = archiveContents.getJSONObject(DATA);
-        JSONArray deletedNodesArray = datatObject.getJSONArray(AbstractArchivedNodeWebScript.DELETED_NODES);
-        return deletedNodesArray.length();
+        JsonNode archiveContents = getArchivedNodes();
+        JsonNode datatObject = archiveContents.get(DATA);
+        ArrayNode deletedNodesArray = (ArrayNode) datatObject.get(AbstractArchivedNodeWebScript.DELETED_NODES);
+        return deletedNodesArray.size();
     }
     
     /**
@@ -466,18 +462,18 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
     {
         AuthenticationUtil.setFullyAuthenticatedUser(AuthenticationUtil.getAdminUserName());
         
-        JSONObject archivedNodesJson = getArchivedNodes();
-        JSONObject dataJsonObj = archivedNodesJson.getJSONObject("data");
-        JSONArray archivedNodesArray = dataJsonObj.getJSONArray(AbstractArchivedNodeWebScript.DELETED_NODES);
+        JsonNode archivedNodesJson = getArchivedNodes();
+        JsonNode dataJsonObj = archivedNodesJson.get("data");
+        ArrayNode archivedNodesArray = (ArrayNode) dataJsonObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
         
-        int archivedNodesLength = archivedNodesArray.length();
+        int archivedNodesLength = archivedNodesArray.size();
         assertTrue("Insufficient archived nodes for test to run.", archivedNodesLength > 1);
         
         // Take a specific archived node and restore it.
-        JSONObject firstArchivedNode = archivedNodesArray.getJSONObject(0);
+        JsonNode firstArchivedNode = archivedNodesArray.get(0);
         
         // So we have identified a specific Node in the archive that we want to restore.
-        String nodeRefString = firstArchivedNode.getString(AbstractArchivedNodeWebScript.NODEREF);
+        String nodeRefString = firstArchivedNode.get(AbstractArchivedNodeWebScript.NODEREF).textValue();
         assertTrue("nodeRef string is invalid", NodeRef.isNodeRef(nodeRefString));
         NodeRef nodeRef = new NodeRef(nodeRefString);
         
@@ -491,10 +487,7 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         int archivedNodesCountBeforeRestore = getArchivedNodesCount();
 
         // Send the PUT REST call.
-        String jsonString = new JSONStringer().object()
-            .key("restoreLocation").value("")
-            .endObject()
-        .toString();
+        String jsonString = AlfrescoDefaultObjectMapper.createObjectNode().put("restoreLocation", "").toString();
         Response rsp = sendRequest(new PutRequest(restoreUrl, jsonString, "application/json"), 200);
         
         assertEquals("Expected archive to shrink by one", archivedNodesCountBeforeRestore - 1, getArchivedNodesCount());
@@ -509,7 +502,7 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
 
         String restoreUrl = getArchiveUrl(user2_DeletedTestNode.getStoreRef()) + "/" + user2_DeletedTestNode.getId();
 
-        String jsonString = new JSONStringer().object().key("restoreLocation").value("").endObject().toString();
+        String jsonString = AlfrescoDefaultObjectMapper.createObjectNode().put("restoreLocation", "").toString();
         
         // User_One has the nodeRef of the node deleted by User_Two. User_One is
         // not an Admin, so he must not be allowed to restore a node which he doesn’t own.
@@ -517,16 +510,16 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         assertEquals(403, rsp.getStatus());
         
         // Now User_One gets his own archived node and tries to restore it
-        JSONObject jsonRsp = getArchivedNodes();
-        JSONObject dataObj = (JSONObject) jsonRsp.get(DATA);
-        JSONArray deletedNodesArray = (JSONArray) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
+        JsonNode jsonRsp = getArchivedNodes();
+        JsonNode dataObj =  jsonRsp.get(DATA);
+        ArrayNode deletedNodesArray = (ArrayNode) dataObj.get(AbstractArchivedNodeWebScript.DELETED_NODES);
 
         // User_One deleted only 1 node and he doesn't have permission to see other users' archived data.
-        assertEquals("Unexpectedly found more than 1 item in the archive store.", 1, deletedNodesArray.length());
-        JSONObject archivedNode = (JSONObject) deletedNodesArray.get(0);
+        assertEquals("Unexpectedly found more than 1 item in the archive store.", 1, deletedNodesArray.size());
+        JsonNode archivedNode =  deletedNodesArray.get(0);
 
         // So we have identified a specific Node in the archive that we want to restore.
-        String nodeRefString = archivedNode.getString(AbstractArchivedNodeWebScript.NODEREF);
+        String nodeRefString = archivedNode.get(AbstractArchivedNodeWebScript.NODEREF).textValue();
         assertTrue("nodeRef string is invalid", NodeRef.isNodeRef(nodeRefString));
 
         NodeRef nodeRef = new NodeRef(nodeRefString);
@@ -537,7 +530,7 @@ public class NodeArchiveServiceRestApiTest extends BaseWebScriptTest
         int archivedNodesCountBeforeRestore = getArchivedNodesCount();
 
         // Send the PUT REST call.
-        jsonString = new JSONStringer().object().key("restoreLocation").value("").endObject().toString();
+        jsonString = AlfrescoDefaultObjectMapper.createObjectNode().put("restoreLocation", "").toString();
         rsp = sendRequest(new PutRequest(restoreUrl, jsonString, "application/json"), 200);
         
         assertEquals("Expected archive to shrink by one", archivedNodesCountBeforeRestore - 1, getArchivedNodesCount());        

@@ -27,12 +27,14 @@ package org.alfresco.rest.api.tests.client.data;
 
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.alfresco.service.namespace.QName;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.QueryResult;
@@ -40,7 +42,6 @@ import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.data.Properties;
 import org.apache.chemistry.opencmis.commons.data.PropertyData;
 import org.apache.chemistry.opencmis.commons.definitions.FolderTypeDefinition;
-import org.json.simple.JSONObject;
 
 public class CMISNode implements Serializable, ExpectedComparison
 {
@@ -212,9 +213,9 @@ public class CMISNode implements Serializable, ExpectedComparison
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JSONObject toJSON()
+	public ObjectNode toJSON()
 	{
-		JSONObject json = new JSONObject();
+		ObjectNode json = AlfrescoDefaultObjectMapper.createObjectNode();
 		json.put("guid", getGuid());
 		json.put("id", getNodeId());
 		return json;

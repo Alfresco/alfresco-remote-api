@@ -25,15 +25,17 @@
  */
 package org.alfresco.rest.workflow.api.tests;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
+import java.util.stream.Collectors;
 import org.alfresco.rest.workflow.api.model.ProcessInfo;
 import org.alfresco.rest.workflow.api.model.Variable;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.JsonUtil;
 
 public class ProcessesParser extends ListParser<ProcessInfo>
 {
@@ -41,34 +43,37 @@ public class ProcessesParser extends ListParser<ProcessInfo>
 
     @SuppressWarnings("unchecked")
     @Override
-    public ProcessInfo parseEntry(JSONObject entry)
+    public ProcessInfo parseEntry(JsonNode entry) throws IOException
     {
         ProcessInfo processesRest = new ProcessInfo();
-        processesRest.setId((String) entry.get("id"));
-        processesRest.setProcessDefinitionId((String) entry.get("processDefinitionId"));
-        processesRest.setProcessDefinitionKey((String) entry.get("processDefinitionKey"));
+        processesRest.setId(entry.get("id").textValue());
+        processesRest.setProcessDefinitionId(entry.get("processDefinitionId").textValue());
+        processesRest.setProcessDefinitionKey(entry.get("processDefinitionKey").textValue());
         processesRest.setStartedAt(WorkflowApiClient.parseDate(entry, "startedAt"));
         processesRest.setEndedAt(WorkflowApiClient.parseDate(entry, "endedAt"));
-        processesRest.setDurationInMs((Long) entry.get("durationInMs"));
-        processesRest.setDeleteReason((String) entry.get("deleteReason"));
-        processesRest.setBusinessKey((String) entry.get("businessKey"));
-        processesRest.setSuperProcessInstanceId((String) entry.get("superProcessInstanceId"));
-        processesRest.setStartActivityId((String) entry.get("startActivityId"));
-        processesRest.setStartUserId((String) entry.get("startUserId"));
-        processesRest.setEndActivityId((String) entry.get("endActivityId"));
-        processesRest.setCompleted((Boolean) entry.get("completed"));
-        processesRest.setVariables((Map<String,Object>) entry.get("variables"));
-        processesRest.setItems((Set<String>) entry.get("item"));
+        processesRest.setDurationInMs(entry.get("durationInMs").longValue());
+        processesRest.setDeleteReason(entry.get("deleteReason").textValue());
+        processesRest.setBusinessKey(entry.get("businessKey").textValue());
+        processesRest.setSuperProcessInstanceId(entry.get("superProcessInstanceId").textValue());
+        processesRest.setStartActivityId(entry.get("startActivityId").textValue());
+        processesRest.setStartUserId(entry.get("startUserId").textValue());
+        processesRest.setEndActivityId(entry.get("endActivityId").textValue());
+        processesRest.setCompleted(entry.get("completed").booleanValue());
+        processesRest.setVariables(JsonUtil.convertJSONObjectToMap((ObjectNode) entry.get("variables")));
+        processesRest.setItems(JsonUtil
+                .convertJSONArrayToList((ArrayNode) entry.get("item"))
+                .stream().map(item -> ((String) item))
+                .collect(Collectors.toSet()));
         
         if (entry.get("processVariables") != null) {
-            List<Variable> processVariables = new ArrayList<Variable>();
-            JSONArray variables = (JSONArray) entry.get("processVariables");
+            List<Variable> processVariables = new ArrayList<>();
+            ArrayNode variables = (ArrayNode) entry.get("processVariables");
             for (int i = 0; i < variables.size(); i++) 
             {
-                JSONObject variableJSON = (JSONObject) variables.get(i);
+                JsonNode variableJSON = variables.get(i);
                 Variable variable = new Variable();
-                variable.setName((String) variableJSON.get("name"));
-                variable.setType((String) variableJSON.get("type"));
+                variable.setName( variableJSON.get("name").textValue());
+                variable.setType( variableJSON.get("type").textValue());
                 variable.setValue(variableJSON.get("value"));
                 processVariables.add(variable);
             }

@@ -25,6 +25,8 @@
  */
 package org.alfresco.repo.web.scripts.download;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -33,9 +35,7 @@ import java.util.Map;
 
 import org.alfresco.repo.content.MimetypeMap;
 import org.alfresco.service.cmr.repository.NodeRef;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -59,7 +59,6 @@ public class DownloadPost extends AbstractDownloadWebscript
         
         
         // Parse the JSON, if supplied
-        JSONArray json = null;
         String contentType = req.getContentType();
         if (contentType != null && contentType.indexOf(';') != -1)
         {
@@ -69,14 +68,13 @@ public class DownloadPost extends AbstractDownloadWebscript
         List<NodeRef> nodes = new LinkedList<NodeRef>();
         if (MimetypeMap.MIMETYPE_JSON.equals(contentType))
         {
-           JSONParser parser = new JSONParser();
            try
            {
-              json = (JSONArray)parser.parse(req.getContent().getContent());
+               ArrayNode json = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
               for (int i = 0 ; i < json.size() ; i++)
               {
-                JSONObject obj = (JSONObject)json.get(i);
-                String nodeRefString = (String)obj.get("nodeRef");
+                JsonNode obj = json.get(i);
+                String nodeRefString = obj.get("nodeRef").textValue();
                 if (nodeRefString != null) 
                 {
                     nodes.add(new NodeRef(nodeRefString));
@@ -86,10 +84,6 @@ public class DownloadPost extends AbstractDownloadWebscript
            catch (IOException io)
            {
                throw new WebScriptException(Status.STATUS_INTERNAL_SERVER_ERROR, "Unexpected IOException", io);
-           }
-           catch (org.json.simple.parser.ParseException je)
-           {
-               throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Unexpected ParseException", je);
            }
         }
         

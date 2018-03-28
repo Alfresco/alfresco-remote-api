@@ -25,6 +25,8 @@
  */
 package org.alfresco.rest.api.impl;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.rest.api.Actions;
 import org.alfresco.rest.api.model.Action;
@@ -46,11 +48,8 @@ import org.alfresco.service.cmr.repository.datatype.DefaultTypeConverter;
 import org.alfresco.service.namespace.NamespacePrefixResolver;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
-import org.json.JSONArray;
-import org.json.JSONException;
+import org.alfresco.util.json.JsonUtil;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.extensions.webscripts.Status;
-import org.springframework.extensions.webscripts.WebScriptException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -299,44 +298,37 @@ public class ActionsImpl implements Actions
     {
         Map<String, Serializable> parameterValues = new HashMap<>();
 
-        try
+        for (Map.Entry<String, String> entry : params.entrySet())
         {
-            for (Map.Entry<String, String> entry : params.entrySet())
+            String propertyName = entry.getKey();
+            Object propertyValue = entry.getValue();
+
+            // Get the parameter definition we care about
+            ParameterDefinition paramDef = actionDefinition.getParameterDefintion(propertyName);
+            if (paramDef == null && !actionDefinition.getAdhocPropertiesAllowed())
             {
-                String propertyName = entry.getKey();
-                Object propertyValue = entry.getValue();
-
-                // Get the parameter definition we care about
-                ParameterDefinition paramDef = actionDefinition.getParameterDefintion(propertyName);
-                if (paramDef == null && !actionDefinition.getAdhocPropertiesAllowed())
-                {
-                    throw new AlfrescoRuntimeException("Invalid parameter " + propertyName + " for action/condition " + actionDefinition.getName());
-                }
-                if (paramDef != null)
-                {
-                    QName typeQName = paramDef.getType();
-
-                    // Convert the property value
-                    Serializable value = convertValue(typeQName, propertyValue);
-                    parameterValues.put(propertyName, value);
-                }
-                else
-                {
-                    // If there is no parameter definition we can only rely on the .toString()
-                    // representation of the ad-hoc property
-                    parameterValues.put(propertyName, propertyValue.toString());
-                }
+                throw new AlfrescoRuntimeException("Invalid parameter " + propertyName + " for action/condition " + actionDefinition.getName());
             }
-        }
-        catch (JSONException je)
-        {
-            throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Could not parse JSON from req.", je);
+            if (paramDef != null)
+            {
+                QName typeQName = paramDef.getType();
+
+                // Convert the property value
+                Serializable value = convertValue(typeQName, propertyValue);
+                parameterValues.put(propertyName, value);
+            }
+            else
+            {
+                // If there is no parameter definition we can only rely on the .toString()
+                // representation of the ad-hoc property
+                parameterValues.put(propertyName, propertyValue.toString());
+            }
         }
 
         return parameterValues;
     }
 
-    private Serializable convertValue(QName typeQName, Object propertyValue) throws JSONException
+    private Serializable convertValue(QName typeQName, Object propertyValue)
     {
         Serializable value;
 
@@ -346,7 +338,7 @@ public class ActionsImpl implements Actions
             throw new AlfrescoRuntimeException("Action property type definition " + typeQName.toPrefixString() + " is unknown.");
         }
 
-        if (propertyValue instanceof JSONArray)
+        if (propertyValue instanceof ArrayNode)
         {
             // Convert property type to java class
             String javaClassName = typeDef.getJavaClassName();
@@ -359,11 +351,11 @@ public class ActionsImpl implements Actions
                 throw new DictionaryException("Java class " + javaClassName + " of property type " + typeDef.getName() + " is invalid", e);
             }
 
-            int length = ((JSONArray) propertyValue).length();
+            int length = ((ArrayNode) propertyValue).size();
             List<Serializable> list = new ArrayList<>(length);
             for (int i = 0; i < length; i++)
             {
-                list.add(convertValue(typeQName, ((JSONArray) propertyValue).get(i)));
+                list.add(convertValue(typeQName, JsonUtil.convertJSONValue((ValueNode) ((ArrayNode) propertyValue).get(i))));
             }
             value = (Serializable) list;
         }

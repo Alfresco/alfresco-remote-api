@@ -28,15 +28,20 @@ package org.alfresco.rest.api.tests.client.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import java.util.stream.Collectors;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ExpectedPaging;
 import org.alfresco.rest.api.tests.client.PublicApiClient.ListResponse;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.JsonUtil;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 
 /**
  * Represents a group.
@@ -63,9 +68,9 @@ public class Group extends org.alfresco.rest.api.model.Group implements Serializ
         AssertUtil.assertEquals("zones", getZones(), other.getZones());
     }
 
-    public JSONObject toJSON()
+    public ObjectNode toJSON()
     {
-        JSONObject groupJson = new JSONObject();
+        ObjectNode groupJson = AlfrescoDefaultObjectMapper.createObjectNode();
         if (getId() != null)
         {
             groupJson.put("id", getId());
@@ -80,24 +85,32 @@ public class Group extends org.alfresco.rest.api.model.Group implements Serializ
 
         if (getParentIds() != null)
         {
-            groupJson.put("parentIds", new ArrayList(getParentIds()));
+            groupJson.set("parentIds",
+                    AlfrescoDefaultObjectMapper.convertValue(new ArrayList(getParentIds()), ArrayNode.class));
         }
 
         if (getZones() != null)
         {
-            groupJson.put("zones", new ArrayList(getZones()));
+            groupJson.set("zones",
+                    AlfrescoDefaultObjectMapper.convertValue(new ArrayList(getZones()), ArrayNode.class));
         }
 
         return groupJson;
     }
 
-    public static Group parseGroup(JSONObject jsonObject)
+    public static Group parseGroup(JsonNode jsonObject) throws IOException
     {
-        String id = (String) jsonObject.get("id");
-        String displayName = (String) jsonObject.get("displayName");
-        Boolean isRoot = (Boolean) jsonObject.get("isRoot");
-        List<String> parentIds = (List<String>) jsonObject.get("parentIds");
-        List<String> zones = (List<String>) jsonObject.get("zones");
+        String id = jsonObject.get("id").textValue();
+        String displayName =  jsonObject.get("displayName").textValue();
+        Boolean isRoot =  jsonObject.get("isRoot").booleanValue();
+        List<String> parentIds = JsonUtil
+                .convertJSONArrayToList((ArrayNode) jsonObject.get("parentIds"))
+                .stream().map(parentId -> ((String) parentId))
+                .collect(Collectors.toList());
+        List<String> zones = JsonUtil
+                .convertJSONArrayToList((ArrayNode) jsonObject.get("zones"))
+                .stream().map(zone -> ((String) zone))
+                .collect(Collectors.toList());
 
         Group group = new Group();
         group.setId(id);
@@ -109,20 +122,20 @@ public class Group extends org.alfresco.rest.api.model.Group implements Serializ
         return group;
     }
 
-    public static ListResponse<Group> parseGroups(JSONObject jsonObject)
+    public static ListResponse<Group> parseGroups(JsonNode jsonObject) throws IOException
     {
         List<Group> groups = new ArrayList<>();
 
-        JSONObject jsonList = (JSONObject) jsonObject.get("list");
+        JsonNode jsonList = jsonObject.get("list");
         assertNotNull(jsonList);
 
-        JSONArray jsonEntries = (JSONArray) jsonList.get("entries");
+        ArrayNode jsonEntries = (ArrayNode) jsonList.get("entries");
         assertNotNull(jsonEntries);
 
         for (int i = 0; i < jsonEntries.size(); i++)
         {
-            JSONObject jsonEntry = (JSONObject) jsonEntries.get(i);
-            JSONObject entry = (JSONObject) jsonEntry.get("entry");
+            JsonNode jsonEntry = jsonEntries.get(i);
+            JsonNode entry = jsonEntry.get("entry");
             groups.add(parseGroup(entry));
         }
 

@@ -25,22 +25,21 @@
  */
 package org.alfresco.repo.web.scripts.subscriptions;
 
-import java.io.IOException;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.alfresco.service.cmr.subscriptions.PagingFollowingResults;
-import org.json.simple.JSONObject;
+import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 import org.springframework.extensions.webscripts.WebScriptResponse;
 
 public class SubscriptionServiceFollowersGet extends AbstractSubscriptionServiceWebScript
 {
-    @SuppressWarnings("unchecked")
-    public JSONObject executeImpl(String userId, WebScriptRequest req, WebScriptResponse res) throws IOException
+    public JsonNode executeImpl(String userId, WebScriptRequest req, WebScriptResponse res)
     {
         PagingFollowingResults result = subscriptionService.getFollowers(userId, createPagingRequest(req));
 
-        JSONObject obj = new JSONObject();
-        obj.put("people", getUserArray(result.getPage()));
+        ObjectNode obj = AlfrescoDefaultObjectMapper.createObjectNode();
+        obj.set("people", getUserArray(result.getPage()));
         obj.put("hasMoreItems", result.hasMoreItems());
         if (result.getTotalResultCount() != null)
         {
