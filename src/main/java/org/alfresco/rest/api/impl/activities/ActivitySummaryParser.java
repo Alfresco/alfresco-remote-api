@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import java.util.regex.Pattern;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.util.json.JsonUtil;
 import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.alfresco.util.registry.NamedObjectRegistry;
 import org.apache.commons.logging.Log;
@@ -141,8 +143,7 @@ public class ActivitySummaryParser implements ActivitySummaryProcessorRegistry
                 {
                     model.put(entry.getKey(), ISO8601DateFormat.parse(value.textValue()));
                 }
-                
-                if ((value instanceof TextNode) && isNodeRef(value.textValue()))
+                else if ((value instanceof TextNode) && isNodeRef(value.textValue()))
                 {
                 	try
                 	{
@@ -153,6 +154,10 @@ public class ActivitySummaryParser implements ActivitySummaryProcessorRegistry
                 		// cannot convert to a nodeRef, just keep as a string
                 		logger.warn("Cannot convert activity summary NodeRef string " + value + " to a NodeRef");
                 	}
+                }
+                else
+                {
+                    model.put(entry.getKey(), JsonUtil.convertJSONValue((ValueNode) value));
                 }
             }
         }
