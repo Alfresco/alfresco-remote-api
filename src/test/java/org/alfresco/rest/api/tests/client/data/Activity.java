@@ -111,12 +111,12 @@ public class Activity implements Serializable, ExpectedComparison
 	public static Activity parseActivity(JsonNode jsonObject) throws IOException
 	{
 		Long id = jsonObject.get("id").longValue();
-		String networkId = jsonObject.get("networkId").textValue();
-		String siteId = jsonObject.get("siteId").textValue();
-		String feedPersonId = jsonObject.get("feedPersonId").textValue();
-		String postPersonId = jsonObject.get("postPersonId").textValue();
-		String postedAt = jsonObject.get("postedAt").textValue();
-		String activityType = jsonObject.get("activityType").textValue();
+		String networkId = jsonObject.path("networkId").textValue();
+		String siteId = jsonObject.path("siteId").textValue();
+		String feedPersonId = jsonObject.path("feedPersonId").textValue();
+		String postPersonId = jsonObject.path("postPersonId").textValue();
+		String postedAt = jsonObject.path("postedAt").textValue();
+		String activityType = jsonObject.path("activityType").textValue();
 		Map<String, Object> summary = JsonUtil.convertJSONObjectToMap((ObjectNode) jsonObject.get("activitySummary"));
 		Activity activity = new Activity(id, networkId, siteId, feedPersonId, postPersonId, postedAt, activityType, summary);
 		return activity;
@@ -204,18 +204,18 @@ public class Activity implements Serializable, ExpectedComparison
 			{
 				throw new RuntimeException("parentNodeRef " + parentNodeRefStr + " in activity feed is not a valid NodeRef");
 			}
-			summary.put("lastName", activitySummary.get("lastName"));
-			summary.put("firstName", activitySummary.get("firstName"));
-			summary.put("title", activitySummary.get("title"));
+			summary.put("lastName", activitySummary.get("lastName").textValue());
+			summary.put("firstName", activitySummary.get("firstName").textValue());
+			summary.put("title", activitySummary.get("title").textValue());
 		} else if(activityType.equals("org.alfresco.site.user-joined"))
 		{
-			summary.put("lastName", activitySummary.get("lastName"));
-			summary.put("firstName", activitySummary.get("firstName"));
-			summary.put("memberLastName", activitySummary.get("memberLastName"));
-			summary.put("memberFirstName", activitySummary.get("memberFirstName"));
-			summary.put("memberPersonId", activitySummary.get("memberUserName"));
-			summary.put("role", activitySummary.get("role"));
-			summary.put("title", activitySummary.get("title"));
+			summary.put("lastName", activitySummary.get("lastName").textValue());
+			summary.put("firstName", activitySummary.get("firstName").textValue());
+			summary.put("memberLastName", activitySummary.get("memberLastName").textValue());
+			summary.put("memberFirstName", activitySummary.get("memberFirstName").textValue());
+			summary.put("memberPersonId", activitySummary.get("memberUserName").textValue());
+			summary.put("role", activitySummary.get("role").textValue());
+			summary.put("title", activitySummary.get("title").textValue());
 		}
 
 		return summary;
