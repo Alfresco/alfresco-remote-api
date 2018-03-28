@@ -181,7 +181,7 @@ public class HttpResponse
 			String response = getResponse();
             if (response != null)
             {
-                JsonNode object = AlfrescoDefaultObjectMapper.getReader().readTree(response);
+                result = AlfrescoDefaultObjectMapper.getReader().readTree(response);
             }
         }
         catch (IOException error)
