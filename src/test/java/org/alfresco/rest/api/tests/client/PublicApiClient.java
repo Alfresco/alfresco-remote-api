@@ -1756,7 +1756,7 @@ public class PublicApiClient
                 Boolean hasMoreItems = jsonPagination.get("hasMoreItems").booleanValue();
                 paging.setHasMoreItems(hasMoreItems);
 
-                Long totalItems = jsonPagination.get("totalItems").longValue();
+                JsonNode totalItems = jsonPagination.get("totalItems");
                 if(totalItems != null)
                 {
                     paging.setTotalItems(totalItems.intValue());
