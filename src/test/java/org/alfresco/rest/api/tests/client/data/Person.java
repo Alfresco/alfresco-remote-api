@@ -235,7 +235,7 @@ public class Person
         String mobile = jsonObject.path("mobile").textValue();
         String telephone = jsonObject.path("telephone").textValue();
         String userStatus = jsonObject.path("userStatus").textValue();
-        Boolean enabled = jsonObject.path("enabled").booleanValue();
+        Boolean enabled = jsonObject.has("enabled") ? jsonObject.get("enabled").booleanValue() : null;
         Boolean emailNotificationsEnabled = jsonObject.path("emailNotificationsEnabled").booleanValue();
         JsonNode aspectNamesJson = jsonObject.path("aspectNames");
         List<String> aspectNames = (aspectNamesJson instanceof MissingNode) ?
