@@ -222,15 +222,15 @@ public class GroupsTest extends BaseWebScriptTest
     		for(int i = 0; i < data.size(); i++)
     		{
     			JsonNode rootGroup = data.get(i);
-    			if(rootGroup.get("shortName").equals(TEST_ROOTGROUP))
+    			if(rootGroup.get("shortName").textValue().equals(TEST_ROOTGROUP))
     			{
     				// This is our test rootgroup
-    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName"));
-    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName"));
-    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType"));
+    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName").textValue());
+    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName").textValue());
+    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType").textValue());
     				gotRootGroup = true;
     			}
-    			if(rootGroup.get("shortName").equals(EMAIL_GROUP))
+    			if(rootGroup.get("shortName").textValue().equals(EMAIL_GROUP))
     			{
     				gotEmailGroup = true;
     			}
@@ -263,12 +263,12 @@ public class GroupsTest extends BaseWebScriptTest
     		for(int i = 0; i < data.size(); i++)
     		{
     			JsonNode rootGroup = data.get(i);
-    			if(rootGroup.get("shortName").equals(TEST_ROOTGROUP))
+    			if(rootGroup.get("shortName").textValue().equals(TEST_ROOTGROUP))
     			{
     				// This is our test rootgroup
-    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName"));
-    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName"));
-    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType"));
+    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName").textValue());
+    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName").textValue());
+    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType").textValue());
     			}
     		}	
     	}
@@ -286,12 +286,12 @@ public class GroupsTest extends BaseWebScriptTest
     		for(int i = 0; i < data.size(); i++)
     		{
     			JsonNode rootGroup = data.get(i);
-    			if(rootGroup.get("shortName").equals(TEST_ROOTGROUP))
+    			if(rootGroup.get("shortName").textValue().equals(TEST_ROOTGROUP))
     			{
     				// This is our test rootgroup
-    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName"));
-    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName"));
-    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType"));
+    				assertEquals("shortName wrong", TEST_ROOTGROUP, rootGroup.get("shortName").textValue());
+    				assertEquals("displayName wrong", TEST_ROOTGROUP_DISPLAY_NAME, rootGroup.get("displayName").textValue());
+    				assertEquals("authorityType wrong", "GROUP", rootGroup.get("authorityType").textValue());
     			}
     		}	
     	}
@@ -385,8 +385,8 @@ public class GroupsTest extends BaseWebScriptTest
     			Response response = sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + myGroupName,  newGroupJSON.toString(), "application/json"), Status.STATUS_CREATED);
     			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     			JsonNode rootGroup = top.get("data");
-    			assertEquals("shortName wrong", myGroupName, rootGroup.get("shortName"));
-    			assertEquals("displayName wrong", myDisplayName, rootGroup.get("displayName"));
+    			assertEquals("shortName wrong", myGroupName, rootGroup.get("shortName").textValue());
+    			assertEquals("displayName wrong", myDisplayName, rootGroup.get("displayName").textValue());
     		}
     	
     		/**
@@ -498,8 +498,8 @@ public class GroupsTest extends BaseWebScriptTest
         		assertTrue("no child groups of myGroup", data.size() == 1);
         		
         		JsonNode subGroup = data.get(0);
-        		assertEquals("shortName wrong", TEST_LINK, subGroup.get("shortName"));
-        		assertEquals("authorityType wrong", "GROUP", subGroup.get("authorityType"));
+        		assertEquals("shortName wrong", TEST_LINK, subGroup.get("shortName").textValue());
+        		assertEquals("authorityType wrong", "GROUP", subGroup.get("authorityType").textValue());
         	}
         	
         	/**
@@ -526,8 +526,8 @@ public class GroupsTest extends BaseWebScriptTest
         		assertTrue("no child groups of myGroup", data.size() == 1);
         		
         		JsonNode subGroup = data.get(0);
-        		assertEquals("shortName wrong", USER_ONE, subGroup.get("shortName"));
-        		assertEquals("authorityType wrong", "USER", subGroup.get("authorityType"));
+        		assertEquals("shortName wrong", USER_ONE, subGroup.get("shortName").textValue());
+        		assertEquals("authorityType wrong", "USER", subGroup.get("authorityType").textValue());
         	}
     			
     		/**
@@ -568,9 +568,9 @@ public class GroupsTest extends BaseWebScriptTest
     			JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
     			logger.debug(response.getContentAsString());
     			JsonNode data = top.get("data");
-        		assertEquals("shortName wrong", "BUFFY", data.get("shortName"));
-        		assertEquals("fullName wrong", myNewGroup, data.get("fullName"));
-        		assertEquals("authorityType wrong", "GROUP", data.get("authorityType"));
+        		assertEquals("shortName wrong", "BUFFY", data.get("shortName").textValue());
+        		assertEquals("fullName wrong", myNewGroup, data.get("fullName").textValue());
+        		assertEquals("authorityType wrong", "GROUP", data.get("authorityType").textValue());
     		}
         	
     		/**
@@ -585,7 +585,7 @@ public class GroupsTest extends BaseWebScriptTest
            		for(int i = 0; i < data.size(); i++)
         		{
         			JsonNode rootGroup = data.get(i);
-        			if(rootGroup.get("fullName").equals(myNewGroup))
+        			if(rootGroup.get("fullName").textValue().equals(myNewGroup))
         			{
         			
         			}
@@ -638,7 +638,7 @@ public class GroupsTest extends BaseWebScriptTest
         		logger.debug(response.getContentAsString());
         		JsonNode data = top.get("data");
         		assertTrue(data.size() > 0);
-        		assertEquals("displayName wrong", myNewDisplayName, data.get("displayName"));
+        		assertEquals("displayName wrong", myNewDisplayName, data.get("displayName").textValue());
 
     		}
     		
@@ -651,7 +651,7 @@ public class GroupsTest extends BaseWebScriptTest
         		logger.debug(response.getContentAsString());
         		JsonNode data = top.get("data");
         		assertTrue(data.size() > 0);
-        		assertEquals("displayName wrong", myNewDisplayName, data.get("displayName"));
+        		assertEquals("displayName wrong", myNewDisplayName, data.get("displayName").textValue());
 
         	}   
         	
@@ -688,7 +688,7 @@ public class GroupsTest extends BaseWebScriptTest
 		    ArrayNode data = (ArrayNode) top.get("data");
 		    assertEquals("size not 1", 1, data.size());
  			JsonNode authority = data.get(0);
-			assertEquals("", ADMIN_GROUP, authority.get("shortName"));
+			assertEquals("", ADMIN_GROUP, authority.get("shortName").textValue());
     	}
     	
     	// Search on partial short name with a ?
@@ -699,7 +699,7 @@ public class GroupsTest extends BaseWebScriptTest
 		    ArrayNode data = (ArrayNode) top.get("data");
 		    assertEquals("size not 1", 1, data.size());
  			JsonNode authority = data.get(0);
-			assertEquals("", ADMIN_GROUP, authority.get("shortName"));
+			assertEquals("", ADMIN_GROUP, authority.get("shortName").textValue());
     	}
     	
     	// Negative test.
@@ -719,7 +719,7 @@ public class GroupsTest extends BaseWebScriptTest
 		    ArrayNode data = (ArrayNode) top.get("data");
 		    assertEquals("size not 1", 1, data.size());
  			JsonNode authority = data.get(0);
-			assertEquals("", ADMIN_GROUP, authority.get("shortName"));
+			assertEquals("", ADMIN_GROUP, authority.get("shortName").textValue());
 		}
 		
     	// Search on partial short name of a non root group
@@ -731,7 +731,7 @@ public class GroupsTest extends BaseWebScriptTest
 		    ArrayNode data = (ArrayNode) top.get("data");
 		    assertEquals("size not 1", 1, data.size());
  			JsonNode authority = data.get(0);
-			assertEquals("", TEST_GROUPD, authority.get("shortName"));
+			assertEquals("", TEST_GROUPD, authority.get("shortName").textValue());
 
     	}
     	
@@ -745,7 +745,7 @@ public class GroupsTest extends BaseWebScriptTest
 		    ArrayNode data = (ArrayNode) top.get("data");
 		    assertEquals("size not 1", 1, data.size());
  			JsonNode authority = data.get(0);
-			assertEquals("", TEST_GROUPD, authority.get("shortName"));
+			assertEquals("", TEST_GROUPD, authority.get("shortName").textValue());
     	}
     	
     	// Search for a group (which is not in the default zone) in all zones
@@ -787,7 +787,7 @@ public class GroupsTest extends BaseWebScriptTest
 		    ArrayNode data = (ArrayNode) top.get("data");
 		    assertEquals("Can't find Group E in Share zone", 1, data.size());
  			JsonNode authority = data.get(0);
-			assertEquals("", TEST_GROUPE, authority.get("shortName"));
+			assertEquals("", TEST_GROUPE, authority.get("shortName").textValue());
     	}
     	
     	// Negative test Search for a group in a wrong zone
@@ -1070,19 +1070,19 @@ public class GroupsTest extends BaseWebScriptTest
       		for(int i = 0; i < data.size(); i++)
     		{
     			JsonNode authority = data.get(i);
-    			if(authority.get("shortName").equals(TEST_GROUPD))
+    			if(authority.get("shortName").textValue().equals(TEST_GROUPD))
     			{
     				gotGroupD = true;
     			}
-    			if(authority.get("shortName").equals(TEST_GROUPE))
+    			if(authority.get("shortName").textValue().equals(TEST_GROUPE))
     			{
     				gotGroupE = true;
     			}
-    			if(authority.get("shortName").equals(USER_TWO))
+    			if(authority.get("shortName").textValue().equals(USER_TWO))
     			{
     				gotUserTwo = true;
     			}
-    			if(authority.get("shortName").equals(USER_THREE))
+    			if(authority.get("shortName").textValue().equals(USER_THREE))
     			{
     				gotUserThree = true;
     			}
@@ -1112,11 +1112,11 @@ public class GroupsTest extends BaseWebScriptTest
       		for(int i = 0; i < data.size(); i++)
     		{
       			JsonNode authority = data.get(i);
-    			if(authority.get("shortName").equals(TEST_GROUPD))
+    			if(authority.get("shortName").textValue().equals(TEST_GROUPD))
     			{
     				gotGroupD = true;
     			}
-    			else if(authority.get("shortName").equals(TEST_GROUPE))
+    			else if(authority.get("shortName").textValue().equals(TEST_GROUPE))
     			{
     				gotGroupE = true;
     			}
@@ -1128,11 +1128,11 @@ public class GroupsTest extends BaseWebScriptTest
       		assertTrue("not got group D", gotGroupD);
       		assertTrue("not got group E", gotGroupE);
       		
-    		assertEquals("authorityType wrong", "GROUP", subGroup.get("authorityType"));
+    		assertEquals("authorityType wrong", "GROUP", subGroup.get("authorityType").textValue());
       		for(int i = 0; i < data.size(); i++)
     		{
       			JsonNode authority = data.get(i);
-      			assertEquals("authorityType wrong", "GROUP", authority.get("authorityType"));      			
+      			assertEquals("authorityType wrong", "GROUP", authority.get("authorityType").textValue());
     		}
     	}
     	
@@ -1149,7 +1149,7 @@ public class GroupsTest extends BaseWebScriptTest
       		for(int i = 0; i < data.size(); i++)
     		{
       			JsonNode authority = data.get(i);
-      			assertEquals("authorityType wrong", "USER", authority.get("authorityType"));      			
+      			assertEquals("authorityType wrong", "USER", authority.get("authorityType").textValue());
     		}
     	}
     	
