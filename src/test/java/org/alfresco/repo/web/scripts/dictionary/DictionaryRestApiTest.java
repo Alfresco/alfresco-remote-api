@@ -242,7 +242,7 @@ public class DictionaryRestApiTest extends BaseWebScriptTest
         }
     }
 
-    private void assertEquivalenceProperties(List<Object> propertyValues1, List<Object> propertyValues2)
+    private void assertEquivalenceProperties(List<String> propertyValues1, List<String> propertyValues2)
     {
         if ((propertyValues1.size() != propertyValues2.size()) || !propertyValues1.containsAll(propertyValues2))
         {
