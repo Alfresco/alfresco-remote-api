@@ -379,15 +379,15 @@ public class WorkflowApiClient extends PublicApiClient
     }
     
     public static Date parseDate(JsonNode entry, String fieldName) {
-        String dateText = entry.get(fieldName).textValue();
-        if (dateText!=null) {
+        JsonNode dateJson = entry.get(fieldName);
+        if (dateJson!=null) {
           try
           {
-              return DATE_FORMAT_ISO8601.parse(dateText);
+              return DATE_FORMAT_ISO8601.parse(dateJson.textValue());
           }
           catch (Exception e)
           {
-              throw new RuntimeException("couldn't parse date "+dateText+": "+e.getMessage(), e);
+              throw new RuntimeException("couldn't parse date "+dateJson.textValue()+": "+e.getMessage(), e);
           }
         }
         return null;

@@ -34,6 +34,7 @@ import static org.junit.Assert.fail;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -70,6 +71,7 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.test_category.OwnJVMTestsCategory;
 import org.alfresco.util.ISO8601DateFormat;
 import org.alfresco.util.Pair;
+import org.alfresco.util.json.JsonUtil;
 import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.junit.experimental.categories.Category;
 import org.junit.Test;
@@ -934,10 +936,10 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             JsonNode processListJsonNode = processesClient.getProcessesJSON(params);
             assertNotNull(processListJsonNode);
             JsonNode paginationJSON = processListJsonNode.get("pagination");
-            assertEquals(3l, paginationJSON.get("count"));
-            assertEquals(3l, paginationJSON.get("totalItems"));
-            assertEquals(0l, paginationJSON.get("skipCount"));
-            assertEquals(false, paginationJSON.get("hasMoreItems"));
+            assertEquals(3L, paginationJSON.get("count").longValue());
+            assertEquals(3L, paginationJSON.get("totalItems").longValue());
+            assertEquals(0L, paginationJSON.get("skipCount").longValue());
+            assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
             ArrayNode jsonEntries = (ArrayNode) processListJsonNode.get("entries");
             assertEquals(3, jsonEntries.size());
             
@@ -948,10 +950,10 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             processListJsonNode = processesClient.getProcessesJSON(params);
             assertNotNull(processListJsonNode);
             paginationJSON = processListJsonNode.get("pagination");
-            assertEquals(2l, paginationJSON.get("count"));
-            assertEquals(3l, paginationJSON.get("totalItems"));
-            assertEquals(0l, paginationJSON.get("skipCount"));
-            assertEquals(true, paginationJSON.get("hasMoreItems"));
+            assertEquals(2L, paginationJSON.get("count").longValue());
+            assertEquals(3L, paginationJSON.get("totalItems").longValue());
+            assertEquals(0L, paginationJSON.get("skipCount").longValue());
+            assertEquals(true, paginationJSON.get("hasMoreItems").booleanValue());
             jsonEntries = (ArrayNode) processListJsonNode.get("entries");
             assertEquals(2, jsonEntries.size());
             
@@ -962,13 +964,13 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             processListJsonNode = processesClient.getProcessesJSON(params);
             assertNotNull(processListJsonNode);
             paginationJSON = processListJsonNode.get("pagination");
-            assertEquals(2l, paginationJSON.get("count"));
-            assertEquals(3l, paginationJSON.get("totalItems"));
-            assertEquals(1l, paginationJSON.get("skipCount"));
+            assertEquals(2L, paginationJSON.get("count").longValue());
+            assertEquals(3L, paginationJSON.get("totalItems").longValue());
+            assertEquals(1L, paginationJSON.get("skipCount").longValue());
 
             // MNT-10977: Workflow process retrieval returns incorrect hasMoreItems value
             // Repository must answer 'false' for 'hasMoreItems' since the total number of items is 3, 2 items are requested and 1 is skipped
-            assertEquals(false, paginationJSON.get("hasMoreItems"));
+            assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
             jsonEntries = (ArrayNode) processListJsonNode.get("entries");
             assertEquals(2, jsonEntries.size());
             
@@ -980,13 +982,13 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             processListJsonNode = processesClient.getProcessesJSON(params);
             assertNotNull(processListJsonNode);
             paginationJSON = processListJsonNode.get("pagination");
-            assertEquals(1l, paginationJSON.get("count"));
-            assertEquals(3l, paginationJSON.get("totalItems"));
-            assertEquals(2l, paginationJSON.get("skipCount"));
+            assertEquals(1L, paginationJSON.get("count").longValue());
+            assertEquals(3L, paginationJSON.get("totalItems").longValue());
+            assertEquals(2L, paginationJSON.get("skipCount").longValue());
 
             // MNT-10977: Workflow process retrieval returns incorrect hasMoreItems value
             // Repository must answer 'false' for 'hasMoreItems' since the total number of items is 3 and 2 items are skipped
-            assertEquals(false, paginationJSON.get("hasMoreItems"));
+            assertEquals(false, paginationJSON.get("hasMoreItems").booleanValue());
             jsonEntries = (ArrayNode) processListJsonNode.get("entries");
             assertEquals(1, jsonEntries.size());
         } 
@@ -1112,13 +1114,13 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertTrue(entriesJSON.size() == 1);
             JsonNode taskJsonNode = (entriesJSON.get(0)).get("entry");
             assertNotNull(taskJsonNode.get("id"));
-            assertEquals(process1.getId(), taskJsonNode.get("processId"));
-            assertEquals(process1.getProcessDefinitionId(), taskJsonNode.get("processDefinitionId"));
-            assertEquals("adhocTask", taskJsonNode.get("activityDefinitionId"));
-            assertEquals("Adhoc Task", taskJsonNode.get("name"));
-            assertEquals(requestContext.getRunAsUser(), taskJsonNode.get("assignee"));
-            assertEquals(2l, taskJsonNode.get("priority"));
-            assertEquals("wf:adhocTask", taskJsonNode.get("formResourceKey"));
+            assertEquals(process1.getId(), taskJsonNode.get("processId").textValue());
+            assertEquals(process1.getProcessDefinitionId(), taskJsonNode.get("processDefinitionId").textValue());
+            assertEquals("adhocTask", taskJsonNode.get("activityDefinitionId").textValue());
+            assertEquals("Adhoc Task", taskJsonNode.get("name").textValue());
+            assertEquals(requestContext.getRunAsUser(), taskJsonNode.get("assignee").textValue());
+            assertEquals(2L, taskJsonNode.get("priority").longValue());
+            assertEquals("wf:adhocTask", taskJsonNode.get("formResourceKey").textValue());
             assertNull(taskJsonNode.get("endedAt"));
             assertNull(taskJsonNode.get("durationInMs"));
             
@@ -1268,9 +1270,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             JsonNode activityJsonNode = activitiesMap.get("start");
             assertNotNull(activityJsonNode);
             assertNotNull(activityJsonNode.get("id"));
-            assertEquals("start", activityJsonNode.get("activityDefinitionId"));
+            assertEquals("start", activityJsonNode.get("activityDefinitionId").textValue());
             assertNull(activityJsonNode.get("activityDefinitionName"));
-            assertEquals("startEvent", activityJsonNode.get("activityDefinitionType"));
+            assertEquals("startEvent", activityJsonNode.get("activityDefinitionType").textValue());
             assertNotNull(activityJsonNode.get("startedAt"));
             assertNotNull(activityJsonNode.get("endedAt"));
             assertNotNull(activityJsonNode.get("durationInMs"));
@@ -1278,9 +1280,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             activityJsonNode = activitiesMap.get("adhocTask");
             assertNotNull(activityJsonNode);
             assertNotNull(activityJsonNode.get("id"));
-            assertEquals("adhocTask", activityJsonNode.get("activityDefinitionId"));
-            assertEquals("Adhoc Task", activityJsonNode.get("activityDefinitionName"));
-            assertEquals("userTask", activityJsonNode.get("activityDefinitionType"));
+            assertEquals("adhocTask", activityJsonNode.get("activityDefinitionId").textValue());
+            assertEquals("Adhoc Task", activityJsonNode.get("activityDefinitionName").textValue());
+            assertEquals("userTask", activityJsonNode.get("activityDefinitionType").textValue());
             assertNotNull(activityJsonNode.get("startedAt"));
             assertNull(activityJsonNode.get("endedAt"));
             assertNull(activityJsonNode.get("durationInMs"));
@@ -1482,30 +1484,32 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         boolean doc2Found = false;
         for (JsonNode entryObject : entriesJSON)
         {
-            JsonNode entryObjectJSON = entryObject;
-            JsonNode entryJSON = entryObjectJSON.get("entry");
-            if (entryJSON.get("name").equals("Test Doc1")) {
+            JsonNode entryJSON = entryObject.get("entry");
+            if (entryJSON.get("name").textValue().equals("Test Doc1"))
+            {
                 doc1Found = true;
-                assertEquals(docNodeRefs[0].getId(), entryJSON.get("id"));
-                assertEquals("Test Doc1", entryJSON.get("name"));
-                assertEquals("Test Doc1 Title", entryJSON.get("title"));
-                assertEquals("Test Doc1 Description", entryJSON.get("description"));
+                assertEquals(docNodeRefs[0].getId(), entryJSON.get("id").textValue());
+                assertEquals("Test Doc1", entryJSON.get("name").textValue());
+                assertEquals("Test Doc1 Title", entryJSON.get("title").textValue());
+                assertEquals("Test Doc1 Description", entryJSON.get("description").textValue());
                 assertNotNull(entryJSON.get("createdAt"));
-                assertEquals(requestContext.getRunAsUser(), entryJSON.get("createdBy"));
+                assertEquals(requestContext.getRunAsUser(), entryJSON.get("createdBy").textValue());
                 assertNotNull(entryJSON.get("modifiedAt"));
-                assertEquals(requestContext.getRunAsUser(), entryJSON.get("modifiedBy"));
+                assertEquals(requestContext.getRunAsUser(), entryJSON.get("modifiedBy").textValue());
                 assertNotNull(entryJSON.get("size"));
                 assertNotNull(entryJSON.get("mimeType"));
-            } else {
+            }
+            else
+            {
                 doc2Found = true;
-                assertEquals(docNodeRefs[1].getId(), entryJSON.get("id"));
-                assertEquals("Test Doc2", entryJSON.get("name"));
-                assertEquals("Test Doc2 Title", entryJSON.get("title"));
-                assertEquals("Test Doc2 Description", entryJSON.get("description"));
+                assertEquals(docNodeRefs[1].getId(), entryJSON.get("id").textValue());
+                assertEquals("Test Doc2", entryJSON.get("name").textValue());
+                assertEquals("Test Doc2 Title", entryJSON.get("title").textValue());
+                assertEquals("Test Doc2 Description", entryJSON.get("description").textValue());
                 assertNotNull(entryJSON.get("createdAt"));
-                assertEquals(requestContext.getRunAsUser(), entryJSON.get("createdBy"));
+                assertEquals(requestContext.getRunAsUser(), entryJSON.get("createdBy").textValue());
                 assertNotNull(entryJSON.get("modifiedAt"));
-                assertEquals(requestContext.getRunAsUser(), entryJSON.get("modifiedBy"));
+                assertEquals(requestContext.getRunAsUser(), entryJSON.get("modifiedBy").textValue());
                 assertNotNull(entryJSON.get("size"));
                 assertNotNull(entryJSON.get("mimeType"));
             }
@@ -1540,14 +1544,14 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         JsonNode itemJSON = processesClient.findProcessItem(newProcessInstanceId, docNodeRefs[0].getId());
         assertNotNull(itemJSON);
         
-        assertEquals(docNodeRefs[0].getId(), itemJSON.get("id"));
-        assertEquals("Test Doc1", itemJSON.get("name"));
-        assertEquals("Test Doc1 Title", itemJSON.get("title"));
-        assertEquals("Test Doc1 Description", itemJSON.get("description"));
+        assertEquals(docNodeRefs[0].getId(), itemJSON.get("id").textValue());
+        assertEquals("Test Doc1", itemJSON.get("name").textValue());
+        assertEquals("Test Doc1 Title", itemJSON.get("title").textValue());
+        assertEquals("Test Doc1 Description", itemJSON.get("description").textValue());
         assertNotNull(itemJSON.get("createdAt"));
-        assertEquals(requestContext.getRunAsUser(), itemJSON.get("createdBy"));
+        assertEquals(requestContext.getRunAsUser(), itemJSON.get("createdBy").textValue());
         assertNotNull(itemJSON.get("modifiedAt"));
-        assertEquals(requestContext.getRunAsUser(), itemJSON.get("modifiedBy"));
+        assertEquals(requestContext.getRunAsUser(), itemJSON.get("modifiedBy").textValue());
         assertNotNull(itemJSON.get("size"));
         assertNotNull(itemJSON.get("mimeType"));
         
@@ -1577,14 +1581,14 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             // Fetching the item
             JsonNode itemJSON = publicApiClient.processesClient().findProcessItem(newProcessInstanceId, docNodeRefs[0].getId());
-            assertEquals(docNodeRefs[0].getId(), itemJSON.get("id"));
-            assertEquals("Test Doc1", itemJSON.get("name"));
-            assertEquals("Test Doc1 Title", itemJSON.get("title"));
-            assertEquals("Test Doc1 Description", itemJSON.get("description"));
+            assertEquals(docNodeRefs[0].getId(), itemJSON.get("id").textValue());
+            assertEquals("Test Doc1", itemJSON.get("name").textValue());
+            assertEquals("Test Doc1 Title", itemJSON.get("title").textValue());
+            assertEquals("Test Doc1 Description", itemJSON.get("description").textValue());
             assertNotNull(itemJSON.get("createdAt"));
-            assertEquals(requestContext.getRunAsUser(), itemJSON.get("createdBy"));
+            assertEquals(requestContext.getRunAsUser(), itemJSON.get("createdBy").textValue());
             assertNotNull(itemJSON.get("modifiedAt"));
-            assertEquals(requestContext.getRunAsUser(), itemJSON.get("modifiedBy"));
+            assertEquals(requestContext.getRunAsUser(), itemJSON.get("modifiedBy").textValue());
             assertNotNull(itemJSON.get("size"));
             assertNotNull(itemJSON.get("mimeType"));
             
@@ -1807,28 +1811,28 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
         // Test some well-known variables
         JsonNode variable = variablesByName.get("bpm_description");
         assertNotNull(variable);
-        assertEquals("d:text", variable.get("type"));
+        assertEquals("d:text", variable.get("type").textValue());
         assertNull(variable.get("value"));
         
         variable = variablesByName.get("bpm_percentComplete");
         assertNotNull(variable);
-        assertEquals("d:int", variable.get("type"));
-        assertEquals(0L, variable.get("value"));
+        assertEquals("d:int", variable.get("type").textValue());
+        assertEquals(0L, variable.get("value").longValue());
         
         variable = variablesByName.get("bpm_sendEMailNotifications");
         assertNotNull(variable);
-        assertEquals("d:boolean", variable.get("type"));
-        assertEquals(Boolean.FALSE, variable.get("value"));
+        assertEquals("d:boolean", variable.get("type").textValue());
+        assertEquals(Boolean.FALSE, variable.get("value").booleanValue());
         
         variable = variablesByName.get("bpm_package");
         assertNotNull(variable);
-        assertEquals("bpm:workflowPackage", variable.get("type"));
+        assertEquals("bpm:workflowPackage", variable.get("type").textValue());
         assertNotNull(variable.get("value"));
         
         variable = variablesByName.get("bpm_assignee");
         assertNotNull(variable);
-        assertEquals("cm:person", variable.get("type"));
-        assertEquals(user, variable.get("value"));
+        assertEquals("cm:person", variable.get("type").textValue());
+        assertEquals(user, variable.get("value").textValue());
     }
     
     @Test
@@ -1858,15 +1862,15 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             ArrayNode resultList = (ArrayNode) resultObject.get("entries");
             assertEquals(2, resultList.size());
             JsonNode firstResultObject = (resultList.get(0)).get("entry");
-            assertEquals("bpm_percentComplete", firstResultObject.get("name"));
-            assertEquals(20L, firstResultObject.get("value"));
-            assertEquals("d:int", firstResultObject.get("type"));
+            assertEquals("bpm_percentComplete", firstResultObject.get("name").textValue());
+            assertEquals(20L, firstResultObject.get("value").longValue());
+            assertEquals("d:int", firstResultObject.get("type").textValue());
             assertEquals(20, activitiProcessEngine.getRuntimeService().getVariable(processInstance.getId(), "bpm_percentComplete"));
             
             JsonNode secondResultObject = (resultList.get(1)).get("entry");
-            assertEquals("bpm_workflowPriority", secondResultObject.get("name"));
-            assertEquals(50L, secondResultObject.get("value"));
-            assertEquals("d:int", secondResultObject.get("type"));
+            assertEquals("bpm_workflowPriority", secondResultObject.get("name").textValue());
+            assertEquals(50L, secondResultObject.get("value").longValue());
+            assertEquals("d:int", secondResultObject.get("type").textValue());
             assertEquals(50, activitiProcessEngine.getRuntimeService().getVariable(processInstance.getId(), "bpm_workflowPriority"));
         }
         finally
@@ -1901,9 +1905,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             JsonNode result = resultEntry.get("entry");
             
-            assertEquals("newVariable", result.get("name"));
-            assertEquals(1234L, result.get("value"));
-            assertEquals("d:long", result.get("type"));
+            assertEquals("newVariable", result.get("name").textValue());
+            assertEquals(1234L, result.get("value").longValue());
+            assertEquals("d:long", result.get("type").textValue());
             assertEquals(1234L, activitiProcessEngine.getRuntimeService().getVariable(processId, "newVariable"));
             
             // Update an unexisting variable, creates a new one using no tying
@@ -1915,9 +1919,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             result = resultEntry.get("entry");
             
-            assertEquals("stringVariable", result.get("name"));
-            assertEquals("This is a string value", result.get("value"));
-            assertEquals("d:text", result.get("type"));
+            assertEquals("stringVariable", result.get("name").textValue());
+            assertEquals("This is a string value", result.get("value").textValue());
+            assertEquals("d:text", result.get("type").textValue());
             assertEquals("This is a string value", activitiProcessEngine.getRuntimeService().getVariable(processId, "stringVariable"));
             
             // Update an existing variable, creates a new one using explicit typing (d:long)
@@ -1930,9 +1934,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             result = resultEntry.get("entry");
             
-            assertEquals("newVariable", result.get("name"));
-            assertEquals(4567L, result.get("value"));
-            assertEquals("d:long", result.get("type"));
+            assertEquals("newVariable", result.get("name").textValue());
+            assertEquals(4567L, result.get("value").longValue());
+            assertEquals("d:long", result.get("type").textValue());
             assertEquals(4567L, activitiProcessEngine.getRuntimeService().getVariable(processId, "newVariable"));
             
             JsonNode processvariables = publicApiClient.processesClient().getProcessvariables(processId);
@@ -1953,7 +1957,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             }
             
             assertNotNull(newVariableEntry);
-            assertEquals(4567L, newVariableEntry.get("value"));
+            assertEquals(4567L, newVariableEntry.get("value").longValue());
             
             // Update an existing variable, creates a new one using no explicit typing 
             variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
@@ -1964,9 +1968,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             result = resultEntry.get("entry");
             
-            assertEquals("stringVariable", result.get("name"));
-            assertEquals("Updated string variable", result.get("value"));
-            assertEquals("d:text", result.get("type"));
+            assertEquals("stringVariable", result.get("name").textValue());
+            assertEquals("Updated string variable", result.get("value").textValue());
+            assertEquals("d:text", result.get("type").textValue());
             assertEquals("Updated string variable", activitiProcessEngine.getRuntimeService().getVariable(processId, "stringVariable"));
             
             // Update an unexisting variable with wrong variable data
@@ -1994,9 +1998,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             result = resultEntry.get("entry");
             
-            assertEquals("newNoValueVariable", result.get("name"));
+            assertEquals("newNoValueVariable", result.get("name").textValue());
             assertNotNull(result.get("value"));
-            assertEquals("d:datetime", result.get("type"));
+            assertEquals("d:datetime", result.get("type").textValue());
             assertNotNull(activitiProcessEngine.getRuntimeService().getVariable(processId, "newNoValueVariable"));
             
             // Test update variable with admin user
@@ -2010,9 +2014,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             result = resultEntry.get("entry");
             
-            assertEquals("newVariable", result.get("name"));
-            assertEquals(1234L, result.get("value"));
-            assertEquals("d:long", result.get("type"));
+            assertEquals("newVariable", result.get("name").textValue());
+            assertEquals(1234L, result.get("value").longValue());
+            assertEquals("d:long", result.get("type").textValue());
             assertEquals(1234L, activitiProcessEngine.getRuntimeService().getVariable(processId, "newVariable"));
         }
         finally
@@ -2039,9 +2043,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             JsonNode result = resultEntry.get("entry");
             
-            assertEquals("newVariable", result.get("name"));
-            assertEquals(1234L, result.get("value"));
-            assertEquals("d:long", result.get("type"));
+            assertEquals("newVariable", result.get("name").textValue());
+            assertEquals(1234L, result.get("value").longValue());
+            assertEquals("d:long", result.get("type").textValue());
             assertEquals(1234L, activitiProcessEngine.getRuntimeService().getVariable(processId, "newVariable"));
             
             // test update variable with user not involved in the process instance
@@ -2100,10 +2104,10 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             final JsonNode updateInitiatorResult = resultEntry.get("entry");
 
-            assertEquals("initiator", updateInitiatorResult.get("name"));
-            assertEquals("d:noderef", updateInitiatorResult.get("type"));
+            assertEquals("initiator", updateInitiatorResult.get("name").textValue());
+            assertEquals("d:noderef", updateInitiatorResult.get("type").textValue());
             assertNotNull("Variable value should be returned", updateInitiatorResult.get("value"));
-            assertEquals(personRef.getId(), updateInitiatorResult.get("value"));
+            assertEquals(personRef.getId(), updateInitiatorResult.get("value").textValue());
 
             // Get process variables after updating "initiator"
             publicApiClient.setRequestContext(adminContext);
@@ -2119,19 +2123,20 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
 
     protected void validateVariableField(JsonNode processvariables, String name, String value)
     {
-        JsonNode entry = null;
         ArrayNode entries = (ArrayNode) processvariables.get("entries");
         assertNotNull(entries);
 
-        int i = 0;
-        do
+        Object actual = null;
+        for (JsonNode node : entries)
         {
-            entry = (entries.get(i)).get("entry");
-            i++;
-        } while (!entry.has(name) && i < entries.size());
-
-        // Test variable value
-        assertEquals(value, entry.get("value"));
+            JsonNode entry = node.get("entry");
+            if (entry.get("name").textValue().equals(name))
+            {
+                actual = JsonUtil.convertJSONValue((ValueNode) entry.get("value"));
+                break;
+            }
+        }
+        assertEquals(value, actual);
     }
 
     @SuppressWarnings("unchecked")
@@ -2172,9 +2177,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             JsonNode result = resultEntry.get("entry");
             
-            assertEquals("wf_requiredApprovePercent", result.get("name"));
-            assertEquals(55l, result.get("value"));
-            assertEquals("d:int", result.get("type"));
+            assertEquals("wf_requiredApprovePercent", result.get("name").textValue());
+            assertEquals(55L, result.get("value").longValue());
+            assertEquals("d:int", result.get("type").textValue());
             assertEquals(55, activitiProcessEngine.getRuntimeService().getVariable(processId, "wf_requiredApprovePercent"));
             
             JsonNode processvariables = publicApiClient.processesClient().getProcessvariables(processId);
@@ -2196,8 +2201,8 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             
             JsonNode approvePercentObject = variablesByName.get("wf_requiredApprovePercent");
             assertNotNull(approvePercentObject);
-            assertEquals(55l, approvePercentObject.get("value"));
-            assertEquals("d:int", approvePercentObject.get("type"));
+            assertEquals(55L, approvePercentObject.get("value").longValue());
+            assertEquals("d:int", approvePercentObject.get("type").textValue());
             
             // set a new variable
             variableJson = AlfrescoDefaultObjectMapper.createObjectNode();
@@ -2209,9 +2214,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             result = resultEntry.get("entry");
             
-            assertEquals("testVariable", result.get("name"));
-            assertEquals("text", result.get("value"));
-            assertEquals("d:text", result.get("type"));
+            assertEquals("testVariable", result.get("name").textValue());
+            assertEquals("text", result.get("value").textValue());
+            assertEquals("d:text", result.get("type").textValue());
             assertEquals("text", activitiProcessEngine.getRuntimeService().getVariable(processId, "testVariable"));
             
             // change the variable value and type (should be working because no content model type)
@@ -2224,9 +2229,9 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             result = resultEntry.get("entry");
             
-            assertEquals("testVariable", result.get("name"));
-            assertEquals(123l, result.get("value"));
-            assertEquals("d:int", result.get("type"));
+            assertEquals("testVariable", result.get("name").textValue());
+            assertEquals(123L, result.get("value").longValue());
+            assertEquals("d:int", result.get("type").textValue());
             assertEquals(123, activitiProcessEngine.getRuntimeService().getVariable(processId, "testVariable"));
             
             // change the variable value for a list of noderefs (bpm_assignees)
@@ -2250,7 +2255,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
             assertNotNull(resultEntry);
             final JsonNode updateAssigneeResult = resultEntry.get("entry");
             
-            assertEquals("bpm_assignees", updateAssigneeResult.get("name"));
+            assertEquals("bpm_assignees", updateAssigneeResult.get("name").textValue());
             TenantUtil.runAsUserTenant(new TenantRunAsWork<Void>()
             {
                 @Override
@@ -2263,7 +2268,7 @@ public class ProcessWorkflowApiTest extends EnterpriseWorkflowTestApi
                 }
             }, requestContext.getRunAsUser(), requestContext.getNetworkId());
             
-            assertEquals("d:noderef", updateAssigneeResult.get("type"));
+            assertEquals("d:noderef", updateAssigneeResult.get("type").textValue());
             
             // update the bpm_assignees with a single entry, should result in an error
             final ObjectNode updateAssigneeJson = AlfrescoDefaultObjectMapper.createObjectNode();

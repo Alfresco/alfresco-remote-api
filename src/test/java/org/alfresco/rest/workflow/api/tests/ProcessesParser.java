@@ -28,6 +28,7 @@ package org.alfresco.rest.workflow.api.tests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,19 +52,22 @@ public class ProcessesParser extends ListParser<ProcessInfo>
         processesRest.setProcessDefinitionKey(entry.get("processDefinitionKey").textValue());
         processesRest.setStartedAt(WorkflowApiClient.parseDate(entry, "startedAt"));
         processesRest.setEndedAt(WorkflowApiClient.parseDate(entry, "endedAt"));
-        processesRest.setDurationInMs(entry.get("durationInMs").longValue());
-        processesRest.setDeleteReason(entry.get("deleteReason").textValue());
-        processesRest.setBusinessKey(entry.get("businessKey").textValue());
-        processesRest.setSuperProcessInstanceId(entry.get("superProcessInstanceId").textValue());
-        processesRest.setStartActivityId(entry.get("startActivityId").textValue());
-        processesRest.setStartUserId(entry.get("startUserId").textValue());
-        processesRest.setEndActivityId(entry.get("endActivityId").textValue());
-        processesRest.setCompleted(entry.get("completed").booleanValue());
-        processesRest.setVariables(JsonUtil.convertJSONObjectToMap((ObjectNode) entry.get("variables")));
-        processesRest.setItems(JsonUtil
-                .convertJSONArrayToList((ArrayNode) entry.get("item"))
-                .stream().map(item -> ((String) item))
-                .collect(Collectors.toSet()));
+        JsonNode duration = entry.get("durationInMs");
+        processesRest.setDurationInMs(duration == null ? null : duration.longValue());
+        processesRest.setDeleteReason(entry.path("deleteReason").textValue());
+        processesRest.setBusinessKey(entry.path("businessKey").textValue());
+        processesRest.setSuperProcessInstanceId(entry.path("superProcessInstanceId").textValue());
+        processesRest.setStartActivityId(entry.path("startActivityId").textValue());
+        processesRest.setStartUserId(entry.path("startUserId").textValue());
+        processesRest.setEndActivityId(entry.path("endActivityId").textValue());
+        processesRest.setCompleted(entry.path("completed").booleanValue());
+        JsonNode variablesJson = entry.get("variables");
+        processesRest.setVariables(variablesJson == null ? null : JsonUtil.convertJSONObjectToMap((ObjectNode) variablesJson));
+        JsonNode itemsJson = entry.get("item");
+        processesRest.setItems(itemsJson == null ? null :
+                JsonUtil.convertJSONArrayToList((ArrayNode) itemsJson)
+                        .stream().map(item -> ((String) item))
+                        .collect(Collectors.toSet()));
         
         if (entry.get("processVariables") != null) {
             List<Variable> processVariables = new ArrayList<>();
@@ -74,7 +78,21 @@ public class ProcessesParser extends ListParser<ProcessInfo>
                 Variable variable = new Variable();
                 variable.setName( variableJSON.get("name").textValue());
                 variable.setType( variableJSON.get("type").textValue());
-                variable.setValue(variableJSON.get("value"));
+                JsonNode valueJson = variableJSON.get("value");
+                Object value = null;
+                if (valueJson instanceof ObjectNode)
+                {
+                    value = JsonUtil.convertJSONObjectToMap((ObjectNode) valueJson);
+                }
+                else if (valueJson instanceof ArrayNode)
+                {
+                    value = JsonUtil.convertJSONArrayToList((ArrayNode) valueJson);
+                }
+                else if (valueJson instanceof ValueNode)
+                {
+                    value = JsonUtil.convertJSONValue((ValueNode) valueJson);
+                }
+                variable.setValue(value);
                 processVariables.add(variable);
             }
             processesRest.setProcessVariables(processVariables);
