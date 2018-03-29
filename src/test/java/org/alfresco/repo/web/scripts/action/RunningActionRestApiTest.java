@@ -160,14 +160,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         
         JsonNode jsonRD = results.get(0);
         assertNotNull(jsonRD);
-        assertEquals(id, jsonRD.get("actionId"));
-        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-        assertEquals(instance, jsonRD.get("actionInstance"));
-        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-        assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.get("cancelRequested"));
+        assertEquals(id, jsonRD.get("actionId").textValue());
+        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+        assertEquals(instance, jsonRD.get("actionInstance").textValue());
+        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+        assertEquals(startedAt, jsonRD.get("startedAt").textValue());
+        assertFalse(jsonRD.get("cancelRequested").booleanValue());
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
-              id + "=" + instance, jsonRD.get("details"));
+              id + "=" + instance, jsonRD.get("details").textValue());
         
         
         // Ensure we didn't get any unexpected data back,
@@ -201,14 +201,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         
         jsonRD = results.get(0);
         assertNotNull(jsonRD);
-        assertEquals(id, jsonRD.get("actionId"));
-        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-        assertEquals(instance, jsonRD.get("actionInstance"));
-        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-        assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(true, jsonRD.get("cancelRequested"));
+        assertEquals(id, jsonRD.get("actionId").textValue());
+        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+        assertEquals(instance, jsonRD.get("actionInstance").textValue());
+        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+        assertEquals(startedAt, jsonRD.get("startedAt").textValue());
+        assertTrue(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
-              id + "=" + instance, jsonRD.get("details"));
+              id + "=" + instance, jsonRD.get("details").textValue());
         
        
         // Add a 2nd and 3rd - one pending, one running
@@ -241,13 +241,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         
         for(int i=0; i<3; i++) {
            jsonRD = results.get(i);
-           if(jsonRD.get("actionId").equals(id)) {
+           if(jsonRD.get("actionId").textValue().equals(id)) {
               has1 = true;
            }
-           if(jsonRD.get("actionId").equals(id2)) {
+           if(jsonRD.get("actionId").textValue().equals(id2)) {
               has2 = true;
            }
-           if(jsonRD.get("actionId").equals(id3)) {
+           if(jsonRD.get("actionId").textValue().equals(id3)) {
               has3 = true;
            }
         }
@@ -276,13 +276,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         
         for(int i=0; i<2; i++) {
            jsonRD = results.get(i);
-           if(jsonRD.get("actionId").equals(id)) {
+           if(jsonRD.get("actionId").textValue().equals(id)) {
               has1 = true;
            }
-           if(jsonRD.get("actionId").equals(id2)) {
+           if(jsonRD.get("actionId").textValue().equals(id2)) {
               has2 = true;
            }
-           if(jsonRD.get("actionId").equals(id3)) {
+           if(jsonRD.get("actionId").textValue().equals(id3)) {
               has3 = true;
            }
         }
@@ -306,14 +306,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         
         jsonRD = results.get(0);
         assertNotNull(jsonRD);
-        assertEquals(id, jsonRD.get("actionId"));
-        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-        assertEquals(instance, jsonRD.get("actionInstance"));
-        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-        assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(true, jsonRD.get("cancelRequested"));
+        assertEquals(id, jsonRD.get("actionId").textValue());
+        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+        assertEquals(instance, jsonRD.get("actionInstance").textValue());
+        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+        assertEquals(startedAt, jsonRD.get("startedAt").textValue());
+        assertTrue(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
-              id + "=" + instance, jsonRD.get("details"));
+              id + "=" + instance, jsonRD.get("details").textValue());
         
         
         // Check the other one
@@ -331,14 +331,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         
         jsonRD = results.get(0);
         assertNotNull(jsonRD);
-        assertEquals(id2, jsonRD.get("actionId"));
-        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-        assertEquals(instance2, jsonRD.get("actionInstance"));
-        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-        assertEquals(startedAt2, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.get("cancelRequested"));
+        assertEquals(id2, jsonRD.get("actionId").textValue());
+        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+        assertEquals(instance2, jsonRD.get("actionInstance").textValue());
+        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+        assertEquals(startedAt2, jsonRD.get("startedAt").textValue());
+        assertFalse(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
         assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
-              id2 + "=" + instance2, jsonRD.get("details"));
+              id2 + "=" + instance2, jsonRD.get("details").textValue());
 
         
         // Check we correctly filter by type
@@ -400,14 +400,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         // Check the details of one of these
         jsonRD = results.get(0);
         assertNotNull(jsonRD);
-        assertEquals("54321", jsonRD.get("actionId"));
-        assertEquals("MadeUp2", jsonRD.get("actionType"));
-        assertEquals(instanceAlt2, jsonRD.get("actionInstance"));
+        assertEquals("54321", jsonRD.get("actionId").textValue());
+        assertEquals("MadeUp2", jsonRD.get("actionType").textValue());
+        assertEquals(instanceAlt2, jsonRD.get("actionInstance").textValue());
         assertEquals(NullNode.getInstance(), jsonRD.get("actionNodeRef"));
-        assertEquals(startAtAlt2, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.get("cancelRequested"));
+        assertEquals(startAtAlt2, jsonRD.get("startedAt").textValue());
+        assertFalse(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
         assertEquals("/" + URL_RUNNING_ACTION + "MadeUp2=54321=" +
-              instanceAlt2, jsonRD.get("details"));
+              instanceAlt2, jsonRD.get("details").textValue());
     }
     
     
@@ -457,14 +457,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        JsonNode jsonRD = results.get(0);
        assertNotNull(jsonRD);
-       assertEquals(id, jsonRD.get("actionId"));
-       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-       assertEquals(instance, jsonRD.get("actionInstance"));
-       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-       assertEquals(startedAt, jsonRD.get("startedAt"));
-       assertEquals(false, jsonRD.get("cancelRequested"));
+       assertEquals(id, jsonRD.get("actionId").textValue());
+       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+       assertEquals(instance, jsonRD.get("actionInstance").textValue());
+       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+       assertEquals(startedAt, jsonRD.get("startedAt").textValue());
+       assertFalse(jsonRD.get("cancelRequested").booleanValue());
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
-             id + "=" + instance, jsonRD.get("details"));
+             id + "=" + instance, jsonRD.get("details").textValue());
        
        
        // Ensure we didn't get any unexpected data back,
@@ -498,14 +498,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        jsonRD = results.get(0);
        assertNotNull(jsonRD);
-       assertEquals(id, jsonRD.get("actionId"));
-       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-       assertEquals(instance, jsonRD.get("actionInstance"));
-       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-       assertEquals(startedAt, jsonRD.get("startedAt"));
-       assertEquals(true, jsonRD.get("cancelRequested"));
+       assertEquals(id, jsonRD.get("actionId").textValue());
+       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+       assertEquals(instance, jsonRD.get("actionInstance").textValue());
+       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+       assertEquals(startedAt, jsonRD.get("startedAt").textValue());
+       assertTrue(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
-             id + "=" + instance, jsonRD.get("details"));
+             id + "=" + instance, jsonRD.get("details").textValue());
        
       
        // Add a 2nd and 3rd, one running and one pending
@@ -540,13 +540,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        for(int i=0; i<3; i++) {
           jsonRD = results.get(i);
-          if(jsonRD.get("actionId").equals(id)) {
+          if(jsonRD.get("actionId").textValue().equals(id)) {
              has1 = true;
           }
-          if(jsonRD.get("actionId").equals(id2)) {
+          if(jsonRD.get("actionId").textValue().equals(id2)) {
              has2 = true;
           }
-          if(jsonRD.get("actionId").equals(id3)) {
+          if(jsonRD.get("actionId").textValue().equals(id3)) {
              has3 = true;
           }
        }
@@ -575,13 +575,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        for(int i=0; i<2; i++) {
           jsonRD = results.get(i);
-          if(jsonRD.get("actionId").equals(id)) {
+          if(jsonRD.get("actionId").textValue().equals(id)) {
              has1 = true;
           }
-          if(jsonRD.get("actionId").equals(id2)) {
+          if(jsonRD.get("actionId").textValue().equals(id2)) {
              has2 = true;
           }
-          if(jsonRD.get("actionId").equals(id3)) {
+          if(jsonRD.get("actionId").textValue().equals(id3)) {
              has3 = true;
           }
        }
@@ -604,14 +604,14 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        
        jsonRD = results.get(0);
        assertNotNull(jsonRD);
-       assertEquals(id, jsonRD.get("actionId"));
-       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-       assertEquals(instance, jsonRD.get("actionInstance"));
-       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-       assertEquals(startedAt, jsonRD.get("startedAt"));
-       assertEquals(true, jsonRD.get("cancelRequested"));
+       assertEquals(id, jsonRD.get("actionId").textValue());
+       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+       assertEquals(instance, jsonRD.get("actionInstance").textValue());
+       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+       assertEquals(startedAt, jsonRD.get("startedAt").textValue());
+       assertTrue(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
        assertEquals("/" + URL_RUNNING_ACTION + "replicationActionExecutor=" +
-             id + "=" + instance, jsonRD.get("details"));
+             id + "=" + instance, jsonRD.get("details").textValue());
        
 
        // Check we correctly filter by type
@@ -673,13 +673,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         String jsonStr = response.getContentAsString();
         JsonNode jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(jsonRD);
-        assertEquals(id, jsonRD.get("actionId"));
-        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-        assertEquals(instance, jsonRD.get("actionInstance"));
-        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-        assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.get("cancelRequested"));
-        assertEquals("/" + URL_RUNNING_ACTION + key1, jsonRD.get("details"));
+        assertEquals(id, jsonRD.get("actionId").textValue());
+        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+        assertEquals(instance, jsonRD.get("actionInstance").textValue());
+        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+        assertEquals(startedAt, jsonRD.get("startedAt").textValue());
+        assertFalse(jsonRD.get("cancelRequested").booleanValue());
+        assertEquals("/" + URL_RUNNING_ACTION + key1, jsonRD.get("details").textValue());
         
         
         // Ensure we didn't get any unexpected data back,
@@ -716,13 +716,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         jsonStr = response.getContentAsString();
         jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(jsonRD);
-        assertEquals(id2, jsonRD.get("actionId"));
-        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-        assertEquals(instance2, jsonRD.get("actionInstance"));
-        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-        assertEquals(startedAt2, jsonRD.get("startedAt"));
-        assertEquals(true, jsonRD.get("cancelRequested"));
-        assertEquals("/" + URL_RUNNING_ACTION + key2, jsonRD.get("details"));
+        assertEquals(id2, jsonRD.get("actionId").textValue());
+        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+        assertEquals(instance2, jsonRD.get("actionInstance").textValue());
+        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+        assertEquals(startedAt2, jsonRD.get("startedAt").textValue());
+        assertTrue(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
+        assertEquals("/" + URL_RUNNING_ACTION + key2, jsonRD.get("details").textValue());
         
         
         // Check that the original is unchanged
@@ -733,13 +733,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         jsonStr = response.getContentAsString();
         jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(jsonRD);
-        assertEquals(id, jsonRD.get("actionId"));
-        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-        assertEquals(instance, jsonRD.get("actionInstance"));
-        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-        assertEquals(startedAt, jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.get("cancelRequested"));
-        assertEquals("/" + URL_RUNNING_ACTION + key1, jsonRD.get("details"));
+        assertEquals(id, jsonRD.get("actionId").textValue());
+        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+        assertEquals(instance, jsonRD.get("actionInstance").textValue());
+        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+        assertEquals(startedAt, jsonRD.get("startedAt").textValue());
+        assertFalse(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
+        assertEquals("/" + URL_RUNNING_ACTION + key1, jsonRD.get("details").textValue());
         
         
         // Add one that is pending - has everything except start date
@@ -756,13 +756,13 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
         jsonStr = response.getContentAsString();
         jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
         assertNotNull(jsonRD);
-        assertEquals(id3, jsonRD.get("actionId"));
-        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-        assertEquals(instance3, jsonRD.get("actionInstance"));
-        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
+        assertEquals(id3, jsonRD.get("actionId").textValue());
+        assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+        assertEquals(instance3, jsonRD.get("actionInstance").textValue());
+        assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
         assertEquals(NullNode.getInstance(), jsonRD.get("startedAt"));
-        assertEquals(false, jsonRD.get("cancelRequested"));
-        assertEquals("/" + URL_RUNNING_ACTION + key3, jsonRD.get("details"));
+        assertFalse(Boolean.valueOf(jsonRD.get("cancelRequested").textValue()));
+        assertEquals("/" + URL_RUNNING_ACTION + key3, jsonRD.get("details").textValue());
     }
     
     public void testRunningActionCancel() throws Exception 
@@ -889,10 +889,10 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        JsonNode jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(jsonRD);
        
-       assertEquals(id, jsonRD.get("actionId"));
-       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-       assertEquals(false, jsonRD.get("cancelRequested"));
+       assertEquals(id, jsonRD.get("actionId").textValue());
+       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+       assertFalse(jsonRD.get("cancelRequested").booleanValue());
        
        // Should be pending 
        // Wait for it to fail (we didn't
@@ -978,10 +978,10 @@ public class RunningActionRestApiTest extends BaseWebScriptTest
        JsonNode jsonRD = AlfrescoDefaultObjectMapper.getReader().readTree(jsonStr).get("data");
        assertNotNull(jsonRD);
        
-       assertEquals(id, jsonRD.get("actionId"));
-       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType"));
-       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef"));
-       assertEquals(false, jsonRD.get("cancelRequested"));
+       assertEquals(id, jsonRD.get("actionId").textValue());
+       assertEquals(ReplicationDefinitionImpl.EXECUTOR_NAME, jsonRD.get("actionType").textValue());
+       assertEquals(rd.getNodeRef().toString(), jsonRD.get("actionNodeRef").textValue());
+       assertFalse(jsonRD.get("cancelRequested").booleanValue());
        
        // Should be pending 
        // Wait for it to fail (we didn't
