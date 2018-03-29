@@ -226,18 +226,20 @@ public abstract class AbstractCommentsWebScript extends DeclarativeWebScript
         {
             try
             {
-                JsonNode params = AlfrescoDefaultObjectMapper.getReader().readTree(getOrNull(json, JSON_KEY_PAGE_PARAMS));
-                String strParams = "";
-
-                Iterator<String> itr = params.fieldNames();
-                while (itr.hasNext())
+                if (json.has(JSON_KEY_PAGE_PARAMS))
                 {
-                    String strParam = itr.next();
-                    strParams += strParam + "=" + params.get(strParam).textValue() + "&";
-                }
-                page = getOrNull(json, JSON_KEY_PAGE) + "?" + (strParams != "" ? strParams.substring(0, strParams.length() - 1) : "");
-                title = getOrNull(json, JSON_KEY_ITEM_TITLE);
+                    JsonNode params = json.get(JSON_KEY_PAGE_PARAMS);
+                    String strParams = "";
 
+                    Iterator<String> itr = params.fieldNames();
+                    while (itr.hasNext())
+                    {
+                        String strParam = itr.next();
+                        strParams += strParam + "=" + params.get(strParam).textValue() + "&";
+                    }
+                    page = getOrNull(json, JSON_KEY_PAGE) + "?" + (strParams != "" ? strParams.substring(0, strParams.length() - 1) : "");
+                    title = getOrNull(json, JSON_KEY_ITEM_TITLE);
+                }
             }
             catch (Exception e)
             {

@@ -27,6 +27,7 @@ package org.alfresco.repo.web.scripts.blogs.posts;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -109,14 +110,14 @@ public class BlogPostsPost extends AbstractBlogWebScript
        }
        if (json.has(DRAFT))
        {
-          Object draft = json.get(DRAFT);
-          if (draft instanceof Boolean)
+          JsonNode draft = json.get(DRAFT);
+          if (draft instanceof BooleanNode)
           {
-             result.setIsDraft((Boolean)draft);
+             result.setIsDraft(draft.booleanValue());
           }
           else
           {
-             result.setIsDraft( Boolean.parseBoolean((String)draft) );
+             result.setIsDraft(Boolean.parseBoolean(draft.textValue()));
           }
        }
        

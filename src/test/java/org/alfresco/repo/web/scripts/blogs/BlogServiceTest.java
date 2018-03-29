@@ -352,9 +352,9 @@ public class BlogServiceTest extends BaseWebScriptTest
         JsonNode item = createPost(title, content, null, true, 200);
         
         // check that the values
-        assertEquals(title, item.get("title"));
-        assertEquals(content, item.get("content"));
-        assertEquals(true, item.get("isDraft"));
+        assertEquals(title, item.get("title").textValue());
+        assertEquals(content, item.get("content").textValue());
+        assertEquals(true, item.get("isDraft").booleanValue());
         
         // check that other user doesn't have access to the draft
         this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -380,9 +380,9 @@ public class BlogServiceTest extends BaseWebScriptTest
         JsonNode item = createPost(title, content, tags, true, 200);
         
         // check that the values
-        assertEquals(title, item.get("title"));
-        assertEquals(content, item.get("content"));
-        assertEquals(true, item.get("isDraft"));
+        assertEquals(title, item.get("title").textValue());
+        assertEquals(content, item.get("content").textValue());
+        assertTrue(item.get("isDraft").booleanValue());
         ArrayNode reportedTags = (ArrayNode)item.get("tags");
         assertEquals("Tags size was wrong.", 2, reportedTags.size());
         List<String> recoveredTagsList = Arrays.asList(new String[]{reportedTags.get(0).textValue(), reportedTags.get(1).textValue()});
@@ -450,9 +450,9 @@ public class BlogServiceTest extends BaseWebScriptTest
         final String postName = item.get("name").textValue();
         
         // check the values
-        assertEquals(title, item.get("title"));
-        assertEquals(content, item.get("content"));
-        assertEquals(false, item.get("isDraft"));
+        assertEquals(title, item.get("title").textValue());
+        assertEquals(content, item.get("content").textValue());
+        assertFalse(item.get("isDraft").booleanValue());
         
         // check that user two has access to it as well
         this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -464,7 +464,7 @@ public class BlogServiceTest extends BaseWebScriptTest
         JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // we should have posts.size + drafts.size together
-        assertEquals(this.posts.size() + this.drafts.size(), result.get("total"));
+        assertEquals(this.posts.size() + this.drafts.size(), result.get("total").intValue());
         
         // Finally, we'll delete the blog-post to test the REST DELETE call.
         response = sendRequest(new DeleteRequest(URL_BLOG_POST + postName), 200);
@@ -476,9 +476,9 @@ public class BlogServiceTest extends BaseWebScriptTest
         JsonNode item = createPost(null, null, null, false, 200);
         
         // check the values
-        assertEquals("", item.get("title"));
-        assertEquals("", item.get("content"));
-        assertEquals(false, item.get("isDraft"));
+        assertEquals("", item.get("title").textValue());
+        assertEquals("", item.get("content").textValue());
+        assertFalse(item.get("isDraft").booleanValue());
         
         // check that user two has access to it as well
         this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -490,10 +490,10 @@ public class BlogServiceTest extends BaseWebScriptTest
     {
         JsonNode item = createPost("test", "test", null, false, 200);
         String name = item.get("name").textValue();
-        assertEquals(false, item.get("isUpdated").booleanValue());
+        assertFalse(item.get("isUpdated").booleanValue());
         
         item = updatePost(name, "new title", "new content", null, false, 200);
-        assertEquals(true, item.get("isUpdated").booleanValue());
+        assertTrue(item.get("isUpdated").booleanValue());
         assertEquals("new title", item.get("title").textValue());
         assertEquals("new content", item.get("content").textValue());
     }
@@ -502,7 +502,7 @@ public class BlogServiceTest extends BaseWebScriptTest
     {
         JsonNode item = createPost("test", "test", null, false, 200);
         String name = item.get("name").textValue();
-        assertEquals(false, item.get("isUpdated").booleanValue());
+        assertFalse(item.get("isUpdated").booleanValue());
         
         item = updatePost(item.get("name").textValue(), null, null, null, false, 200);
         assertEquals("", item.get("title").textValue());
@@ -513,7 +513,7 @@ public class BlogServiceTest extends BaseWebScriptTest
     {
         JsonNode item = createPost("test", "test", null, true, 200);
         String name = item.get("name").textValue();
-        assertEquals(true, item.get("isDraft"));
+        assertTrue(item.get("isDraft").booleanValue());
         
         // check that user two does not have access
         this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -523,7 +523,7 @@ public class BlogServiceTest extends BaseWebScriptTest
         item = updatePost(name, "new title", "new content", null, false, 200);
         assertEquals("new title", item.get("title").textValue());
         assertEquals("new content", item.get("content").textValue());
-        assertEquals(false, item.get("isDraft").booleanValue());
+        assertFalse(item.get("isDraft").booleanValue());
         
         // check that user two does have access
         this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -654,7 +654,7 @@ public class BlogServiceTest extends BaseWebScriptTest
         assertEquals(1, result.get("itemCount").intValue());
         assertEquals(1, result.get("items").size());
 
-        assertEquals(TITLE_2, result.get("items").get(0).get("title"));
+        assertEquals(TITLE_2, result.get("items").get(0).get("title").textValue());
 
         
         // Switch user, check that permissions are correct
@@ -670,17 +670,17 @@ public class BlogServiceTest extends BaseWebScriptTest
         assertEquals(2, result.get("items").size());
         blog = result.get("items").get(0);
         assertEquals(TITLE_3, blog.get("title").textValue());
-        assertEquals(false, blog.get("isDraft").booleanValue());
+        assertFalse(blog.get("isDraft").booleanValue());
         perms = blog.get("permissions");
-        assertEquals(false, perms.get("delete").booleanValue());
-        assertEquals(true, perms.get("edit").booleanValue());
+        assertFalse(perms.get("delete").booleanValue());
+        assertTrue(perms.get("edit").booleanValue());
         
         blog = result.get("items").get(1);
         assertEquals(TITLE_1, blog.get("title").textValue());
-        assertEquals(false, blog.get("isDraft").booleanValue());
+        assertFalse(blog.get("isDraft").booleanValue());
         perms = blog.get("permissions");
-        assertEquals(false, perms.get("delete").booleanValue());
-        assertEquals(true, perms.get("edit").booleanValue());
+        assertFalse(perms.get("delete").booleanValue());
+        assertTrue(perms.get("edit").booleanValue());
     }
     
     public void testGetNew() throws Exception
