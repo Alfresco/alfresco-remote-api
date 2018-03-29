@@ -27,9 +27,12 @@ package org.alfresco.repo.web.scripts.dictionary;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.util.Iterator;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.web.scripts.BaseWebScriptTest;
+import org.alfresco.util.json.JsonUtil;
 import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
@@ -67,33 +70,33 @@ public class DictionaryRestApiTest extends BaseWebScriptTest
 	
 	private void validatePropertyDef(JsonNode result) throws Exception
 	{
-		assertEquals("cm:created", result.get("name"));
-		assertEquals("Created Date", result.get("title"));
-		assertEquals("Created Date", result.get("description"));
-		assertEquals("d:datetime", result.get("dataType"));
-		assertEquals(false, result.get("multiValued"));
-		assertEquals(true, result.get("mandatory"));
-		assertEquals(true, result.get("enforced"));
-		assertEquals(true, result.get("protected"));
-		assertEquals(true, result.get("indexed"));
-		assertEquals(true, result.get("indexedAtomically"));
-		assertEquals("/api/property/cm_created", result.get("url"));
+		assertEquals("cm:created", result.get("name").textValue());
+		assertEquals("Created Date", result.get("title").textValue());
+		assertEquals("Created Date", result.get("description").textValue());
+		assertEquals("d:datetime", result.get("dataType").textValue());
+        assertFalse(result.get("multiValued").booleanValue());
+        assertTrue(result.get("mandatory").booleanValue());
+        assertTrue(result.get("enforced").booleanValue());
+        assertTrue(result.get("protected").booleanValue());
+        assertTrue(result.get("indexed").booleanValue());
+        assertTrue(result.get("indexedAtomically").booleanValue());
+		assertEquals("/api/property/cm_created", result.get("url").textValue());
 		
 	}
 	
 	private void validateChildAssociation(JsonNode result) throws Exception
 	{
-        assertEquals("cm:member", result.get("name"));
-		assertEquals(true, result.get("isChildAssociation"));
-		assertEquals(false, result.get("protected"));
+        assertEquals("cm:member", result.get("name").textValue());
+        assertTrue(result.get("isChildAssociation").booleanValue());
+        assertFalse(result.get("protected").booleanValue());
 		
-		assertEquals("cm:authorityContainer", result.get("source").get("class"));
-		assertEquals(false, result.get("source").get("mandatory"));
-		assertEquals(true, result.get("source").get("many"));
+		assertEquals("cm:authorityContainer", result.get("source").get("class").textValue());
+        assertFalse(result.get("source").get("mandatory").booleanValue());
+        assertTrue(result.get("source").get("many").booleanValue());
 		
-		assertEquals("cm:authority", result.get("target").get("class"));
-		assertEquals(false, result.get("target").get("mandatory"));
-		assertEquals(true, result.get("target").get("many"));
+		assertEquals("cm:authority", result.get("target").get("class").textValue());
+        assertFalse(result.get("target").get("mandatory").booleanValue());
+        assertTrue(result.get("target").get("many").booleanValue());
 		
 		assertTrue(result.get("url").toString().startsWith("/api/classes/"));
 		assertTrue(result.get("url").toString().indexOf("/association/cm_member") > 0);;
@@ -101,60 +104,60 @@ public class DictionaryRestApiTest extends BaseWebScriptTest
 	
 	private void validateAssociation(JsonNode result) throws Exception
 	{
-		assertEquals("cm:workingcopylink", result.get("name"));
-		assertEquals(false, result.get("isChildAssociation"));
-		assertEquals(false, result.get("protected"));
+		assertEquals("cm:workingcopylink", result.get("name").textValue());
+        assertFalse(result.get("isChildAssociation").booleanValue());
+        assertFalse(result.get("protected").booleanValue());
 		
-		assertEquals("cm:checkedOut", result.get("source").get("class"));
-		assertEquals(true, result.get("source").get("mandatory"));
-		assertEquals(false, result.get("source").get("many"));
+		assertEquals("cm:checkedOut", result.get("source").get("class").textValue());
+        assertTrue(result.get("source").get("mandatory").booleanValue());
+        assertFalse(result.get("source").get("many").booleanValue());
 		
-		assertEquals("cm:workingcopy", result.get("target").get("class"));
-		assertEquals(true, result.get("target").get("mandatory"));
-		assertEquals(false, result.get("target").get("many"));
+		assertEquals("cm:workingcopy", result.get("target").get("class").textValue());
+        assertTrue(result.get("target").get("mandatory").booleanValue());
+        assertFalse(result.get("target").get("many").booleanValue());
 		
-		assertEquals("/api/classes/cm_checkedOut/association/cm_workingcopylink", result.get("url"));
+		assertEquals("/api/classes/cm_checkedOut/association/cm_workingcopylink", result.get("url").textValue());
 	}
 	private void validateAssociationDef(JsonNode result) throws Exception
 	{
-		assertEquals("cm:avatar", result.get("name"));
-		assertEquals("Avatar", result.get("title"));
-		assertEquals("The person's avatar image", result.get("description"));
-		assertEquals(false, result.get("isChildAssociation"));
-		assertEquals(false, result.get("protected"));
+		assertEquals("cm:avatar", result.get("name").textValue());
+		assertEquals("Avatar", result.get("title").textValue());
+		assertEquals("The person's avatar image", result.get("description").textValue());
+        assertFalse(result.get("isChildAssociation").booleanValue());
+        assertFalse(result.get("protected").booleanValue());
 		
-		assertEquals("cm:person", result.get("source").get("class"));
-		assertEquals("cm:avatarOf", result.get("source").get("role"));
-		assertEquals(false, result.get("source").get("mandatory"));
-		assertEquals(false, result.get("source").get("many"));
+		assertEquals("cm:person", result.get("source").get("class").textValue());
+		assertEquals("cm:avatarOf", result.get("source").get("role").textValue());
+        assertFalse(result.get("source").get("mandatory").booleanValue());
+        assertFalse(result.get("source").get("many").booleanValue());
 		
-		assertEquals("cm:content", result.get("target").get("class"));
-		assertEquals("cm:hasAvatar", result.get("target").get("role"));
-		assertEquals(false, result.get("target").get("mandatory"));
-		assertEquals(false, result.get("target").get("many"));
+		assertEquals("cm:content", result.get("target").get("class").textValue());
+		assertEquals("cm:hasAvatar", result.get("target").get("role").textValue());
+        assertFalse(result.get("target").get("mandatory").booleanValue());
+        assertFalse(result.get("target").get("many").booleanValue());
 		
-		assertEquals("/api/classes/cm_person/association/cm_avatar", result.get("url"));
+		assertEquals("/api/classes/cm_person/association/cm_avatar", result.get("url").textValue());
 	}
 	
 	private void validateTypeClass(JsonNode result) throws Exception
 	{
 		//cm:cmobject is of type =>type
-		assertEquals("cm:cmobject", result.get("name"));
-		assertEquals(false , result.get("isAspect"));
-		assertEquals("Object", result.get("title"));
-		assertEquals("", result.get("description"));
+		assertEquals("cm:cmobject", result.get("name").textValue());
+        assertFalse(result.get("isAspect").booleanValue());
+		assertEquals("Object", result.get("title").textValue());
+		assertEquals("", result.get("description").textValue());
 		
-		assertEquals("sys:base", result.get("parent").get("name"));
-		assertEquals("base", result.get("parent").get("title"));
-		assertEquals("/api/classes/sys_base", result.get("parent").get("url"));
+		assertEquals("sys:base", result.get("parent").get("name").textValue());
+		assertEquals("base", result.get("parent").get("title").textValue());
+		assertEquals("/api/classes/sys_base", result.get("parent").get("url").textValue());
 		
-		assertEquals("sys:referenceable", result.get("defaultAspects").get("sys:referenceable").get("name"));
-		assertEquals("Referenceable", result.get("defaultAspects").get("sys:referenceable").get("title"));
-		assertEquals("/api/classes/cm_cmobject/property/sys_referenceable", result.get("defaultAspects").get("sys:referenceable").get("url"));
+		assertEquals("sys:referenceable", result.get("defaultAspects").get("sys:referenceable").get("name").textValue());
+		assertEquals("Referenceable", result.get("defaultAspects").get("sys:referenceable").get("title").textValue());
+		assertEquals("/api/classes/cm_cmobject/property/sys_referenceable", result.get("defaultAspects").get("sys:referenceable").get("url").textValue());
 
-		assertEquals("cm:auditable", result.get("defaultAspects").get("cm:auditable").get("name"));
-		assertEquals("Auditable", result.get("defaultAspects").get("cm:auditable").get("title"));
-		assertEquals("/api/classes/cm_cmobject/property/cm_auditable", result.get("defaultAspects").get("cm:auditable").get("url"));
+		assertEquals("cm:auditable", result.get("defaultAspects").get("cm:auditable").get("name").textValue());
+		assertEquals("Auditable", result.get("defaultAspects").get("cm:auditable").get("title").textValue());
+		assertEquals("/api/classes/cm_cmobject/property/cm_auditable", result.get("defaultAspects").get("cm:auditable").get("url").textValue());
 		
 		//assertEquals("cm:name", result.get("properties").get("cm:name").get("name"));
 		//assertEquals("Name", result.get("properties").get("cm:name").get("title"));
@@ -163,24 +166,24 @@ public class DictionaryRestApiTest extends BaseWebScriptTest
 		//assertEquals(, result.get("associations").size());
 		//assertEquals(0, result.get("childassociations").size());
 		
-		assertEquals("/api/classes/cm_cmobject", result.get("url"));
+		assertEquals("/api/classes/cm_cmobject", result.get("url").textValue());
 		
 	}
 	
 	private void validateAspectClass(JsonNode result) throws Exception
 	{
 		//cm:thumbnailed is of type =>aspect
-		assertEquals("cm:thumbnailed", result.get("name"));
-		assertEquals(true , result.get("isAspect"));
-		assertEquals("Thumbnailed", result.get("title"));
-		assertEquals("", result.get("description"));
+		assertEquals("cm:thumbnailed", result.get("name").textValue());
+        assertTrue(result.get("isAspect").booleanValue());
+		assertEquals("Thumbnailed", result.get("title").textValue());
+		assertEquals("", result.get("description").textValue());
 		assertEquals(0, result.get("defaultAspects").size());
 		
-		if (result.get("properties").has("cm:automaticUpdate") == true)
+		if (result.get("properties").has("cm:automaticUpdate"))
 		{
-    		assertEquals("cm:automaticUpdate", result.get("properties").get("cm:automaticUpdate").get("name"));
-    		assertEquals("Automatic Update", result.get("properties").get("cm:automaticUpdate").get("title"));
-    		assertEquals("/api/classes/cm_thumbnailed/property/cm_automaticUpdate", result.get("properties").get("cm:automaticUpdate").get("url"));
+    		assertEquals("cm:automaticUpdate", result.get("properties").get("cm:automaticUpdate").get("name").textValue());
+    		assertEquals("Automatic Update", result.get("properties").get("cm:automaticUpdate").get("title").textValue());
+    		assertEquals("/api/classes/cm_thumbnailed/property/cm_automaticUpdate", result.get("properties").get("cm:automaticUpdate").get("url").textValue());
 		}
 		
 		//assertEquals(2, result.get("associations").size());
@@ -199,7 +202,8 @@ public class DictionaryRestApiTest extends BaseWebScriptTest
             while (propNamesIterator1.hasNext())
             {
                 String propName = propNamesIterator1.next();
-                propertyValues1.add(propertyNames1.get(propName).textValue());
+                JsonNode valueJson = propertyNames1.get(propName).get("name");
+                propertyValues1.add(valueJson.textValue());
             }
 
             String classUrl = classDef1.get("url").textValue();
@@ -217,7 +221,8 @@ public class DictionaryRestApiTest extends BaseWebScriptTest
             while (propNamesIterator2.hasNext())
             {
                 String propName = propNamesIterator2.next();
-                propertyValues2.add(propertyNames2.get(propName).textValue());
+                JsonNode valueJson = propertyNames2.get(propName).get("name");
+                propertyValues2.add(valueJson.textValue());
             }
 
             Response responseFromGetPropertiesDef = sendRequest(new GetRequest(classUrl + "/properties"), 200);
@@ -228,7 +233,8 @@ public class DictionaryRestApiTest extends BaseWebScriptTest
             List<String> propertyValues3 = new ArrayList<>(propertiesDefs.size());
             for (int j = 0; j < propertiesDefs.size(); j++)
             {
-                propertyValues3.add(propertiesDefs.get(j).get("name").textValue());
+                JsonNode valueJson = propertiesDefs.get(j).get("name");
+                propertyValues3.add(valueJson.textValue());
             }
 
             assertEquivalenceProperties(propertyValues1, propertyValues2);
@@ -236,7 +242,7 @@ public class DictionaryRestApiTest extends BaseWebScriptTest
         }
     }
 
-    private void assertEquivalenceProperties(List<String> propertyValues1, List<String> propertyValues2)
+    private void assertEquivalenceProperties(List<Object> propertyValues1, List<Object> propertyValues2)
     {
         if ((propertyValues1.size() != propertyValues2.size()) || !propertyValues1.containsAll(propertyValues2))
         {
