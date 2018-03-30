@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import org.alfresco.service.cmr.repository.datatype.TypeConversionException;
 import org.alfresco.service.cmr.workflow.WorkflowException;
 import org.alfresco.service.cmr.workflow.WorkflowTask;
 import org.alfresco.service.namespace.QName;
+import org.alfresco.util.json.JsonUtil;
 import org.alfresco.util.json.jackson.AlfrescoDefaultObjectMapper;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
@@ -146,13 +148,14 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
                             {
                                 ((List<Serializable>)value).add(
                                         (Serializable) DefaultTypeConverter.INSTANCE
-                                                .convert(prop.getDataType(), jsonValue.toString()));
+                                                .convert(prop.getDataType(), JsonUtil.convertJSONValue((ValueNode) jsonValue)));
                             }
                         }
                         else
                         {
                             // convert property using its data type specified in model
-                            value = (Serializable) DefaultTypeConverter.INSTANCE.convert(prop.getDataType(), jsonValue);
+                            value = (Serializable) DefaultTypeConverter.INSTANCE.convert(prop.getDataType(),
+                                    JsonUtil.convertJSONValue((ValueNode) jsonValue));
                         }
                     }
                     else
@@ -190,13 +193,13 @@ public class TaskInstancePut extends AbstractWorkflowWebscript
                                 else
                                 {
                                     // Revert to using string-value
-                                    value = jsonValue.toString();
+                                    value = jsonValue.textValue();
                                 }
                             }
                             else
                             {
                                 // Use the value provided by JSON
-                                value = jsonValue.toString();
+                                value = (Serializable) JsonUtil.convertJSONValue((ValueNode) jsonValue);
                             }
                         }
                     }

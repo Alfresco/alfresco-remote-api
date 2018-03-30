@@ -27,8 +27,11 @@ package org.alfresco.repo.web.scripts.workflow;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -195,7 +198,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         assertFalse(result.get("isReleasable").booleanValue());
 
         JsonNode owner = result.get("owner");
-        assertEquals(USER2, owner.get("userName"));
+        assertEquals(USER2, owner.get("userName").textValue());
         assertEquals(personManager.getFirstName(USER2), owner.get("firstName").textValue());
         assertEquals(personManager.getLastName(USER2), owner.get("lastName").textValue());
 
@@ -589,16 +592,16 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         result = json.get("data");
         assertNotNull(result);
         
-        assertEquals(firstTask.getId(), result.get("id"));
-        assertEquals(URL_TASKS + "/" + firstTask.getId(), result.get("url"));
-        assertEquals(firstTask.getName(), result.get("name"));
-        assertEquals(firstTask.getTitle(), result.get("title"));
-        assertEquals(firstTask.getDescription(), result.get("description"));
+        assertEquals(firstTask.getId(), result.get("id").textValue());
+        assertEquals(URL_TASKS + "/" + firstTask.getId(), result.get("url").textValue());
+        assertEquals(firstTask.getName(), result.get("name").textValue());
+        assertEquals(firstTask.getTitle(), result.get("title").textValue());
+        assertEquals(firstTask.getDescription(), result.get("description").textValue());
        
         // Task should be in progress
-        assertEquals(firstTask.getState().name(), result.get("state"));
-        assertEquals(WorkflowTaskState.IN_PROGRESS.toString(), result.get("state"));
-        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path"));
+        assertEquals(firstTask.getState().name(), result.get("state").textValue());
+        assertEquals(WorkflowTaskState.IN_PROGRESS.toString(), result.get("state").textValue());
+        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path").textValue());
         
         checkWorkflowTaskEditable(result);
         checkWorkflowTaskOwner(result, USER2);
@@ -617,16 +620,16 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         result = json.get("data");
         assertNotNull(result);
         
-        assertEquals(firstTask.getId(), result.get("id"));
-        assertEquals(URL_TASKS + "/" + firstTask.getId(), result.get("url"));
-        assertEquals(firstTask.getName(), result.get("name"));
-        assertEquals(firstTask.getTitle(), result.get("title"));
-        assertEquals(firstTask.getDescription(), result.get("description"));
+        assertEquals(firstTask.getId(), result.get("id").textValue());
+        assertEquals(URL_TASKS + "/" + firstTask.getId(), result.get("url").textValue());
+        assertEquals(firstTask.getName(), result.get("name").textValue());
+        assertEquals(firstTask.getTitle(), result.get("title").textValue());
+        assertEquals(firstTask.getDescription(), result.get("description").textValue());
         
         // The task should be completed
-        assertEquals(firstTask.getState().name(), result.get("state"));
-        assertEquals(WorkflowTaskState.COMPLETED.toString(), result.get("state"));
-        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path"));
+        assertEquals(firstTask.getState().name(), result.get("state").textValue());
+        assertEquals(WorkflowTaskState.COMPLETED.toString(), result.get("state").textValue());
+        assertEquals("api/workflow-paths/" + adhocPath.getId(), result.get("path").textValue());
 
         checkWorkflowTaskReadOnly(result);
         checkWorkflowTaskOwner(result, USER2);
@@ -662,9 +665,9 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
     private void checkWorkflowTaskOwner(JsonNode taskJson, String user) throws Exception
     {
         JsonNode owner = taskJson.get("owner");
-        assertEquals(user, owner.get("userName"));
-        assertEquals(personManager.getFirstName(user), owner.get("firstName"));
-        assertEquals(personManager.getLastName(user), owner.get("lastName"));
+        assertEquals(user, owner.get("userName").textValue());
+        assertEquals(personManager.getFirstName(user), owner.get("firstName").textValue());
+        assertEquals(personManager.getLastName(user), owner.get("lastName").textValue());
     }
 
     private void checkWorkflowTaskEditable(JsonNode taskJson) throws Exception
@@ -679,11 +682,11 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
     private void checkWorkflowInstance(WorkflowInstance wfInstance, JsonNode instance) throws Exception
     {
         assertNotNull(instance);
-        assertEquals(wfInstance.getId(), instance.get("id"));
+        assertEquals(wfInstance.getId(), instance.get("id").textValue());
         assertTrue(instance.has("url"));
-        assertEquals(wfInstance.getDefinition().getName(), instance.get("name"));
-        assertEquals(wfInstance.getDefinition().getTitle(), instance.get("title"));
-        assertEquals(wfInstance.getDefinition().getDescription(), instance.get("description"));
+        assertEquals(wfInstance.getDefinition().getName(), instance.get("name").textValue());
+        assertEquals(wfInstance.getDefinition().getTitle(), instance.get("title").textValue());
+        assertEquals(wfInstance.getDefinition().getDescription(), instance.get("description").textValue());
         assertEquals(wfInstance.isActive(), instance.get("isActive").booleanValue());
         assertTrue(instance.has("startDate"));
 
@@ -698,7 +701,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
     {
         assertNotNull(definition);
 
-        assertEquals(wfDefinition.getId(), definition.get("id"));
+        assertEquals(wfDefinition.getId(), definition.get("id").textValue());
         assertTrue(definition.has("url"));
 
         JsonNode type = definition.get("type");
@@ -706,9 +709,9 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         assertNotNull(type);
 
-        assertEquals(startType.getName().toPrefixString(), type.get("name"));
-        assertEquals(startType.getTitle(this.dictionaryService), type.get("title"));
-        assertEquals(startType.getDescription(this.dictionaryService), type.get("description"));
+        assertEquals(startType.getName().toPrefixString(), type.get("name").textValue());
+        assertEquals(startType.getTitle(this.dictionaryService), type.get("title").textValue());
+        assertEquals(startType.getDescription(this.dictionaryService), type.get("description").textValue());
         assertTrue(type.has("url"));
 
         JsonNode node = definition.get("node");
@@ -716,10 +719,10 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         assertNotNull(node);
 
-        assertEquals(startNode.getName(), node.get("name"));
-        assertEquals(startNode.getTitle(), node.get("title"));
-        assertEquals(startNode.getDescription(), node.get("description"));
-        assertEquals(startNode.isTaskNode(), node.get("isTaskNode"));
+        assertEquals(startNode.getName(), node.get("name").textValue());
+        assertEquals(startNode.getTitle(), node.get("title").textValue());
+        assertEquals(startNode.getDescription(), node.get("description").textValue());
+        assertEquals(startNode.isTaskNode(), node.get("isTaskNode").booleanValue());
 
         ArrayNode transitions = (ArrayNode) node.get("transitions");
         WorkflowTransition[] startTransitions = startNode.getTransitions();
@@ -737,15 +740,15 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
             if (startTransition.getId() == null)
             {
-                assertEquals("", transition.get("id"));
+                assertEquals("", transition.get("id").textValue());
             }
             else
             {
-                assertEquals(startTransition.getId(), transition.get("id"));
+                assertEquals(startTransition.getId(), transition.get("id").textValue());
             }
-            assertEquals(startTransition.getTitle(), transition.get("title"));
-            assertEquals(startTransition.getDescription(), transition.get("description"));
-            assertEquals(startTransition.isDefault(), transition.get("isDefault"));
+            assertEquals(startTransition.getTitle(), transition.get("title").textValue());
+            assertEquals(startTransition.getDescription(), transition.get("description").textValue());
+            assertEquals(startTransition.isDefault(), transition.get("isDefault").booleanValue());
             assertTrue(transition.has("isHidden"));
         }
 
@@ -793,9 +796,9 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         jsonProperties.put(qnameToString(WorkflowModel.PROP_PRIORITY), 1);
 
         // Add some custom properties, which are not defined in typeDef
-        jsonProperties.put("customIntegerProperty", 1234);
-        jsonProperties.put("customBooleanProperty", Boolean.TRUE);
-        jsonProperties.put("customStringProperty", "Property value");
+        jsonProperties.set("customIntegerProperty", IntNode.valueOf(1234));
+        jsonProperties.set("customBooleanProperty", BooleanNode.TRUE);
+        jsonProperties.set("customStringProperty", TextNode.valueOf("Property value"));
 
         // test USER3 can not update the task
         personManager.setUser(USER3);
@@ -907,7 +910,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
             JsonNode workflowDefinitionJSON = results.get(i);
 
             assertTrue(workflowDefinitionJSON.has("id"));
-            assertTrue(workflowDefinitionJSON.get("id").size() > 0);
+            assertTrue(workflowDefinitionJSON.get("id").textValue().length() > 0);
 
             assertTrue(workflowDefinitionJSON.has("url"));
             String url = workflowDefinitionJSON.get("url").textValue();
@@ -915,7 +918,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
             assertTrue(url.startsWith("api/workflow-definitions/"));
 
             assertTrue(workflowDefinitionJSON.has("name"));
-            assertTrue(workflowDefinitionJSON.get("name").size() > 0);
+            assertTrue(workflowDefinitionJSON.get("name").textValue().length() > 0);
 
             assertTrue(workflowDefinitionJSON.has("title"));
             String title = workflowDefinitionJSON.get("title").textValue();
@@ -925,7 +928,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
             String description = workflowDefinitionJSON.get("description").textValue();
             assertTrue(description.length() > 0);
 
-            if(adhocDefName.equals(workflowDefinitionJSON.get("name"))) 
+            if(adhocDefName.equals(workflowDefinitionJSON.get("name").textValue()))
             {
                 assertEquals(getAdhocWorkflowDefinitionTitle(), title);
                 assertEquals(getAdhocWorkflowDefinitionDescription(), description);
@@ -997,7 +1000,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         
         // Check fields
         assertTrue(workflowDefinitionJSON.has("id"));
-        assertTrue(workflowDefinitionJSON.get("id").size() > 0);
+        assertTrue(workflowDefinitionJSON.get("id").textValue().length() > 0);
 
         assertTrue(workflowDefinitionJSON.has("url"));
         String url = workflowDefinitionJSON.get("url").textValue();
@@ -1005,21 +1008,21 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         assertTrue(url.startsWith("api/workflow-definitions/"));
 
         assertTrue(workflowDefinitionJSON.has("name"));
-        assertTrue(workflowDefinitionJSON.get("name").size() > 0);
-        assertEquals(getAdhocWorkflowDefinitionName(), workflowDefinitionJSON.get("name"));
+        assertTrue(workflowDefinitionJSON.get("name").textValue().length() > 0);
+        assertEquals(getAdhocWorkflowDefinitionName(), workflowDefinitionJSON.get("name").textValue());
 
         assertTrue(workflowDefinitionJSON.has("title"));
-        assertTrue(workflowDefinitionJSON.get("title").size() > 0);
+        assertTrue(workflowDefinitionJSON.get("title").textValue().length() > 0);
 
         assertTrue(workflowDefinitionJSON.has("description"));
-        assertTrue(workflowDefinitionJSON.get("description").size() > 0);
+        assertTrue(workflowDefinitionJSON.get("description").textValue().length() > 0);
         
         assertTrue(workflowDefinitionJSON.has("startTaskDefinitionUrl"));
         String startTaskDefUrl = workflowDefinitionJSON.get("startTaskDefinitionUrl").textValue();
         assertEquals(startTaskDefUrl, "api/classes/" + getSafeDefinitionName(ADHOC_START_TASK_TYPE));
         
         assertTrue(workflowDefinitionJSON.has("startTaskDefinitionType"));
-        assertEquals(ADHOC_START_TASK_TYPE, workflowDefinitionJSON.get("startTaskDefinitionType"));
+        assertEquals(ADHOC_START_TASK_TYPE, workflowDefinitionJSON.get("startTaskDefinitionType").textValue());
         
         // Check task-definitions
         ArrayNode taskDefinitions = (ArrayNode) workflowDefinitionJSON.get("taskDefinitions");
@@ -1029,11 +1032,11 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         assertEquals(2, taskDefinitions.size());
         
         // Should be adhoc-task
-        JsonNode firstTaskDefinition  = (JsonNode) taskDefinitions.get(0);
+        JsonNode firstTaskDefinition  =  taskDefinitions.get(0);
         checkTaskDefinitionTypeAndUrl(ADHOC_TASK_TYPE, firstTaskDefinition);
                 
         // Should be adhoc completed task
-        JsonNode secondTaskDefinition  = (JsonNode) taskDefinitions.get(1);
+        JsonNode secondTaskDefinition  =  taskDefinitions.get(1);
         checkTaskDefinitionTypeAndUrl(ADHOC_TASK_COMPLETED_TYPE, secondTaskDefinition);
     }
     
@@ -1041,12 +1044,12 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
     {
         // Check type
         assertTrue(taskDefinition.has("type"));
-        assertEquals(expectedTaskType, taskDefinition.get("type"));
+        assertEquals(expectedTaskType, taskDefinition.get("type").textValue());
         
         // Check URL
         assertTrue(taskDefinition.has("url"));
         assertEquals("api/classes/" + 
-                    getSafeDefinitionName(expectedTaskType), taskDefinition.get("url"));
+                    getSafeDefinitionName(expectedTaskType), taskDefinition.get("url").textValue());
     }
 
     private String getSafeDefinitionName(String definitionName) 
@@ -1084,24 +1087,24 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         JsonNode result = json.get("data");
         assertNotNull(result);
 
-        assertEquals(adhocInstance.getId(), result.get("id"));
+        assertEquals(adhocInstance.getId(), result.get("id").textValue());
         assertTrue(result.get("message").equals(NullNode.getInstance()));
-        assertEquals(adhocInstance.getDefinition().getName(), result.get("name"));
-        assertEquals(adhocInstance.getDefinition().getTitle(), result.get("title"));
-        assertEquals(adhocInstance.getDefinition().getDescription(), result.get("description"));
-        assertEquals(adhocInstance.isActive(), result.get("isActive"));
-        assertEquals(org.springframework.extensions.surf.util.ISO8601DateFormat.format(adhocInstance.getStartDate()), result.get("startDate"));
+        assertEquals(adhocInstance.getDefinition().getName(), result.get("name").textValue());
+        assertEquals(adhocInstance.getDefinition().getTitle(), result.get("title").textValue());
+        assertEquals(adhocInstance.getDefinition().getDescription(), result.get("description").textValue());
+        assertEquals(adhocInstance.isActive(), result.get("isActive").booleanValue());
+        assertEquals(org.springframework.extensions.surf.util.ISO8601DateFormat.format(adhocInstance.getStartDate()), result.get("startDate").textValue());
         assertNotNull(result.get("dueDate"));
         assertNotNull(result.get("endDate"));
-        assertEquals(1, result.get("priority"));
+        assertEquals(1, result.get("priority").intValue());
         JsonNode initiator = result.get("initiator");
 
-        assertEquals(USER1, initiator.get("userName"));
-        assertEquals(personManager.getFirstName(USER1), initiator.get("firstName"));
-        assertEquals(personManager.getLastName(USER1), initiator.get("lastName"));
+        assertEquals(USER1, initiator.get("userName").textValue());
+        assertEquals(personManager.getFirstName(USER1), initiator.get("firstName").textValue());
+        assertEquals(personManager.getLastName(USER1), initiator.get("lastName").textValue());
 
-        assertEquals(adhocInstance.getContext().toString(), result.get("context"));
-        assertEquals(adhocInstance.getWorkflowPackage().toString(), result.get("package"));
+        assertEquals(adhocInstance.getContext().toString(), result.get("context").textValue());
+        assertEquals(adhocInstance.getWorkflowPackage().toString(), result.get("package").textValue());
         assertNotNull(result.get("startTaskInstanceId"));
 
         JsonNode jsonDefinition = result.get("definition");
@@ -1109,12 +1112,12 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
 
         assertNotNull(jsonDefinition);
 
-        assertEquals(adhocDefinition.getId(), jsonDefinition.get("id"));
-        assertEquals(adhocDefinition.getName(), jsonDefinition.get("name"));
-        assertEquals(adhocDefinition.getTitle(), jsonDefinition.get("title"));
-        assertEquals(adhocDefinition.getDescription(), jsonDefinition.get("description"));
-        assertEquals(adhocDefinition.getVersion(), jsonDefinition.get("version"));
-        assertEquals(adhocDefinition.getStartTaskDefinition().getMetadata().getName().toPrefixString(namespaceService), jsonDefinition.get("startTaskDefinitionType"));
+        assertEquals(adhocDefinition.getId(), jsonDefinition.get("id").textValue());
+        assertEquals(adhocDefinition.getName(), jsonDefinition.get("name").textValue());
+        assertEquals(adhocDefinition.getTitle(), jsonDefinition.get("title").textValue());
+        assertEquals(adhocDefinition.getDescription(), jsonDefinition.get("description").textValue());
+        assertEquals(adhocDefinition.getVersion(), jsonDefinition.get("version").textValue());
+        assertEquals(adhocDefinition.getStartTaskDefinition().getMetadata().getName().toPrefixString(namespaceService), jsonDefinition.get("startTaskDefinitionType").textValue());
         assertTrue(jsonDefinition.has("taskDefinitions"));
 
         ArrayNode tasks = (ArrayNode) result.get("tasks");
@@ -1721,18 +1724,18 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         assertTrue(json.get("url").textValue().startsWith(URL_WORKFLOW_INSTANCES));
 
         assertTrue(json.has("name"));
-        assertTrue(json.get("name").size() > 0);
+        assertTrue(json.get("name").textValue().length() > 0);
 
         assertTrue(json.has("title"));
-        assertTrue(json.get("title").size() > 0);
+        assertTrue(json.get("title").textValue().length() > 0);
 
         assertTrue(json.has("description"));
-        assertTrue(json.get("description").size() > 0);
+        assertTrue(json.get("description").textValue().length() > 0);
 
         assertTrue(json.has("isActive"));
 
         assertTrue(json.has("startDate"));
-        assertTrue(json.get("startDate").size() > 0);
+        assertTrue(json.get("startDate").textValue().length() > 0);
 
         assertTrue(json.has("endDate"));
 
@@ -1759,7 +1762,7 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         for (int i=0; i<result.size(); i++)
         {
             JsonNode taskObject = result.get(i);
-            assertEquals(2, taskObject.get("properties").get("bpm_priority"));
+            assertEquals(2, taskObject.get("properties").get("bpm_priority").intValue());
         }
     }
     
@@ -1880,9 +1883,9 @@ public abstract class AbstractWorkflowRestApiTest extends BaseWebScriptTest
         assertTrue(data.size() >= 0);
         assertTrue(data.size() <= maxItems);
         
-        assertEquals(totalItems, paging.get("totalItems"));
-        assertEquals(maxItems, paging.get("maxItems"));
-        assertEquals(skipCount, paging.get("skipCount"));
+        assertEquals(totalItems, paging.get("totalItems").intValue());
+        assertEquals(maxItems, paging.get("maxItems").intValue());
+        assertEquals(skipCount, paging.get("skipCount").intValue());
     }
 
     private ArrayNode getJsonArray(Response response, int expectedLength) throws Exception
