@@ -170,7 +170,7 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
         getArr = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(getAllResp.getContentAsString());
         assertNotNull(getArr);
         assertEquals(1, getArr.size());
-        assertEquals("medium", getArr.get(0).get("thumbnailName"));
+        assertEquals("medium", getArr.get(0).get("thumbnailName").textValue());
         
     }
     
@@ -237,7 +237,7 @@ public class ThumbnailServiceTest extends BaseWebScriptTest
         ArrayNode getArr = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(getAllResp.getContentAsString());
         assertNotNull(getArr);
         assertEquals(1, getArr.size());
-        assertEquals("doclib", getArr.get(0).get("thumbnailName"));
+        assertEquals("doclib", getArr.get(0).get("thumbnailName").textValue());
         //Now we know that thumbnail was created
         
         
