@@ -193,8 +193,8 @@ public class FacetRestApiTest extends BaseWebScriptTest
             {
                 Response response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
                 ObjectNode jsonRsp = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-                assertEquals(filterName, jsonRsp.get("filterID"));
-                assertEquals(5, jsonRsp.get("maxFilters"));
+                assertEquals(filterName, jsonRsp.get("filterID").textValue());
+                assertEquals(5, jsonRsp.get("maxFilters").intValue());
                 // Now change the maxFilters value and try to update
                 jsonRsp.put("maxFilters", 10);
                 sendRequest(new PutRequest(PUT_FACETS_URL, jsonRsp.toString(), "application/json"), 403);
@@ -317,16 +317,16 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 // Retrieve the created filter
                 response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterNameOne), 200);
                 JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-                assertEquals(filterNameOne, jsonRsp.get("filterID"));
-                assertEquals("{http://www.alfresco.org/model/content/1.0}test1", jsonRsp.get("facetQName"));
-                assertEquals("facet-menu.facet.test1", jsonRsp.get("displayName"));
-                assertEquals("alfresco/search/FacetFilters/test1", jsonRsp.get("displayControl"));
-                assertEquals(5, jsonRsp.get("maxFilters"));
-                assertEquals(1, jsonRsp.get("hitThreshold"));
-                assertEquals(4, jsonRsp.get("minFilterValueLength"));
-                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy"));
+                assertEquals(filterNameOne, jsonRsp.get("filterID").textValue());
+                assertEquals("{http://www.alfresco.org/model/content/1.0}test1", jsonRsp.get("facetQName").textValue());
+                assertEquals("facet-menu.facet.test1", jsonRsp.get("displayName").textValue());
+                assertEquals("alfresco/search/FacetFilters/test1", jsonRsp.get("displayControl").textValue());
+                assertEquals(5, jsonRsp.get("maxFilters").intValue());
+                assertEquals(1, jsonRsp.get("hitThreshold").intValue());
+                assertEquals(4, jsonRsp.get("minFilterValueLength").intValue());
+                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy").textValue());
                 // Check the Default values
-                assertEquals("ALL", jsonRsp.get("scope"));
+                assertEquals("ALL", jsonRsp.get("scope").textValue());
                 assertFalse(jsonRsp.get("isEnabled").booleanValue());
                 assertFalse(jsonRsp.get("isDefault").booleanValue());
 
@@ -354,8 +354,8 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterNameTwo), 200);
                 jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-                assertEquals(filterNameTwo, jsonRsp.get("filterID"));
-                assertEquals("SCOPED_SITES", jsonRsp.get("scope"));
+                assertEquals(filterNameTwo, jsonRsp.get("filterID").textValue());
+                assertEquals("SCOPED_SITES", jsonRsp.get("scope").textValue());
                 assertTrue(jsonRsp.get("isEnabled").booleanValue());
                 ArrayNode jsonArray = (ArrayNode) jsonRsp.get("scopedSites");
                 List<String> retrievedValues = getListFromJsonArray(jsonArray);
@@ -412,11 +412,11 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 customProp = (ObjectNode) jsonRsp.get("customProperties");
 
                 blockIncludeRequest = (ObjectNode) customProp.get("blockIncludeFacetRequest");
-                assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}blockIncludeFacetRequest", blockIncludeRequest.get("name"));
-                assertEquals("true", blockIncludeRequest.get("value"));
+                assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}blockIncludeFacetRequest", blockIncludeRequest.get("name").textValue());
+                assertEquals("true", blockIncludeRequest.get("value").textValue());
 
                 multipleValue = (ObjectNode) customProp.get("multipleValueTest");
-                assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}multipleValueTest", multipleValue.get("name"));
+                assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}multipleValueTest", multipleValue.get("name").textValue());
 
                 ArrayNode jsonArray = (ArrayNode) multipleValue.get("value");
                 List<String> retrievedValues = getListFromJsonArray(jsonArray);
@@ -464,7 +464,7 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 // Retrieve the created filter
                 Response response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
                 ObjectNode jsonRsp = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-                assertEquals(filterName, jsonRsp.get("filterID"));
+                assertEquals(filterName, jsonRsp.get("filterID").textValue());
                 // Now change the filterID value and try to update
                 jsonRsp.set("filterID", TextNode.valueOf(filterName + "Modified"));
                 sendRequest(new PutRequest(PUT_FACETS_URL, jsonRsp.toString(), "application/json"), 400);
@@ -590,9 +590,9 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 Response response = sendRequest(new GetRequest(GET_FACETS_URL + "/" + filterName), 200);
                 JsonNode jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
-                assertEquals(filterName, jsonRsp.get("filterID"));
-                assertEquals("facet-menu.facet.test1", jsonRsp.get("displayName"));
-                assertEquals("{http://www.alfresco.org/model/content/1.0}test", jsonRsp.get("facetQName"));
+                assertEquals(filterName, jsonRsp.get("filterID").textValue());
+                assertEquals("facet-menu.facet.test1", jsonRsp.get("displayName").textValue());
+                assertEquals("{http://www.alfresco.org/model/content/1.0}test", jsonRsp.get("facetQName").textValue());
                 assertTrue(jsonRsp.get("isEnabled").booleanValue());
 
                 // Just supply the filterID and the required value
@@ -614,23 +614,23 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
                 // Now see if the two changes have been persisted
-                assertEquals("facet-menu.facet.modifiedValue", jsonRsp.get("displayName"));
+                assertEquals("facet-menu.facet.modifiedValue", jsonRsp.get("displayName").textValue());
                 assertFalse(jsonRsp.get("isEnabled").booleanValue());
                 // Make sure the rest of values haven't been changed
-                assertEquals(filterName, jsonRsp.get("filterID"));
-                assertEquals("{http://www.alfresco.org/model/content/1.0}test", jsonRsp.get("facetQName"));
-                assertEquals("alfresco/search/FacetFilters/test", jsonRsp.get("displayControl"));
-                assertEquals(5, jsonRsp.get("maxFilters"));
-                assertEquals(1, jsonRsp.get("hitThreshold"));
-                assertEquals(4, jsonRsp.get("minFilterValueLength"));
-                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy"));
-                assertEquals("ALL", jsonRsp.get("scope"));
+                assertEquals(filterName, jsonRsp.get("filterID").textValue());
+                assertEquals("{http://www.alfresco.org/model/content/1.0}test", jsonRsp.get("facetQName").textValue());
+                assertEquals("alfresco/search/FacetFilters/test", jsonRsp.get("displayControl").textValue());
+                assertEquals(5, jsonRsp.get("maxFilters").intValue());
+                assertEquals(1, jsonRsp.get("hitThreshold").intValue());
+                assertEquals(4, jsonRsp.get("minFilterValueLength").intValue());
+                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy").textValue());
+                assertEquals("ALL", jsonRsp.get("scope").textValue());
                 assertFalse(jsonRsp.get("isDefault").booleanValue());
                 // Make sure custom properties haven't been deleted
                 JsonNode retrievedCustomProp = jsonRsp.get("customProperties");
                 JsonNode retrievedBlockIncludeRequest = retrievedCustomProp.get("blockIncludeFacetRequest");
-                assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}blockIncludeFacetRequest", retrievedBlockIncludeRequest.get("name"));
-                assertEquals("true", retrievedBlockIncludeRequest.get("value"));
+                assertEquals("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}blockIncludeFacetRequest", retrievedBlockIncludeRequest.get("name").textValue());
+                assertEquals("true", retrievedBlockIncludeRequest.get("value").textValue());
 
                 // Change the facetQName value and update
                 singleValueJson = AlfrescoDefaultObjectMapper.createObjectNode();
@@ -644,18 +644,18 @@ public class FacetRestApiTest extends BaseWebScriptTest
                 jsonRsp = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
                 // Now see if the facetQName and its side-effect have been persisted
-                assertEquals("{http://www.alfresco.org/model/content/1.0}testModifiedValue",jsonRsp.get("facetQName"));
+                assertEquals("{http://www.alfresco.org/model/content/1.0}testModifiedValue",jsonRsp.get("facetQName").textValue());
                 assertNull("Custom properties should have been deleted.", jsonRsp.get("customProperties"));
                 // Make sure the rest of values haven't been changed
-                assertEquals(filterName, jsonRsp.get("filterID"));
-                assertEquals("facet-menu.facet.modifiedValue", jsonRsp.get("displayName"));
-                assertEquals("alfresco/search/FacetFilters/test", jsonRsp.get("displayControl"));
-                assertEquals(5, jsonRsp.get("maxFilters"));
-                assertEquals(1, jsonRsp.get("hitThreshold"));
-                assertEquals(4, jsonRsp.get("minFilterValueLength"));
-                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy"));
+                assertEquals(filterName, jsonRsp.get("filterID").textValue());
+                assertEquals("facet-menu.facet.modifiedValue", jsonRsp.get("displayName").textValue());
+                assertEquals("alfresco/search/FacetFilters/test", jsonRsp.get("displayControl").textValue());
+                assertEquals(5, jsonRsp.get("maxFilters").intValue());
+                assertEquals(1, jsonRsp.get("hitThreshold").intValue());
+                assertEquals(4, jsonRsp.get("minFilterValueLength").intValue());
+                assertEquals("ALPHABETICALLY", jsonRsp.get("sortBy").textValue());
                 assertFalse(jsonRsp.get("isDefault").booleanValue());
-                assertEquals("ALL", jsonRsp.get("scope"));
+                assertEquals("ALL", jsonRsp.get("scope").textValue());
                 assertFalse(jsonRsp.get("isEnabled").booleanValue());
 
                 return null;
@@ -718,15 +718,15 @@ public class FacetRestApiTest extends BaseWebScriptTest
         for (int i = 0; i < facetsArray.size(); i++)
         {
             Object object = facetsArray.get(i);
-            if (object instanceof JsonNode)
+            if (object instanceof ObjectNode)
             {
-                final JsonNode nextFacet = (JsonNode) object;
-                final String nextId = nextFacet.get("filterID").textValue();
+                final JsonNode filterIdJson = ((JsonNode) object).get("filterID");
+                final String nextId = filterIdJson == null ? null : filterIdJson.textValue();
                 result.add(nextId);
             }
             else
             {
-                result.add((String) object);
+                result.add(((JsonNode) object).textValue());
             }
         }
         return result;

@@ -159,7 +159,7 @@ public class SolrFacetConfigAdminPut extends AbstractSolrFacetConfigAdminWebScri
             final Boolean isEnabled = getValue(Boolean.class, json.get(PARAM_IS_ENABLED), null);
             ArrayNode scopedSitesJsonArray = getValue(ArrayNode.class, json.get(PARAM_SCOPED_SITES), null);
             final Set<String> scopedSites = getScopedSites(scopedSitesJsonArray);
-            final ObjectNode customPropJsonObj = getValue(ObjectNode.class, json.get(PARAM_CUSTOM_PROPERTIES), null);
+            final ObjectNode customPropJsonObj = json.has(PARAM_CUSTOM_PROPERTIES) ? (ObjectNode) json.get(PARAM_CUSTOM_PROPERTIES) : null;
             final Set<CustomProperties> customProps = getCustomProperties(customPropJsonObj);
 
             SolrFacetProperties fp = new SolrFacetProperties.Builder()
