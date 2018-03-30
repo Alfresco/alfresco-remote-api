@@ -275,7 +275,7 @@ public class RuleServiceTest extends BaseWebScriptTest
         ArrayNode ruleType = (ArrayNode) data.get("ruleType");
 
         assertEquals(1, ruleType.size());
-        assertEquals("outbound", ruleType.get(0));
+        assertEquals("outbound", ruleType.get(0).textValue());
 
         assertFalse(data.get("disabled").booleanValue());
         assertTrue(data.has("url"));

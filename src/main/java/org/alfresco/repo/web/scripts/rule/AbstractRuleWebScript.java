@@ -27,6 +27,7 @@ package org.alfresco.repo.web.scripts.rule;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -59,6 +60,7 @@ import org.alfresco.service.cmr.rule.RuleService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.GUID;
+import org.alfresco.util.json.JsonUtil;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
@@ -356,7 +358,7 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
         {
             Map.Entry<String,JsonNode> parameter = parametersIterator.next();
             String propertyName = parameter.getKey();
-            Object propertyValue = parameter.getValue();
+            JsonNode propertyValue = parameter.getValue();
             
             // Get the parameter definition we care about
             ParameterDefinition paramDef = definition.getParameterDefintion(propertyName);
@@ -374,8 +376,8 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
             }
             else
             {
-                // If there is no parameter definition we can only rely on the .toString() representation of the ad-hoc property
-                parameterValues.put(propertyName, propertyValue.toString());
+                // If there is no parameter definition we can only rely on the object representation of the ad-hoc property
+                parameterValues.put(propertyName, (Serializable) JsonUtil.convertJSONValue((ValueNode) propertyValue));
             }
             
         }
@@ -383,7 +385,7 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
         return parameterValues;
     }
     
-    private Serializable convertValue(QName typeQName, Object propertyValue)
+    private Serializable convertValue(QName typeQName, JsonNode propertyValue)
     {        
         Serializable value = null;
         
@@ -408,11 +410,11 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
                 throw new DictionaryException("Java class " + javaClassName + " of property type " + typeDef.getName() + " is invalid", e);
             }
             
-            int length = ((ArrayNode)propertyValue).size();
+            int length = propertyValue.size();
             List<Serializable> list = new ArrayList<Serializable>(length);
             for (int i = 0; i < length; i++)
             {
-                list.add(convertValue(typeQName, ((ArrayNode)propertyValue).get(i)));
+                list.add(convertValue(typeQName, propertyValue.get(i)));
             }
             value = (Serializable)list;
         }
@@ -421,11 +423,12 @@ public abstract class AbstractRuleWebScript extends DeclarativeWebScript
             if (typeQName.equals(DataTypeDefinition.QNAME) == true && 
                 typeQName.toString().contains(":") == true)
             {
-                 value = QName.createQName(propertyValue.toString(), namespaceService);
+                 value = QName.createQName(propertyValue.textValue(), namespaceService);
             }
             else
             {
-                value = (Serializable)DefaultTypeConverter.INSTANCE.convert(dictionaryService.getDataType(typeQName), propertyValue);
+                value = (Serializable)DefaultTypeConverter.INSTANCE.convert(dictionaryService.getDataType(typeQName),
+                        JsonUtil.convertJSONValue((ValueNode) propertyValue));
             }
         }
         
