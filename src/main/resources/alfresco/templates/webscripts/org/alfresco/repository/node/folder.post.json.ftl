@@ -4,7 +4,7 @@
      <#if site??>
         ,
         "site": "${site.shortName}",
-        "container": "${container}",
+        "container": "${container}"
      </#if>
   }
 </#escape>

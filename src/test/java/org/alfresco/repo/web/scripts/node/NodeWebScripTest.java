@@ -444,9 +444,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
         jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
-        assertEquals("true", json.get("overallSuccess"));
-        assertEquals("1", json.get("successCount"));
-        assertEquals("0", json.get("failureCount"));
+        assertEquals("true", json.get("overallSuccess").textValue());
+        assertEquals("1", json.get("successCount").textValue());
+        assertEquals("0", json.get("failureCount").textValue());
 
         jsonLinkNode = jsonLinkNodes.get(0);
         String nodeRef =  jsonLinkNode.get("nodeRef").textValue();
@@ -473,9 +473,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
         jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
-        assertEquals("true", json.get("overallSuccess"));
-        assertEquals("1", json.get("successCount"));
-        assertEquals("0", json.get("failureCount"));
+        assertEquals("true", json.get("overallSuccess").textValue());
+        assertEquals("1", json.get("successCount").textValue());
+        assertEquals("0", json.get("failureCount").textValue());
 
         jsonLinkNode = jsonLinkNodes.get(0);
         nodeRef =  jsonLinkNode.get("nodeRef").textValue();
@@ -498,9 +498,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
         jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
-        assertEquals("true", json.get("overallSuccess"));
-        assertEquals("1", json.get("successCount"));
-        assertEquals("0", json.get("failureCount"));
+        assertEquals("true", json.get("overallSuccess").textValue());
+        assertEquals("1", json.get("successCount").textValue());
+        assertEquals("0", json.get("failureCount").textValue());
 
         jsonLinkNode = jsonLinkNodes.get(0);
         nodeRef =  jsonLinkNode.get("nodeRef").textValue();
@@ -530,9 +530,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
         jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(3, jsonLinkNodes.size());
-        assertEquals("true", json.get("overallSuccess"));
-        assertEquals("3", json.get("successCount"));
-        assertEquals("0", json.get("failureCount"));
+        assertEquals("true", json.get("overallSuccess").textValue());
+        assertEquals("3", json.get("successCount").textValue());
+        assertEquals("0", json.get("failureCount").textValue());
 
         NodeRef fileLink = null;
         List<NodeRef> fileLinks = new ArrayList<NodeRef>();
@@ -677,9 +677,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
         jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
-        assertEquals("true", json.get("overallSuccess"));
-        assertEquals("1", json.get("successCount"));
-        assertEquals("0", json.get("failureCount"));
+        assertEquals("true", json.get("overallSuccess").textValue());
+        assertEquals("1", json.get("successCount").textValue());
+        assertEquals("0", json.get("failureCount").textValue());
 
         jsonLinkNode = jsonLinkNodes.get(0);
         nodeRef =  jsonLinkNode.get("nodeRef").textValue();
@@ -752,9 +752,9 @@ public class NodeWebScripTest extends BaseWebScriptTest
         jsonLinkNodes = (ArrayNode) json.get("linkNodes");
         assertNotNull(jsonLinkNodes);
         assertEquals(1, jsonLinkNodes.size());
-        assertEquals("true", json.get("overallSuccess"));
-        assertEquals("1", json.get("successCount"));
-        assertEquals("0", json.get("failureCount"));
+        assertEquals("true", json.get("overallSuccess").textValue());
+        assertEquals("1", json.get("successCount").textValue());
+        assertEquals("0", json.get("failureCount").textValue());
 
         jsonLinkNode = jsonLinkNodes.get(0);
         nodeRef =  jsonLinkNode.get("nodeRef").textValue();

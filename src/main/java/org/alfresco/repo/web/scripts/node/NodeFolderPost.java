@@ -145,18 +145,16 @@ public class NodeFolderPost extends DeclarativeWebScript
         }
         
         // Fetch the name, title and description
-        String name = json.get("name").textValue();
+        JsonNode nameJson = json.get("name");
+        String name = nameJson == null ? null : nameJson.textValue();
         if (name == null)
         {
             throw new WebScriptException(Status.STATUS_BAD_REQUEST, "Name is required");
         }
-                
-        String title = json.get("title").textValue();
-        if (title == null)
-        {
-            title = name;
-        }
-        String description = json.get("description").textValue();
+        JsonNode titleJson = json.get("title");
+        String title = titleJson == null ? name : titleJson.textValue();
+        JsonNode descriptionJson = json.get("description");
+        String description = descriptionJson == null ? null : descriptionJson.textValue();
         
         Map<QName,Serializable> props = new HashMap<QName, Serializable>();
         props.put(ContentModel.PROP_NAME, name);
