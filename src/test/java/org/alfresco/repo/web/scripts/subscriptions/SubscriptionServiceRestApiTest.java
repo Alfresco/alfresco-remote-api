@@ -236,7 +236,7 @@ public class SubscriptionServiceRestApiTest extends BaseWebScriptTest
 
         JsonNode resultObject = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         assertTrue(resultObject.has("private"));
-        assertEquals(setPrivate, resultObject.get("private"));
+        assertEquals(setPrivate, resultObject.get("private").booleanValue());
     }
 
     public void testFollow() throws Exception

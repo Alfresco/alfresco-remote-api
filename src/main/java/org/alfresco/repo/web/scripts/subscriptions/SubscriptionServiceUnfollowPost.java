@@ -39,9 +39,9 @@ public class SubscriptionServiceUnfollowPost extends AbstractSubscriptionService
     {
         ArrayNode jsonUsers = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
 
-        for (Object o : jsonUsers)
+        for (JsonNode o : jsonUsers)
         {
-            String user = (o == null ? null : o.toString());
+            String user = (o == null ? null : o.textValue());
             if (user != null)
             {
                 subscriptionService.unfollow(userId, user);

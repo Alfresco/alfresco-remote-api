@@ -38,17 +38,11 @@ public class SubscriptionServicePrivateListPut extends SubscriptionServicePrivat
     {
         JsonNode obj = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
 
-        Object setPrivate = obj.get("private");
+        JsonNode setPrivate = obj.get("private");
 
         if (setPrivate != null)
         {
-            if (setPrivate.toString().equalsIgnoreCase("true"))
-            {
-                subscriptionService.setSubscriptionListPrivate(userId, true);
-            } else if (setPrivate.toString().equalsIgnoreCase("false"))
-            {
-                subscriptionService.setSubscriptionListPrivate(userId, false);
-            }
+            subscriptionService.setSubscriptionListPrivate(userId, setPrivate.booleanValue());
         }
 
         return super.executeImpl(userId, req, res);

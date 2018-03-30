@@ -43,9 +43,9 @@ public class SubscriptionServiceFollowsPost extends AbstractSubscriptionServiceW
 
         ArrayNode result = AlfrescoDefaultObjectMapper.createArrayNode();
 
-        for (Object o : jsonUsers)
+        for (JsonNode o : jsonUsers)
         {
-            String user = (o == null ? null : o.toString());
+            String user = (o == null ? null : o.textValue());
             if (user != null)
             {
                 ObjectNode item = AlfrescoDefaultObjectMapper.createObjectNode();
