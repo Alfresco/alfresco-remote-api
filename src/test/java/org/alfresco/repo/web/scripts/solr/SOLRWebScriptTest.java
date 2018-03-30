@@ -137,7 +137,7 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         {
             logger.debug(response.getContentAsString());
         }
-        ArrayNode json = (ArrayNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
+        JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
         ArrayNode transactions = (ArrayNode) json.get("transactions");
         
