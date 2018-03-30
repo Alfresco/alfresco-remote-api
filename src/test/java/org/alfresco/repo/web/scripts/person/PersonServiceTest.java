@@ -698,12 +698,12 @@ public class PersonServiceTest extends BaseWebScriptTest
                 "updatedOrganisation", "updatedJobTitle", "updatedFN.updatedLN@email.com", "updatedBio",
                 "images/updatedAvatar.jpg", Status.STATUS_OK);
 
-        assertEquals(userName, result.get("userName"));
-        assertEquals("updatedFirstName", result.get("firstName"));
-        assertEquals("updatedLastName", result.get("lastName"));
-        assertEquals("updatedOrganisation", result.get("organization"));
-        assertEquals("updatedJobTitle", result.get("jobtitle"));
-        assertEquals("updatedFN.updatedLN@email.com", result.get("email"));
+        assertEquals(userName, result.get("userName").textValue());
+        assertEquals("updatedFirstName", result.get("firstName").textValue());
+        assertEquals("updatedLastName", result.get("lastName").textValue());
+        assertEquals("updatedOrganisation", result.get("organization").textValue());
+        assertEquals("updatedJobTitle", result.get("jobtitle").textValue());
+        assertEquals("updatedFN.updatedLN@email.com", result.get("email").textValue());
     }
     
     public void testDeletePerson() throws Exception
@@ -729,12 +729,12 @@ public class PersonServiceTest extends BaseWebScriptTest
         JsonNode result = createPerson(userName, "myTitle", "myFirstName", "myLastName", "myOrganisation",
                                 "myJobTitle", "firstName.lastName@email.com", "myBio", "images/avatar.jpg", 0,
                                 Status.STATUS_OK);        
-        assertEquals(userName, result.get("userName"));
-        assertEquals("myFirstName", result.get("firstName"));
-        assertEquals("myLastName", result.get("lastName"));
-        assertEquals("myOrganisation", result.get("organization"));
-        assertEquals("myJobTitle", result.get("jobtitle"));
-        assertEquals("firstName.lastName@email.com", result.get("email"));
+        assertEquals(userName, result.get("userName").textValue());
+        assertEquals("myFirstName", result.get("firstName").textValue());
+        assertEquals("myLastName", result.get("lastName").textValue());
+        assertEquals("myOrganisation", result.get("organization").textValue());
+        assertEquals("myJobTitle", result.get("jobtitle").textValue());
+        assertEquals("firstName.lastName@email.com", result.get("email").textValue());
         
         // Check for duplicate names
         createPerson(userName, "myTitle", "myFirstName", "mylastName", "myOrganisation",
