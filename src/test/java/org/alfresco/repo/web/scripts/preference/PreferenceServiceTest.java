@@ -203,9 +203,9 @@ public class PreferenceServiceTest extends BaseWebScriptTest
 
     private void checkJsonNode(JsonNode jsonObject)
     {
-        assertEquals("value", jsonObject.get("stringValue"));
-        assertEquals(10, jsonObject.get("numberValue"));
-        assertEquals(3.142, jsonObject.get("numberValue2"));
+        assertEquals("value", jsonObject.get("stringValue").textValue());
+        assertEquals(10, jsonObject.get("numberValue").intValue());
+        assertEquals(3.142, jsonObject.get("numberValue2").doubleValue());
     }
 
 }
