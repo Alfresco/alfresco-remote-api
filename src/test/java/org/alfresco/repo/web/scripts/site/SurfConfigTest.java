@@ -106,11 +106,11 @@ public class SurfConfigTest extends AbstractSiteServiceTest
         // Create a site as USER_ONE
         String shortName = UUID.randomUUID().toString();
         JsonNode result = createSite("myPreset", shortName, "myTitle", "myDescription", SiteVisibility.PUBLIC, 200);
-        assertEquals("myPreset", result.get("sitePreset"));
-        assertEquals(shortName, result.get("shortName"));
-        assertEquals("myTitle", result.get("title"));
-        assertEquals("myDescription", result.get("description"));
-        assertEquals(SiteVisibility.PUBLIC.toString(), result.get("visibility"));
+        assertEquals("myPreset", result.get("sitePreset").textValue());
+        assertEquals(shortName, result.get("shortName").textValue());
+        assertEquals("myTitle", result.get("title").textValue());
+        assertEquals("myDescription", result.get("description").textValue());
+        assertEquals(SiteVisibility.PUBLIC.toString(), result.get("visibility").textValue());
 
         // Make ADMRemoteStore to create the surf-config folder and the dashboard.xml file.
         sendRequest(new PostRequest(URL_ADM + "CREATE/alfresco/site-data/pages/site/" + shortName + "/dashboard.xml?s=sitestore",
@@ -195,8 +195,8 @@ public class SurfConfigTest extends AbstractSiteServiceTest
         membership.put("person", person);
         response = sendRequest(new PutRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, membership.toString(), "application/json"), 200);
         result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        assertEquals(SiteModel.SITE_CONTRIBUTOR, result.get("role"));
-        assertEquals(USER_ONE, result.get("authority").get("userName"));
+        assertEquals(SiteModel.SITE_CONTRIBUTOR, result.get("role").textValue());
+        assertEquals(USER_ONE, result.get("authority").get("userName").textValue());
 
         // USER_ONE is no longer a site manager
         // USER_ONE tries to access "{siteName}/cm:surf-config" children
