@@ -142,13 +142,13 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         
         // Create a new site
         JsonNode result = createSite("myPreset", shortName, "myTitle", "myDescription", SiteVisibility.PUBLIC, 200);        
-        assertEquals("myPreset", result.get("sitePreset"));
-        assertEquals(shortName, result.get("shortName"));
-        assertEquals("myTitle", result.get("title"));
-        assertEquals("myDescription", result.get("description"));
+        assertEquals("myPreset", result.get("sitePreset").textValue());
+        assertEquals(shortName, result.get("shortName").textValue());
+        assertEquals("myTitle", result.get("title").textValue());
+        assertEquals("myDescription", result.get("description").textValue());
         assertNotNull(result.get("node"));
         assertNotNull(result.get("tagScope"));
-        assertEquals(SiteVisibility.PUBLIC.toString(), result.get("visibility"));
+        assertEquals(SiteVisibility.PUBLIC.toString(), result.get("visibility").textValue());
         assertTrue(result.get("isPublic").booleanValue());
         
         // Check for duplicate names
@@ -240,9 +240,9 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         // sample one of the returned sites and check it's what we expect
         JsonNode site = result.get(0);
         assertNotNull(site);
-        assertEquals("myPreset", site.get("sitePreset"));
-        assertEquals("myTitle", site.get("title"));
-        assertEquals("myDescription", site.get("description"));
+        assertEquals("myPreset", site.get("sitePreset").textValue());
+        assertEquals("myTitle", site.get("title").textValue());
+        assertEquals("myDescription", site.get("description").textValue());
         assertNotNull(site.get("node"));
         assertNotNull(site.get("tagScope"));
         assertTrue(site.get("isPublic").booleanValue());
@@ -272,18 +272,18 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         result.put("visibility", SiteVisibility.PRIVATE.toString());
         Response response = sendRequest(new PutRequest(URL_SITES + "/" + shortName, result.toString(), "application/json"), 200);
         result = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        assertEquals("abs123abc", result.get("title"));
-        assertEquals("123abc123", result.get("description"));
+        assertEquals("abs123abc", result.get("title").textValue());
+        assertEquals("123abc123", result.get("description").textValue());
         assertFalse(result.get("isPublic").booleanValue());
-        assertEquals(SiteVisibility.PRIVATE.toString(), result.get("visibility"));
+        assertEquals(SiteVisibility.PRIVATE.toString(), result.get("visibility").textValue());
         
         // Try and get the site and double check it's changed
         response = sendRequest(new GetRequest(URL_SITES + "/" + shortName), 200);
         result = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        assertEquals("abs123abc", result.get("title"));
-        assertEquals("123abc123", result.get("description"));
+        assertEquals("abs123abc", result.get("title").textValue());
+        assertEquals("123abc123", result.get("description").textValue());
         assertFalse(result.get("isPublic").booleanValue());
-        assertEquals(SiteVisibility.PRIVATE.toString(), result.get("visibility"));
+        assertEquals(SiteVisibility.PRIVATE.toString(), result.get("visibility").textValue());
     }
     
     public void testDeleteSite() throws Exception
@@ -317,8 +317,8 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         assertNotNull(result);
         assertEquals(1, result.size());
         JsonNode membership = result.get(0);
-        assertEquals(SiteModel.SITE_MANAGER, membership.get("role"));
-        assertEquals(USER_ONE, membership.get("authority").get("userName"));        
+        assertEquals(SiteModel.SITE_MANAGER, membership.get("role").textValue());
+        assertEquals(USER_ONE, membership.get("authority").get("userName").textValue());
     }
     
     public void testPostMemberships() throws Exception
@@ -338,8 +338,8 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         Response response = sendRequest(new PostRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, membership.toString(), "application/json"), 200);
         
         // Check the result
-        assertEquals(SiteModel.SITE_CONSUMER, membership.get("role"));
-        assertEquals(USER_TWO, membership.get("person").get("userName")); 
+        assertEquals(SiteModel.SITE_CONSUMER, membership.get("role").textValue());
+        assertEquals(USER_TWO, membership.get("person").get("userName").textValue());
         
         // Get the membership list
         response = sendRequest(new GetRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS), 200);   
@@ -358,8 +358,8 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         
         // Check the details are correct for one user
         membership = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        assertEquals(SiteModel.SITE_CONTRIBUTOR, membership.get("role"));
-        assertEquals(USER_NUMERIC, membership.get("authority").get("userName"));
+        assertEquals(SiteModel.SITE_CONTRIBUTOR, membership.get("role").textValue());
+        assertEquals(USER_NUMERIC, membership.get("authority").get("userName").textValue());
         
         
         // Check the membership list
@@ -379,15 +379,15 @@ public class SiteServiceTest extends AbstractSiteServiceTest
 
         membership = (ObjectNode) membershipMap.get(SiteModel.SITE_MANAGER);
         assertNotNull("The response did not contain " + SiteModel.SITE_MANAGER, membership);
-        assertEquals(USER_ONE, membership.get("authority").get("userName"));
+        assertEquals(USER_ONE, membership.get("authority").get("userName").textValue());
         
         membership = (ObjectNode) membershipMap.get(SiteModel.SITE_CONSUMER);
         assertNotNull("The response did not contain " + SiteModel.SITE_CONSUMER, membership);
-        assertEquals(USER_TWO, membership.get("authority").get("userName"));
+        assertEquals(USER_TWO, membership.get("authority").get("userName").textValue());
         
         membership = (ObjectNode) membershipMap.get(SiteModel.SITE_CONTRIBUTOR);
         assertNotNull("The response did not contain " + SiteModel.SITE_CONTRIBUTOR, membership);
-        assertEquals(USER_NUMERIC, membership.get("authority").get("userName"));
+        assertEquals(USER_NUMERIC, membership.get("authority").get("userName").textValue());
     }
     
     public void testGetMembership() throws Exception
@@ -405,8 +405,8 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // Check the result
-        assertEquals(SiteModel.SITE_MANAGER, result.get("role"));
-        assertEquals(USER_ONE, result.get("authority").get("userName")); 
+        assertEquals(SiteModel.SITE_MANAGER, result.get("role").textValue());
+        assertEquals(USER_ONE, result.get("authority").get("userName").textValue());
     }
     
     public void testPutMembership() throws Exception
@@ -432,14 +432,14 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
         // Check the result
-        assertEquals(SiteModel.SITE_COLLABORATOR, result.get("role"));
-        assertEquals(USER_TWO, result.get("authority").get("userName"));
+        assertEquals(SiteModel.SITE_COLLABORATOR, result.get("role").textValue());
+        assertEquals(USER_TWO, result.get("authority").get("userName").textValue());
         
         // Double check and get the membership for user two
         response = sendRequest(new GetRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS + "/" + USER_TWO), 200);
         result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        assertEquals(SiteModel.SITE_COLLABORATOR, result.get("role"));
-        assertEquals(USER_TWO, result.get("authority").get("userName"));
+        assertEquals(SiteModel.SITE_COLLABORATOR, result.get("role").textValue());
+        assertEquals(USER_TWO, result.get("authority").get("userName").textValue());
         
     }
     
@@ -475,18 +475,17 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             ObjectNode newMember = (ObjectNode) AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
             // Validate the return value
-            assertEquals("role not correct", SiteModel.SITE_CONSUMER, newMember.get("role"));
+            assertEquals("role not correct", SiteModel.SITE_CONSUMER, newMember.get("role").textValue());
             JsonNode newGroup = newMember.get("authority");
-            assertNotNull("newGroup");
-            assertEquals("full name not correct", testGroupName, newGroup.get("fullName"));
-            assertEquals("authorityType not correct", "GROUP", newGroup.get("authorityType"));
+            assertEquals("full name not correct", testGroupName, newGroup.get("fullName").textValue());
+            assertEquals("authorityType not correct", "GROUP", newGroup.get("authorityType").textValue());
             
 
             // Now send the returned value back with a new role (COLLABORATOR)
             newMember.put("role", SiteModel.SITE_COLLABORATOR);
             response = sendRequest(new PutRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, newMember.toString(), "application/json"), 200);
             JsonNode updateResult = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-            assertEquals("role not correct", SiteModel.SITE_COLLABORATOR, updateResult.get("role"));
+            assertEquals("role not correct", SiteModel.SITE_COLLABORATOR, updateResult.get("role").textValue());
             
         }
         
@@ -522,7 +521,7 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             JsonNode getResult = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             System.out.println(response.getContentAsString());
             JsonNode grp = getResult.get("authority");
-            assertEquals("full name not correct", testGroupName, grp.get("fullName"));
+            assertEquals("full name not correct", testGroupName, grp.get("fullName").textValue());
         }
         
         // cleanup
@@ -666,14 +665,14 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         assertNotNull(customProperties);
         JsonNode addInfo = customProperties.get("{http://www.alfresco.org/model/sitecustomproperty/1.0}additionalInformation");
         assertNotNull(addInfo);
-        assertEquals("{http://www.alfresco.org/model/sitecustomproperty/1.0}additionalInformation", addInfo.get("name"));
-        assertEquals("information", addInfo.get("value"));
-        assertEquals("{http://www.alfresco.org/model/dictionary/1.0}text", addInfo.get("type"));
-        assertEquals("Additional Site Information", addInfo.get("title"));
+        assertEquals("{http://www.alfresco.org/model/sitecustomproperty/1.0}additionalInformation", addInfo.get("name").textValue());
+        assertEquals("information", addInfo.get("value").textValue());
+        assertEquals("{http://www.alfresco.org/model/dictionary/1.0}text", addInfo.get("type").textValue());
+        assertEquals("Additional Site Information", addInfo.get("title").textValue());
         
         JsonNode tags = customProperties.get("{http://www.alfresco.org/model/sitecustomproperty/1.0}siteTags");
         assertNotNull(tags);
-        assertEquals("{http://www.alfresco.org/model/sitecustomproperty/1.0}siteTags", tags.get("name"));
+        assertEquals("{http://www.alfresco.org/model/sitecustomproperty/1.0}siteTags", tags.get("name").textValue());
         assertEquals(NullNode.getInstance(), tags.get("type"));
         assertEquals(NullNode.getInstance(), tags.get("title"));
         // TODO Fix ALF-2707 so this works
@@ -884,14 +883,14 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             //System.out.println(response.getContentAsString());
             JsonNode data = top.get("data");
             assertNotNull("data is null", data);
-            assertEquals("inviteId is not set", data.get("inviteId"), inviteId);
-            assertEquals("invitationType", "MODERATED", data.get("invitationType"));
-            assertEquals("inviteeUserName is not set", userName, data.get("inviteeUserName"));
-            assertEquals("resourceName is not correct", shortName, data.get("resourceName"));
-            assertEquals("resourceType is not correct", "WEB_SITE", data.get("resourceType"));
+            assertEquals("inviteId is not set", data.get("inviteId").textValue(), inviteId);
+            assertEquals("invitationType", "MODERATED", data.get("invitationType").textValue());
+            assertEquals("inviteeUserName is not set", userName, data.get("inviteeUserName").textValue());
+            assertEquals("resourceName is not correct", shortName, data.get("resourceName").textValue());
+            assertEquals("resourceType is not correct", "WEB_SITE", data.get("resourceType").textValue());
             // Moderated specific properties
-            assertEquals("inviteeComments", inviteeComments, data.get("inviteeComments"));
-            assertEquals("roleName is not set", roleName, data.get("roleName"));
+            assertEquals("inviteeComments", inviteeComments, data.get("inviteeComments").textValue());
+            assertEquals("roleName is not set", roleName, data.get("roleName").textValue());
 
         }
         
@@ -927,13 +926,13 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             //System.out.println(response.getContentAsString());
             JsonNode data = top.get("data");
             assertNotNull("data is null", data);
-            assertEquals("inviteId is not set", data.get("inviteId"), inviteId);
-            assertEquals("invitationType", "NOMINATED", data.get("invitationType"));
-            assertEquals("resourceName is not correct", shortName, data.get("resourceName"));
-            assertEquals("resourceType is not correct", "WEB_SITE", data.get("resourceType"));
+            assertEquals("inviteId is not set", data.get("inviteId").textValue(), inviteId);
+            assertEquals("invitationType", "NOMINATED", data.get("invitationType").textValue());
+            assertEquals("resourceName is not correct", shortName, data.get("resourceName").textValue());
+            assertEquals("resourceType is not correct", "WEB_SITE", data.get("resourceType").textValue());
             
             // Nominated specific attributes
-            assertEquals("roleName is not set", roleName, data.get("roleName"));
+            assertEquals("roleName is not set", roleName, data.get("roleName").textValue());
             // Generated user name
             assertNotNull("inviteeUserName is not set", data.get("inviteeUserName"));
             
@@ -1031,7 +1030,7 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             ArrayNode data = (ArrayNode) top.get("data");
             assertEquals("user two invitation not found", 1, data.size());
             JsonNode first = data.get(0);
-            assertEquals("userid is wrong", first.get("inviteeUserName"), USER_TWO);
+            assertEquals("userid is wrong", first.get("inviteeUserName").textValue(), USER_TWO);
             
         }
         
@@ -1063,8 +1062,8 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             ArrayNode data = (ArrayNode) top.get("data");
             assertEquals("user two invitation not found", data.size(), 1);
             JsonNode first = data.get(0);
-            assertEquals("first userid is wrong", first.get("inviteeUserName"), USER_TWO);
-            assertEquals("type is wrong", first.get("invitationType"), "MODERATED"); 
+            assertEquals("first userid is wrong", first.get("inviteeUserName").textValue(), USER_TWO);
+            assertEquals("type is wrong", first.get("invitationType").textValue(), "MODERATED");
         }      
     }
     
@@ -1136,10 +1135,10 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
             JsonNode data = top.get("data");
             inviteId = data.get("inviteId").textValue();
-            assertEquals("invitationType", "MODERATED", data.get("invitationType"));
-            assertEquals("inviteeUserName is not set", userName, data.get("inviteeUserName"));
-            assertEquals("resourceName is not correct", shortName, data.get("resourceName"));
-            assertEquals("resourceType is not correct", "WEB_SITE", data.get("resourceType"));
+            assertEquals("invitationType", "MODERATED", data.get("invitationType").textValue());
+            assertEquals("inviteeUserName is not set", userName, data.get("inviteeUserName").textValue());
+            assertEquals("resourceName is not correct", shortName, data.get("resourceName").textValue());
+            assertEquals("resourceType is not correct", "WEB_SITE", data.get("resourceType").textValue());
             
         }
         assertNotNull("inviteId is null", inviteId);
@@ -1175,7 +1174,11 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         Response response = sendRequest(new PostRequest(URL_SITES + "/" + siteName + "/invitations",  newInvitation.toString(), "application/json"), expectedStatus);
         JsonNode top = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         JsonNode data = top.get("data");
-        String inviteId = data.get("inviteId").textValue();
+        if (data == null)
+        {
+            throw new IOException("No data returned");
+        }
+        String inviteId = data.get("inviteId") == null ? null : data.get("inviteId").textValue();
         
         return inviteId;
     }
@@ -1239,11 +1242,11 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             JsonNode newMember = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
 
             // Validate the return value
-            assertEquals("role not correct", SiteModel.SITE_CONSUMER, newMember.get("role"));
+            assertEquals("role not correct", SiteModel.SITE_CONSUMER, newMember.get("role").textValue());
             JsonNode newGroup = newMember.get("authority");
             assertNotNull(newGroup);
-            assertEquals("full name not correct", testGroupName, newGroup.get("fullName"));
-            assertEquals("authorityType not correct", "GROUP", newGroup.get("authorityType"));
+            assertEquals("full name not correct", testGroupName, newGroup.get("fullName").textValue());
+            assertEquals("authorityType not correct", "GROUP", newGroup.get("authorityType").textValue());
         }
 
         // Now List memberships
@@ -1258,14 +1261,14 @@ public class SiteServiceTest extends AbstractSiteServiceTest
             {
                 JsonNode json = listResult.get(i);
 
-                if (USER_ONE.equals(json.get("authority").get("fullName")))
+                if (USER_ONE.equals(json.get("authority").get("fullName").textValue()))
                 {
-                    assertEquals("user one is Not member of any group", false, json.get("isMemberOfGroup"));
+                    assertFalse("user one is Not member of any group", json.get("isMemberOfGroup").booleanValue());
                 }
                 else
                 {
-                    assertEquals("full name not correct", USER_TWO, json.get("authority").get("fullName"));
-                    assertEquals("user two is member of a SiteServiceTestGroupA group", true, json.get("isMemberOfGroup"));
+                    assertEquals("full name not correct", USER_TWO, json.get("authority").get("fullName").textValue());
+                    assertTrue("user two is member of a SiteServiceTestGroupA group", json.get("isMemberOfGroup").booleanValue());
                 }
             }
         }
@@ -1285,7 +1288,7 @@ public class SiteServiceTest extends AbstractSiteServiceTest
 
         // Create a new site
         JsonNode result = createSite("myPreset", shortName, "myTitle", "myDescription", SiteVisibility.PUBLIC, 200);
-        assertEquals(SiteVisibility.PUBLIC.toString(), result.get("visibility"));
+        assertEquals(SiteVisibility.PUBLIC.toString(), result.get("visibility").textValue());
 
         // try to change the site visibility as user2
         this.authenticationComponent.setCurrentUser(USER_TWO);
@@ -1303,14 +1306,14 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         // Change the visibility to private
         Response response = sendRequest(new PutRequest(URL_SITES + "/" + shortName, changeVisibility.toString(), "application/json"), 200);
         JsonNode jsonObj = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        assertEquals(SiteVisibility.PRIVATE.toString(), jsonObj.get("visibility"));
+        assertEquals(SiteVisibility.PRIVATE.toString(), jsonObj.get("visibility").textValue());
 
         // Change the visibility to moderated. We want to test if we can find
         // the private site before changing its visibility
         changeVisibility.put("visibility", "MODERATED");
         response = sendRequest(new PutRequest(URL_SITES + "/" + shortName, changeVisibility.toString(), "application/json"), 200);
         jsonObj = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        assertEquals(SiteVisibility.MODERATED.toString(), jsonObj.get("visibility"));
+        assertEquals(SiteVisibility.MODERATED.toString(), jsonObj.get("visibility").textValue());
 
         // Remove user4 from the site-admin group
         this.authenticationComponent.setCurrentUser(AuthenticationUtil.getAdminUserName());
@@ -1342,8 +1345,8 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         Response response = sendRequest(new PostRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, membership.toString(), "application/json"), 200);
         JsonNode jsonObj = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         // Check the result
-        assertEquals(SiteModel.SITE_CONSUMER,  jsonObj.get("role"));
-        assertEquals(USER_TWO,  jsonObj.get("authority").get("userName"));
+        assertEquals(SiteModel.SITE_CONSUMER,  jsonObj.get("role").textValue());
+        assertEquals(USER_TWO,  jsonObj.get("authority").get("userName").textValue());
 
         // try to change the user role as user3
         this.authenticationComponent.setCurrentUser(USER_THREE);
@@ -1356,8 +1359,8 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         response = sendRequest(new PutRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, membership.toString(), "application/json"), 200);
         jsonObj = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         // Check the result
-        assertEquals(SiteModel.SITE_COLLABORATOR,  jsonObj.get("role"));
-        assertEquals(USER_TWO,  jsonObj.get("authority").get("userName"));
+        assertEquals(SiteModel.SITE_COLLABORATOR,  jsonObj.get("role").textValue());
+        assertEquals(USER_TWO,  jsonObj.get("authority").get("userName").textValue());
     }
     
     public void testDeleteMembershipAsSiteAdmin() throws Exception
@@ -1377,8 +1380,8 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         Response response = sendRequest(new PostRequest(URL_SITES + "/" + shortName + URL_MEMBERSHIPS, membership.toString(), "application/json"), 200);
         JsonNode jsonObj = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         // Check the result
-        assertEquals(SiteModel.SITE_CONSUMER, jsonObj.get("role"));
-        assertEquals(USER_TWO, jsonObj.get("authority").get("userName"));
+        assertEquals(SiteModel.SITE_CONSUMER, jsonObj.get("role").textValue());
+        assertEquals(USER_TWO, jsonObj.get("authority").get("userName").textValue());
 
         // try to delete user2 from the site
         this.authenticationComponent.setCurrentUser(USER_THREE);
@@ -1406,7 +1409,7 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         // Get the site
         Response response = sendRequest(new GetRequest(URL_SITES + "/" + shortName), 200);
         JsonNode jsonObj = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        assertEquals(shortName, jsonObj.get("shortName"));
+        assertEquals(shortName, jsonObj.get("shortName").textValue());
 
         // set the current user as site-admin
         this.authenticationComponent.setCurrentUser(USER_FOUR_AS_SITE_ADMIN);
@@ -1426,22 +1429,22 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         // USER_ONE public site
         JsonNode result = createSite("myPreset", user1PublicSiteName, "u1PublicSite", "myDescription",
                     SiteVisibility.PUBLIC, 200);
-        assertEquals(SiteVisibility.PUBLIC.toString(), result.get("visibility"));
+        assertEquals(SiteVisibility.PUBLIC.toString(), result.get("visibility").textValue());
 
         // USER_ONE moderated site
         result = createSite("myPreset", user1ModeratedSiteName, "u1ModeratedSite", "myDescription",
                     SiteVisibility.MODERATED, 200);
-        assertEquals(SiteVisibility.MODERATED.toString(), result.get("visibility"));
+        assertEquals(SiteVisibility.MODERATED.toString(), result.get("visibility").textValue());
 
         // USER_ONE private site
         result = createSite("myPreset", user1PrivateSiteName, "u1PrivateSite", "myDescription", SiteVisibility.PRIVATE,
                     200);
-        assertEquals(SiteVisibility.PRIVATE.toString(), result.get("visibility"));
+        assertEquals(SiteVisibility.PRIVATE.toString(), result.get("visibility").textValue());
 
         this.authenticationComponent.setCurrentUser(USER_TWO);
         // USER_TWO private site
         result = createSite("myPreset", user2PrivateSiteName, "u2PrivateSite", "myDescription", SiteVisibility.PRIVATE, 200);
-        assertEquals(SiteVisibility.PRIVATE.toString(), result.get("visibility"));
+        assertEquals(SiteVisibility.PRIVATE.toString(), result.get("visibility").textValue());
 
         this.authenticationComponent.setCurrentUser(USER_THREE);
         // Note: we'll get 404 rather than 403
@@ -1497,9 +1500,9 @@ public class SiteServiceTest extends AbstractSiteServiceTest
         response = sendRequest(new GetRequest(URL_SITES_ADMIN+"?nf="+siteNamePrefix+"&maxItems=5&skipCount=0"), 200);
         jsonObject = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         paging = jsonObject.get("list").get("pagination");
-        assertEquals("The count must be 1", 1, paging.get("count"));
-        assertEquals("The maxItems must be 5", 5, paging.get("maxItems"));
-        assertEquals("The totalItems must be 1", 1, paging.get("totalItems"));
+        assertEquals("The count must be 1", 1, paging.get("count").intValue());
+        assertEquals("The maxItems must be 5", 5, paging.get("maxItems").intValue());
+        assertEquals("The totalItems must be 1", 1, paging.get("totalItems").intValue());
         assertFalse(paging.get("hasMoreItems").booleanValue());
 
     }
