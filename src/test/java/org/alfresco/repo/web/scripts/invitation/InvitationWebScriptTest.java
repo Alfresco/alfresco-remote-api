@@ -272,7 +272,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
             for (int i = 0; i < data.size(); i++)
             {
                 JsonNode obj = data.get(i);
-                assertEquals("Wrong invitation type", "MODERATED", obj.get("invitationType"));
+                assertEquals("Wrong invitation type", "MODERATED", obj.get("invitationType").textValue());
             }
             JsonNode moderatedATwoInv = getInvitation(moderatedIdAUSER_TWO, data);
             assertNotNull("first is null", moderatedATwoInv);
@@ -417,7 +417,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
             ArrayNode data = (ArrayNode) top.get("data");
             assertEquals(1, data.size());
             JsonNode invitation = data.get(0);
-            assertEquals("Wrong invitation type", "MODERATED", invitation.get("invitationType"));
+            assertEquals("Wrong invitation type", "MODERATED", invitation.get("invitationType").textValue());
             JsonNode moderatedATwoInv = getInvitation(moderatedIdAUSER_TWO, data);
             assertNotNull("first is null", moderatedATwoInv);
         }
@@ -431,7 +431,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
             ArrayNode data = (ArrayNode) top.get("data");
             assertEquals(1, data.size());
             JsonNode invitation = data.get(0);
-            assertEquals("Wrong invitation type", "NOMINATED", invitation.get("invitationType"));
+            assertEquals("Wrong invitation type", "NOMINATED", invitation.get("invitationType").textValue());
             JsonNode nominatedATwoInv = getInvitation(nominatedId, data);
             assertNotNull("first is null", nominatedATwoInv);
         }
@@ -445,7 +445,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
             ArrayNode data = (ArrayNode) top.get("data");
             assertEquals(1, data.size());
             JsonNode invitation = data.get(0);
-            assertEquals("Wrong invitation user", userTwo, invitation.get("inviteeUserName"));
+            assertEquals("Wrong invitation user", userTwo, invitation.get("inviteeUserName").textValue());
             JsonNode moderatedBTwoInv = getInvitation(moderatedIdBUSER_TWO, data);
             assertNotNull("first is null", moderatedBTwoInv);
         }
@@ -459,7 +459,7 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
             ArrayNode data = (ArrayNode) top.get("data");
             assertEquals(1, data.size());
             JsonNode invitation = data.get(0);
-            assertEquals("Wrong invitation user", userThree, invitation.get("inviteeUserName"));
+            assertEquals("Wrong invitation user", userThree, invitation.get("inviteeUserName").textValue());
             JsonNode moderatedBThreeInv = getInvitation(moderatedIdBUSER_THREE, data);
             assertNotNull("first is null", moderatedBThreeInv);
         }
@@ -512,10 +512,10 @@ public class InvitationWebScriptTest extends BaseWebScriptTest
             Map<String, String> expectedProps = userProperties.get(userId);
             JsonNode invitee = invitation.get("invitee");
             assertNotNull(invitee);
-            assertEquals("User name is wrong for user: " + i, userId, invitee.get("userName"));
-            assertEquals("Avatar URI is wrong for user: " + i, expectedProps.get("avatar"), invitee.get("avatar"));
-            assertEquals("First name is wrong!", expectedProps.get("firstName"), invitee.get("firstName"));
-            assertEquals("Last name is wrong!", expectedProps.get("lastName"), invitee.get("lastName"));
+            assertEquals("User name is wrong for user: " + i, userId, invitee.get("userName").textValue());
+            assertEquals("Avatar URI is wrong for user: " + i, expectedProps.get("avatar"), invitee.get("avatar").textValue());
+            assertEquals("First name is wrong!", expectedProps.get("firstName"), invitee.get("firstName").textValue());
+            assertEquals("Last name is wrong!", expectedProps.get("lastName"), invitee.get("lastName").textValue());
         }
     }
 
