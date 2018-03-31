@@ -130,11 +130,17 @@ public class AdminWebScriptTest extends BaseWebScriptTest
         Response response = sendRequest(req, Status.STATUS_OK, guest);
         System.out.println(response.getContentAsString());
         JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
-        Long users = json.has(AbstractAdminWebScript.JSON_KEY_USERS) ? json.get(AbstractAdminWebScript.JSON_KEY_USERS).asLong() : null;
+        Long users = json.has(AbstractAdminWebScript.JSON_KEY_USERS) &&
+                !(json.get(AbstractAdminWebScript.JSON_KEY_USERS) instanceof NullNode) ?
+                json.get(AbstractAdminWebScript.JSON_KEY_USERS).asLong() : null;
         assertEquals("Mismatched users", usage.getUsers(), users);
-        Long documents = json.has(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) ? json.get(AbstractAdminWebScript.JSON_KEY_DOCUMENTS).asLong() : null;
+        Long documents = json.has(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) &&
+                !(json.get(AbstractAdminWebScript.JSON_KEY_DOCUMENTS) instanceof NullNode) ?
+                json.get(AbstractAdminWebScript.JSON_KEY_DOCUMENTS).asLong() : null;
         assertEquals("Mismatched documents", usage.getDocuments(), documents);
-        String licenseMode = json.has(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE) ? json.get(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE).textValue() : null;
+        String licenseMode = json.has(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE) &&
+                !(json.get(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE) instanceof NullNode) ?
+                json.get(AbstractAdminWebScript.JSON_KEY_LICENSE_MODE).textValue() : null;
         assertEquals("Mismatched licenseMode", usage.getLicenseMode().toString(), licenseMode);
         boolean readOnly = json.get(AbstractAdminWebScript.JSON_KEY_READ_ONLY).booleanValue();
         assertEquals("Mismatched readOnly", usage.isReadOnly(), readOnly);
@@ -149,7 +155,9 @@ public class AdminWebScriptTest extends BaseWebScriptTest
         assertEquals("Mismatched licenseValidUntil",
                 (validUntil == null) ? null : validUntil.getTime(),
                 licenseValidUntil);
-        Integer level = json.has(AbstractAdminWebScript.JSON_KEY_LEVEL) ? json.get(AbstractAdminWebScript.JSON_KEY_LEVEL).intValue() : null;
+        Integer level = json.has(AbstractAdminWebScript.JSON_KEY_LEVEL) &&
+                !(json.get(AbstractAdminWebScript.JSON_KEY_LEVEL) instanceof NullNode) ?
+                json.get(AbstractAdminWebScript.JSON_KEY_LEVEL).intValue() : null;
         assertEquals("Mismatched level", checkLevel, level);
         json.get(AbstractAdminWebScript.JSON_KEY_WARNINGS);
         json.get(AbstractAdminWebScript.JSON_KEY_ERRORS);
