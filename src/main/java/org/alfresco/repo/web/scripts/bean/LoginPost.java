@@ -26,6 +26,7 @@
 package org.alfresco.repo.web.scripts.bean;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import java.io.IOException;
 import java.util.Map;
 
@@ -60,8 +61,10 @@ public class LoginPost extends AbstractLoginBean
         try
         {
             JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(c.getContent());
-            String username = json.get("username").textValue();
-            String password = json.get("password").textValue();
+            String username = json.has("username") && !(json.get("username") instanceof NullNode) ?
+                    json.get("username").textValue() : null;
+            String password = json.has("password") && !(json.get("password") instanceof NullNode) ?
+                    json.get("password").textValue() : null;
 
             if (username == null || username.length() == 0)
             {
