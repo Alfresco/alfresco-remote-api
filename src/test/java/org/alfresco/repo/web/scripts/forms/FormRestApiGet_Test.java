@@ -27,6 +27,7 @@ package org.alfresco.repo.web.scripts.forms;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -102,8 +103,8 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
         assertNotNull(jsonParsedObject);
         
         Object dataObj = jsonParsedObject.get("data");
-        assertEquals(JsonNode.class, dataObj.getClass());
-        JsonNode rootDataObject = (JsonNode) dataObj;
+        assertEquals(ObjectNode.class, dataObj.getClass());
+        ObjectNode rootDataObject = (ObjectNode) dataObj;
 
         assertEquals(5, rootDataObject.size());
         String item = rootDataObject.get("item").textValue();
@@ -180,7 +181,7 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
             {
                 if (s.equals("mandatory") || s.equals("protectedField"))
                 {
-                    assertEquals("JSON booleans should be actual booleans.", java.lang.Boolean.class, nextJsonObject.get(s).getClass());
+                    assertEquals("JSON booleans should be actual booleans.", BooleanNode.class, nextJsonObject.get(s).getClass());
                 }
             }
         }
@@ -219,7 +220,7 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
         JsonNode formDataObject = rootDataObject.get("formData");
         assertNotNull("Expected to find cm:name data", formDataObject.get(nameFieldDataKey));
         assertNotNull("Expected to find cm:title data", formDataObject.get(titleFieldDataKey));
-        assertEquals(TEST_FORM_TITLE, formDataObject.get("prop_cm_title"));
+        assertEquals(TEST_FORM_TITLE, formDataObject.get("prop_cm_title").textValue());
     }
     
     public void testJsonForcedFields() throws Exception
@@ -262,6 +263,6 @@ public class FormRestApiGet_Test extends AbstractTestFormRestApi
         JsonNode formDataObject = rootDataObject.get("formData");
         assertNotNull("Expected to find cm:name data", formDataObject.get(nameFieldDataKey));
         assertNotNull("Expected to find cm:title data", formDataObject.get(titleFieldDataKey));
-        assertEquals(TEST_FORM_TITLE, formDataObject.get("prop_cm_title"));
+        assertEquals(TEST_FORM_TITLE, formDataObject.get("prop_cm_title").textValue());
     }
 }
