@@ -1175,7 +1175,7 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
       result = getPosts("mine", Status.STATUS_OK);
       assertEquals(1, result.get("total").intValue());
       assertEquals(1, result.get("itemCount").intValue());
-      assertEquals(1, result.get("items").intValue());
+      assertEquals(1, result.get("items").size());
       assertEquals("SiteTitle1", result.get("items").get(0).get("title").textValue());
       assertEquals(2, result.get("items").get(0).get("replyCount").intValue());
       
@@ -1193,7 +1193,7 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
       result = getPosts("hot", Status.STATUS_OK);
       assertEquals(2, result.get("total").intValue());
       assertEquals(2, result.get("itemCount").intValue());
-      assertEquals(2, result.get("items").intValue());
+      assertEquals(2, result.get("items").size());
       assertEquals("SiteTitle2", result.get("items").get(0).get("title").textValue());
       assertEquals("SiteTitle1", result.get("items").get(1).get("title").textValue());
       assertEquals(3, result.get("items").get(0).get("replyCount").intValue());
@@ -1250,7 +1250,7 @@ public class DiscussionRestApiTest extends BaseWebScriptTest
         assertEquals(1, items.size());
         
         reply = items.get(0);
-        assertEquals("Yes I can", reply.get("content"));
+        assertEquals("Yes I can", reply.get("content").textValue());
 
     }
     
