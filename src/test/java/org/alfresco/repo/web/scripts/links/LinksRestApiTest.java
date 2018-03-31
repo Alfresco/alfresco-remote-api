@@ -452,33 +452,33 @@ public class LinksRestApiTest extends BaseWebScriptTest
        link = getLink(name, Status.STATUS_OK);
        
        assertEquals("Error found " + link.toString(), false, link.has("error"));
-       assertEquals(LINK_TITLE_ONE, link.get("title"));
-       assertEquals("Thing 1", link.get("description"));
-       assertEquals(LINK_URL_ONE, link.get("url"));
-       assertEquals(false, link.get("internal"));
+       assertEquals(LINK_TITLE_ONE, link.get("title").textValue());
+       assertEquals("Thing 1", link.get("description").textValue());
+       assertEquals(LINK_URL_ONE, link.get("url").textValue());
+       assertFalse(link.get("internal").booleanValue());
        assertEquals(0, link.get("tags").size());
-       
-       assertEquals(true, link.has("author"));
+
+       assertTrue(link.has("author"));
        author = link.get("author");
-       assertEquals(USER_ONE, author.get("username"));
-       assertEquals(USERDETAILS_FIRSTNAME, author.get("firstName"));
-       assertEquals(USERDETAILS_LASTNAME, author.get("lastName"));
+       assertEquals(USER_ONE, author.get("username").textValue());
+       assertEquals(USERDETAILS_FIRSTNAME, author.get("firstName").textValue());
+       assertEquals(USERDETAILS_LASTNAME, author.get("lastName").textValue());
        
        // Check the permissions
-       assertEquals(true, link.has("permissions"));
+       assertTrue(link.has("permissions"));
        permissions = link.get("permissions");
-       assertEquals(true, permissions.get("edit"));
-       assertEquals(true, permissions.get("delete"));
+       assertTrue(permissions.get("edit").booleanValue());
+       assertTrue(permissions.get("delete").booleanValue());
        
        // Check the noderef
        NodeRef nodeRef = new NodeRef(link.get("nodeRef").textValue());
-       assertEquals(true, nodeService.exists(nodeRef));
+       assertTrue(nodeService.exists(nodeRef));
        assertEquals(name, nodeService.getProperty(nodeRef, ContentModel.PROP_NAME));
        
        // Check the comments url
        assertEquals(
              "/node/workspace/" + nodeRef.getStoreRef().getIdentifier() + "/" + nodeRef.getId() + "/comments",
-             link.get("commentsUrl"));
+             link.get("commentsUrl").textValue());
        
        // Check the created date: compare two java.util.Date objects.
        assertEquals(
@@ -493,24 +493,24 @@ public class LinksRestApiTest extends BaseWebScriptTest
              true, link.has("message"));
        assertEquals(
              "Incorrect JSON: " + link.toString(), 
-             true, link.get("message").has("updated"));
+             true, link.get("message").textValue().contains("updated"));
        
        
        // Fetch
        link = getLink(name, Status.STATUS_OK);
        
        assertEquals("Error found " + link.toString(), false, link.has("error"));
-       assertEquals(LINK_TITLE_ONE, link.get("title"));
-       assertEquals("More Thing 1", link.get("description"));
-       assertEquals(LINK_URL_ONE, link.get("url"));
-       assertEquals(true, link.get("internal"));
+       assertEquals(LINK_TITLE_ONE, link.get("title").textValue());
+       assertEquals("More Thing 1", link.get("description").textValue());
+       assertEquals(LINK_URL_ONE, link.get("url").textValue());
+       assertEquals(true, link.get("internal").booleanValue());
        assertEquals(0, link.get("tags").size());
        
        assertEquals(true, link.has("author"));
        author = link.get("author");
-       assertEquals(USER_ONE, author.get("username"));
-       assertEquals(USERDETAILS_FIRSTNAME, author.get("firstName"));
-       assertEquals(USERDETAILS_LASTNAME, author.get("lastName"));
+       assertEquals(USER_ONE, author.get("username").textValue());
+       assertEquals(USERDETAILS_FIRSTNAME, author.get("firstName").textValue());
+       assertEquals(USERDETAILS_LASTNAME, author.get("lastName").textValue());
        
        
        // Fetch as a different user, permissions different
@@ -518,17 +518,17 @@ public class LinksRestApiTest extends BaseWebScriptTest
        link = getLink(name, Status.STATUS_OK);
        
        // Check the basics
-       assertEquals(LINK_TITLE_ONE, link.get("title"));
-       assertEquals("More Thing 1", link.get("description"));
-       assertEquals(LINK_URL_ONE, link.get("url"));
-       assertEquals(true, link.get("internal"));
+       assertEquals(LINK_TITLE_ONE, link.get("title").textValue());
+       assertEquals("More Thing 1", link.get("description").textValue());
+       assertEquals(LINK_URL_ONE, link.get("url").textValue());
+       assertEquals(true, link.get("internal").booleanValue());
        assertEquals(0, link.get("tags").size());
        
        // Different user in the site, can edit but not delete
        assertEquals(true, link.has("permissions"));
        permissions = link.get("permissions");
-       assertEquals(true, permissions.get("edit"));
-       assertEquals(false, permissions.get("delete"));
+       assertEquals(true, permissions.get("edit").booleanValue());
+       assertEquals(false, permissions.get("delete").booleanValue());
        
        this.authenticationComponent.setCurrentUser(USER_ONE);
 
@@ -541,7 +541,7 @@ public class LinksRestApiTest extends BaseWebScriptTest
        
        assertEquals(
              "Incorrect JSON: " + link.toString(), 
-             true, link.get("message").has("deleted"));
+             true, link.get("message").textValue().contains("deleted"));
 
        
        // Fetch, will have gone
@@ -618,8 +618,8 @@ public class LinksRestApiTest extends BaseWebScriptTest
        // Initially, there are no events
        links = getLinks(null, null);
        assertEquals("Incorrect JSON: " + links.toString(), true, links.has("total"));
-       assertEquals(0, links.get("total"));
-       assertEquals(0, links.get("itemCount"));
+       assertEquals(0, links.get("total").intValue());
+       assertEquals(0, links.get("itemCount").intValue());
        
        
        // Add two links to get started with
@@ -631,14 +631,14 @@ public class LinksRestApiTest extends BaseWebScriptTest
        
        // Should have two links
        assertEquals("Incorrect JSON: " + links.toString(), true, links.has("total"));
-       assertEquals(2, links.get("total"));
-       assertEquals(2, links.get("itemCount"));
+       assertEquals(2, links.get("total").intValue());
+       assertEquals(2, links.get("itemCount").intValue());
      
        entries = (ArrayNode) links.get("items");
        assertEquals(2, entries.size());
        // Sorted by newest created first
-       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title"));
-       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title"));
+       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title").textValue());
+       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title").textValue());
        
        
        // Add a third, which is internal, and created by the other user
@@ -651,58 +651,58 @@ public class LinksRestApiTest extends BaseWebScriptTest
        
        // Check now, should have three links
        links = getLinks(null, null);
-       assertEquals(3, links.get("total"));
-       assertEquals(3, links.get("itemCount"));
+       assertEquals(3, links.get("total").intValue());
+       assertEquals(3, links.get("itemCount").intValue());
        
        entries = (ArrayNode) links.get("items");
        assertEquals(3, entries.size());
-       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title"));
-       assertEquals(LINK_TITLE_TWO, entries.get(1).get("title"));
-       assertEquals(LINK_TITLE_ONE, entries.get(2).get("title"));
+       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title").textValue());
+       assertEquals(LINK_TITLE_TWO, entries.get(1).get("title").textValue());
+       assertEquals(LINK_TITLE_ONE, entries.get(2).get("title").textValue());
        
        
        // Ask for filtering by user
        links = getLinks(null, USER_ONE);
-       assertEquals(2, links.get("total"));
-       assertEquals(2, links.get("itemCount"));
+       assertEquals(2, links.get("total").intValue());
+       assertEquals(2, links.get("itemCount").intValue());
        
        entries = (ArrayNode) links.get("items");
        assertEquals(2, entries.size());
-       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title"));
-       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title"));
+       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title").textValue());
+       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title").textValue());
        
        links = getLinks(null, USER_TWO);
-       assertEquals(1, links.get("total"));
-       assertEquals(1, links.get("itemCount"));
+       assertEquals(1, links.get("total").intValue());
+       assertEquals(1, links.get("itemCount").intValue());
        
        entries = (ArrayNode) links.get("items");
        assertEquals(1, entries.size());
-       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title"));
+       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title").textValue());
 
        
        // Ask for filtering by recent docs
        links = getLinks("recent", null);
-       assertEquals(3, links.get("total"));
-       assertEquals(3, links.get("itemCount"));
+       assertEquals(3, links.get("total").intValue());
+       assertEquals(3, links.get("itemCount").intValue());
        
        entries = (ArrayNode) links.get("items");
        assertEquals(3, entries.size());
-       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title"));
-       assertEquals(LINK_TITLE_TWO, entries.get(1).get("title"));
-       assertEquals(LINK_TITLE_ONE, entries.get(2).get("title"));
+       assertEquals(LINK_TITLE_THREE, entries.get(0).get("title").textValue());
+       assertEquals(LINK_TITLE_TWO, entries.get(1).get("title").textValue());
+       assertEquals(LINK_TITLE_ONE, entries.get(2).get("title").textValue());
        
        
        // Push the 3rd event back, it'll fall off
        pushLinkCreatedDateBack(name3, 10);
        
        links = getLinks("recent", null);
-       assertEquals(2, links.get("total"));
-       assertEquals(2, links.get("itemCount"));
+       assertEquals(2, links.get("total").intValue());
+       assertEquals(2, links.get("itemCount").intValue());
        
        entries = (ArrayNode) links.get("items");
        assertEquals(2, entries.size());
-       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title"));
-       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title"));
+       assertEquals(LINK_TITLE_TWO, entries.get(0).get("title").textValue());
+       assertEquals(LINK_TITLE_ONE, entries.get(1).get("title").textValue());
        
        
        
@@ -711,15 +711,15 @@ public class LinksRestApiTest extends BaseWebScriptTest
        createLink(LINK_TITLE_THREE+"z", "Thing 5", LINK_URL_THREE, true, Status.STATUS_OK);
        
        links = getLinks(null, null);
-       assertEquals(5, links.get("total"));
-       assertEquals(4, links.get("itemCount"));
+       assertEquals(5, links.get("total").intValue());
+       assertEquals(4, links.get("itemCount").intValue());
        
        entries = (ArrayNode) links.get("items");
        assertEquals(4, entries.size());
-       assertEquals(LINK_TITLE_THREE+"z", entries.get(0).get("title"));
-       assertEquals(LINK_TITLE_THREE+"a", entries.get(1).get("title"));
-       assertEquals(LINK_TITLE_TWO, entries.get(2).get("title"));
-       assertEquals(LINK_TITLE_ONE, entries.get(3).get("title"));
+       assertEquals(LINK_TITLE_THREE+"z", entries.get(0).get("title").textValue());
+       assertEquals(LINK_TITLE_THREE+"a", entries.get(1).get("title").textValue());
+       assertEquals(LINK_TITLE_TWO, entries.get(2).get("title").textValue());
+       assertEquals(LINK_TITLE_ONE, entries.get(3).get("title").textValue());
        // THREE is now the oldest, as we pushed it back in time, so it's on page two
        
        
@@ -784,7 +784,8 @@ public class LinksRestApiTest extends BaseWebScriptTest
         Response response = sendRequest(new GetRequest(url), 200);
         JsonNode result = AlfrescoDefaultObjectMapper.getReader().readTree(response.getContentAsString());
         
-        assertTrue("The user sould have permission to create a new link.", result.get("metadata").get("linkPermissions").get("create").booleanValue());
+        assertTrue("The user should have permission to create a new link.",
+                Boolean.valueOf(result.get("metadata").get("linkPermissions").get("create").textValue()));
     }
 
     public void testCommentLink() throws Exception
