@@ -84,11 +84,12 @@ public class FileFolderLoaderPost extends AbstractWebScript implements Applicati
         try
         {
             JsonNode json = AlfrescoDefaultObjectMapper.getReader().readTree(req.getContent().getContent());
-            folderPath = json.get(KEY_FOLDER_PATH).textValue();
-            if (folderPath == null)
+            JsonNode folderPathJson = json.get(KEY_FOLDER_PATH);
+            if (folderPathJson == null)
             {
                 throw new WebScriptException(Status.STATUS_BAD_REQUEST, KEY_FOLDER_PATH + " not supplied.");
             }
+            folderPath = folderPathJson.textValue();
             int fileCount = 100;
             if (json.has(KEY_FILE_COUNT))
             {
