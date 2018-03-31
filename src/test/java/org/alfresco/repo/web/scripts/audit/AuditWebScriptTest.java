@@ -307,7 +307,7 @@ public class AuditWebScriptTest extends BaseWebScriptTest
         assertEquals("Incorrect number of entries reported", 1, jsonEntries.size());
 
         JsonNode values =  jsonEntries.get(0).get(AbstractAuditWebScript.JSON_KEY_ENTRY_VALUES);
-        assertTrue("Audit entry was not found", values.get(0).toString().contains("query==cm:name:" + filename));
+        assertTrue("Audit entry was not found", values.get("/searchaudit/queryX/searchParametersX").textValue().contains("query==cm:name:" + filename));
 
         // clear audit entries for the application
         auditService.clearAudit(APP_SEARCHTEST_NAME, null, null);
