@@ -612,11 +612,11 @@ public class InviteServiceTest extends BaseWebScriptTest
         JsonNode data = result.get("data");
         JsonNode inviteeData = data.get("invitee");
         
-        assertEquals(INVITEE_FIRSTNAME, inviteeData.get("firstName"));
-        assertEquals(INVITEE_LASTNAME, inviteeData.get("lastName"));
+        assertEquals(INVITEE_FIRSTNAME, inviteeData.get("firstName").textValue());
+        assertEquals(INVITEE_LASTNAME, inviteeData.get("lastName").textValue());
         assertEquals(this.inviteeEmailAddrs.get(this.inviteeEmailAddrs.size() - 1),
-                     inviteeData.get("email"));
-        assertEquals(SITE_SHORT_NAME_INVITE_1, data.get("resourceName"));
+                     inviteeData.get("email").textValue());
+        assertEquals(SITE_SHORT_NAME_INVITE_1, data.get("resourceName").textValue());
     }
 
     public void testStartInviteWhenInviteeIsAlreadyMemberOfSite()
@@ -860,7 +860,7 @@ public class InviteServiceTest extends BaseWebScriptTest
 
         JsonNode inviteJSONObj = getInvitesResult.get("invites").get(0);
 
-        assertEquals(inviteId, inviteJSONObj.get("inviteId"));
+        assertEquals(inviteId, inviteJSONObj.get("inviteId").textValue());
     }
 
     public void testGetInvitesByInviterUserName() throws Exception
@@ -877,7 +877,7 @@ public class InviteServiceTest extends BaseWebScriptTest
         assertEquals(true, getInvitesResult.size() > 0);
 
         JsonNode inviteJSONObj = getInvitesResult.get("invites").get(0);
-        assertEquals(USER_INVITER, inviteJSONObj.get("inviter").get("userName"));
+        assertEquals(USER_INVITER, inviteJSONObj.get("inviter").get("userName").textValue());
     }
 
     public void testGetInvitesByInviteeUserName() throws Exception
@@ -901,7 +901,7 @@ public class InviteServiceTest extends BaseWebScriptTest
 
         JsonNode inviteJSONObj = getInvitesResult.get("invites").get(0);
 
-        assertEquals(inviteeUserName, inviteJSONObj.get("invitee").get("userName"));
+        assertEquals(inviteeUserName, inviteJSONObj.get("invitee").get("userName").textValue());
     }
 
     public void testGetInvitesBySiteShortName() throws Exception
@@ -924,7 +924,7 @@ public class InviteServiceTest extends BaseWebScriptTest
 
         JsonNode inviteJSONObj = getInvitesResult.get("invites").get(0);
 
-        assertEquals(siteShortName, inviteJSONObj.get("site").get("shortName"));
+        assertEquals(siteShortName, inviteJSONObj.get("site").get("shortName").textValue());
     }
 
     public void testStartInviteForbiddenWhenInviterNotSiteManager() throws Exception
