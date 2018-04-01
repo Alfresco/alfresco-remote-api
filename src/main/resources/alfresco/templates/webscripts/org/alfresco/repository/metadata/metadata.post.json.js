@@ -23,7 +23,7 @@ function main()
    // Set passed-in properties
    if (json.has("properties"))
    {
-      var properties = jsonToObject("properties");
+      var properties = jsonUtils.toObject(json.get("properties"));
       for (property in properties)
       {
          node.properties[property] = properties[property];
@@ -33,7 +33,7 @@ function main()
    // Set passed-in mimetype
    if (json.has("mimetype"))
    {
-      node.mimetype = json.get("mimetype");
+      node.mimetype = json.get("mimetype").textValue();
    }
    
    // Set passed-in tags
@@ -45,7 +45,7 @@ function main()
       
       for (var t = 0; t < jsonTags.length(); t++)
       {
-         tags.push(jsonTags.get(t));
+         tags.push(jsonTags.get(t).textValue());
       }
 
       if (tags.length > 0)
@@ -58,29 +58,4 @@ function main()
       }
    }
    node.save();
-}
-
-function jsonToObject(p_name)
-{
-   var object = {};
-   var jsonObj = json.get(p_name);
-   var names = jsonObj.names();
-   var name;
-   for (var i = 0, j = names.length(); i < j; i++)
-   {
-      name = names.get(i);
-      object[name] = jsonObj.get(name);
-   }
-   return object;
-}
-
-function jsonToArray(p_name)
-{
-   var array = [];
-   var jsonArray = json.get(p_name);
-   for (var i = 0, j = jsonArray.length(); i < j; i++)
-   {
-      array.push(jsonArray.get(i));
-   }
-   return array;
 }

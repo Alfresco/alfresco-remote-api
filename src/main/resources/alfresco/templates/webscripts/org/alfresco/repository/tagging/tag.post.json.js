@@ -4,12 +4,12 @@ function main()
    var store = url.templateArgs.store_type + "://" + url.templateArgs.store_id;
 
    // Get the details of the tag
-   if (json.has("name") == false || json.get("name").length == 0)
+   if (json.has("name") == false || json.get("name").textValue().length == 0)
    {
       status.setCode(status.STATUS_BAD_REQUEST, "Name missing when creating tag");
       return;
    }
-   var tagName = json.get("name");
+   var tagName = json.get("name").textValue();
    
    // See if the tag already exists
    var tag = taggingService.getTag(store, tagName),

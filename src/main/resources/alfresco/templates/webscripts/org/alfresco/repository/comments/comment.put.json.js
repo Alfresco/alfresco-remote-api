@@ -9,9 +9,9 @@ function updateComment(node)
    var title = "";
    if (json.has("title"))
    {
-      title = json.get("title");
+      title = json.get("title").textValue();
    }
-   var content = json.get("content");
+   var content = json.get("content").textValue();
    
    // update the topic title
    node.properties.title = title;
@@ -54,12 +54,12 @@ function main()
       }
       var data =
       {
-         title: json.get("itemTitle"),
-         page: json.get("page") + (strParams != "" ? "?" + strParams.substring(0, strParams.length - 1) : ""),
+         title: json.get("itemTitle").textValue(),
+         page: json.get("page").asInt() + (strParams != "" ? "?" + strParams.substring(0, strParams.length - 1) : ""),
          nodeRef: node.getNodeRef()
       }
 
-      activities.postActivity("org.alfresco.comments.comment-updated", json.get("site"), "comments", jsonUtils.toJSONString(data));
+      activities.postActivity("org.alfresco.comments.comment-updated", json.get("site").textValue(), "comments", jsonUtils.toJSONString(data));
    }
 }
 

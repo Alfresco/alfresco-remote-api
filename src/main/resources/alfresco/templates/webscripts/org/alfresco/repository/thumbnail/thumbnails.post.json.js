@@ -21,9 +21,9 @@ function main()
    
    // Get the thumbnail name from the JSON content 
    var thumbnailName = null;
-   if (json.isNull("thumbnailName") == false)
+   if (json.has("thumbnailName"))
    {
-      thumbnailName = json.get("thumbnailName");
+      thumbnailName = json.get("thumbnailName").textValue();
    }
    
    // 400 if no thumbnail name found

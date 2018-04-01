@@ -33,7 +33,7 @@ function main()
    
    // Try and retrieve the name of the new category
    var name = json.get(PROP_NAME);
-   if (name == null || name.length === 0)
+   if (name == null || name.textValue().length === 0)
    {
       status.setCode(status.STATUS_BAD_REQUEST, "Could not create category, because 'prop_cm_name' parameter is missing from json request.");
       return;
@@ -58,7 +58,7 @@ function main()
       var aspect = DEFAULT_ASPECT;
       if (json.has(PROP_ASPECT) == true)
       {
-         aspect = json.get(PROP_ASPECT);
+         aspect = json.get(PROP_ASPECT).textValue();
       }
    }
     

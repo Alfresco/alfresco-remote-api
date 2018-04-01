@@ -7,12 +7,16 @@ function main()
 
    var nodeRef = json.get("nodeRef");
    var version = json.get("version");
-   var majorVersion = json.get("majorVersion") == "true";
-   var description = json.get("description");
+
 
    // allow for content to be loaded from id
    if (nodeRef != null && version != null)
    {
+      nodeRef = nodeRef.textValue();
+      version = version.textValue();
+      var majorVersion = json.get("majorVersion").booleanValue() == "true";
+      var description = json.get("description").textValue();
+
       var workingCopy = search.findNode(nodeRef);
       if (workingCopy != null)
       {

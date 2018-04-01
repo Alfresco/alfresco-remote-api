@@ -19,7 +19,7 @@ function main()
    
    if (json.has("displayName") == true)
    {
-      displayName = json.get("displayName");
+      displayName = json.get("displayName").textValue();
    }
    
    model.group = groups.createRootGroup(shortName, displayName);

@@ -17,12 +17,12 @@ function main()
    var jsonItems = json.get("items"),
       itemValueType = "nodeRef",
       itemValueTypeHint = "",
-      numItems = jsonItems.length(),
+      numItems = jsonItems.size(),
       item, result;
    
    if (json.has("itemValueType"))
    {
-      var jsonValueTypes = json.get("itemValueType").split(";");
+      var jsonValueTypes = json.get("itemValueType").textValue().split(";");
       itemValueType = jsonValueTypes[0];
       itemValueTypeHint = (jsonValueTypes.length > 1) ? jsonValueTypes[1] : "";
    }
@@ -31,12 +31,12 @@ function main()
    {
       item = jsonItems.get(count);
       var container = null;
-      if (item != "")
+      if (item.textValue() != "")
       {
          result = null;
          if (itemValueType == "nodeRef")
          {
-            result = search.findNode(item);
+            result = search.findNode(item.textValue());
             if (result)
             {
                var qnamePaths = result.qnamePath.split("/");
@@ -48,7 +48,7 @@ function main()
          }
          else if (itemValueType == "xpath")
          {
-            result = search.xpathSearch(itemValueTypeHint.replace("%VALUE%", search.ISO9075Encode(item)))[0];
+            result = search.xpathSearch(itemValueTypeHint.replace("%VALUE%", search.ISO9075Encode(item.textValue())))[0];
          }
          
          if (result != null)

@@ -26,7 +26,7 @@ function main()
    
    // Try and retrieve the name of the new category
    var name = json.get(PROP_NAME);       
-   if (name == null || name.length === 0)
+   if (name == null || name.textValue().length === 0)
    {
       tatus.setCode(status.STATUS_BAD_REQUEST, "Could not update category, because 'name' parameter is missing from json request.");
       return;

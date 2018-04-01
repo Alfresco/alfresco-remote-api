@@ -17,17 +17,19 @@ function main()
       status.setCode(status.STATUS_BAD_REQUEST, "The role has not been set.");
       return;
    }
+   role = role.textValue();
    
    // Are we adding a person?
    if (json.has("person"))
    {
       // Get the user name
-      var userName = json.getJSONObject("person").get("userName");
+      var userName = json.get("person").get("userName");
       if (userName == null)
       {
          status.setCode(status.STATUS_BAD_REQUEST, "The user name has not been set.");
          return;
       }
+      userName = userName.textValue();
       var person = people.getPerson(userName);
       if (person == null)
       {
@@ -48,12 +50,13 @@ function main()
    if (json.has("group"))
    {
       // Get the user name
-      var groupName = json.getJSONObject("group").get("fullName");
+      var groupName = json.get("group").get("fullName");
       if (groupName == null)
       {
          status.setCode(status.STATUS_BAD_REQUEST, "The fullName for the group has not been set.");
          return;
       }
+      groupName = groupName.textValue();
       
       if (groupName.match("^GROUP_") == null)
       {
@@ -80,13 +83,13 @@ function main()
    if (json.has("authority"))
    {
       // Get the user name
-      var authorityName = json.getJSONObject("authority").get("fullName");
+      var authorityName = json.get("authority").get("fullName");
       if (authorityName == null)
       {
          status.setCode(status.STATUS_BAD_REQUEST, "The fullName for the authority has not been set.");
          return;
       }
-      
+      authorityName = authorityName.textValue();
       var authority;
       if (authorityName.match("^GROUP_") != null)
       {

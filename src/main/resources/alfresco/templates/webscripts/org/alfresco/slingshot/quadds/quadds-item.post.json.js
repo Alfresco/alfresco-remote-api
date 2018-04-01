@@ -69,7 +69,7 @@ function main() {
       // Create the file...
       try
       {
-         var item = QuADDS_Folder.createNode(json.get("name"), "cm:content");
+         var item = QuADDS_Folder.createNode(json.get("name").textValue(), "cm:content");
          if (item == null)
          {
             // Couldn't create the item for some reason...

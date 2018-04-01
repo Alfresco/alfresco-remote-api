@@ -8,10 +8,10 @@ function main()
     // as the current use case is very limited.    
     if (json.has("shortName") == true)
     {
-        var shortNameQuery = json.getJSONObject("shortName");
+        var shortNameQuery = json.get("shortName");
         
         // Get the matching mode required (default is "exact")
-        var matchMode = shortNameQuery.get("match")
+        var matchMode = shortNameQuery.get("match").textValue()
         var isMembershipMode = (matchMode == "exact-membership");
 
         // The purpose of the "shortname" mode is to just make sure that the shortname is valid
@@ -22,13 +22,13 @@ function main()
         // Get each short name and put the associated site in the list
         if (shortNameQuery.has("values") == true)
         {
-            var values = shortNameQuery.getJSONArray("values");
-            var len = values.length();
+            var values = shortNameQuery.get("values");
+            var len = values.size();
             var username = person.properties.userName;
             sites = new Array(len);
             for (var index=0; index<len; index++)
             {
-               var shortName = values.getString(index);
+               var shortName = values.get(index).textValue();
                var site = siteService.getSite(shortName);
                if (site != null)
                {

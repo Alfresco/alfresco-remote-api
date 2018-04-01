@@ -77,7 +77,7 @@ function main()
    }
 
    // fetch and execute the action
-   var action = json.get("action");
+   var action = json.get("action").textValue();
    executeAction(node, action);
 
    // get the updated data for the blog post

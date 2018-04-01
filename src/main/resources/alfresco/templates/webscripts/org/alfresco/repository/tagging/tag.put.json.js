@@ -31,7 +31,7 @@ function main()
       {
          // Get the new name for the tag
          var newTagName;
-         if (json.has("name") == false || json.get("name").length() == 0)
+         if (json.has("name") == false || json.get("name").textValue().length() == 0)
          {
             // Empty new name
             status.code = 400;
@@ -40,7 +40,7 @@ function main()
          } 
          else 
          {
-            newTagName = json.get("name").toLowerCase();
+            newTagName = json.get("name").textValue().toLowerCase();
             if (newTagName == tagName) 
             {
                // Duplciate name

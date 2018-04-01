@@ -14,8 +14,8 @@ function main()
     }
 
     // extract required data from request body
-    var itemKind = json.get("itemKind");
-    var itemId = json.get("itemId");
+    var itemKind = json.get("itemKind").textValue();
+    var itemId = json.get("itemId").textValue();
        
     if (logger.isLoggingEnabled())
     {
@@ -32,10 +32,10 @@ function main()
        // convert the JSONArray object into a native JavaScript array
        fields = [];
        var jsonFields = json.get("fields");
-       var numFields = jsonFields.length();
+       var numFields = jsonFields.size();
        for (count = 0; count < numFields; count++)
        {
-          fields.push(jsonFields.get(count));
+          fields.push(jsonUtils.toObject(jsonFields.get(count)));
        }
        
        if (logger.isLoggingEnabled())
@@ -48,10 +48,10 @@ function main()
         // convert the JSONArray object into a native JavaScript array
         forcedFields = [];
         var jsonForcedFields = json.get("force");
-        var numForcedFields = jsonForcedFields.length();
+        var numForcedFields = jsonForcedFields.size();
         for (count = 0; count < numForcedFields; count++)
         {
-           forcedFields.push(jsonForcedFields.get(count));
+           forcedFields.push(jsonUtils.toObject(jsonForcedFields.get(count)));
         }
         
         if (logger.isLoggingEnabled())

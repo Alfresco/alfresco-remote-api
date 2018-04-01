@@ -17,7 +17,7 @@ function main()
    
    if (json.has("displayName") == true)
    {
-      group.setDisplayName(json.get("displayName"));
+      group.setDisplayName(json.get("displayName").textValue());
    }
    
    model.group = group;

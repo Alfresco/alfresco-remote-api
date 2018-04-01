@@ -8,12 +8,12 @@ function main()
    }
    
    // Get the details of the site
-   if (json.has("shortName") == false || json.get("shortName").length == 0)
+   if (json.has("shortName") == false || json.get("shortName").textValue().length == 0)
    {
       status.setCode(status.STATUS_BAD_REQUEST, "Short name missing when creating site");
       return;
    }
-   var shortName = json.get("shortName");
+   var shortName = json.get("shortName").textValue();
    
    // See if the shortName is available
    if (siteService.hasSite(shortName))
@@ -28,40 +28,40 @@ function main()
       return;
    }
    
-   if (json.has("sitePreset") == false || json.get("sitePreset").length == 0)
+   if (json.has("sitePreset") == false || json.get("sitePreset").textValue().length == 0)
    {
       status.setCode(status.STATUS_BAD_REQUEST, "Site preset missing when creating site");
       return;
    }
-   var sitePreset = json.get("sitePreset");
+   var sitePreset = json.get("sitePreset").textValue();
    
    var title = null;
    if (json.has("title"))
    {
-      title = json.get("title");
+      title = json.get("title").textValue();
    }
       
    var description = null;
    if (json.has("description"))
    {
-      description = json.get("description");
+      description = json.get("description").textValue();
    }
    
    var sitetype = null;
    if (json.has("type") == true)
    {
-      sitetype = json.get("type");
+      sitetype = json.get("type").textValue();
    }
    
    // Use the visibility flag before the isPublic flag
    var visibility = siteService.PUBLIC_SITE;
    if (json.has("visibility"))
    {
-      visibility = json.get("visibility");
+      visibility = json.get("visibility").textValue();
    }
    else if (json.has("isPublic"))
    {
-      var isPublic = json.getBoolean("isPublic");
+      var isPublic = json.get("isPublic").booleanValue();
       if (isPublic == true)
       {
          visibility = siteService.PUBLIC_SITE;

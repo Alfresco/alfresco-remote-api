@@ -29,7 +29,7 @@ function main()
     }
    
     var repoFormData = new Packages.org.alfresco.repo.forms.FormData();
-    var jsonKeys = json.keys();
+    var jsonKeys = json.fieldNames();
     for ( ; jsonKeys.hasNext(); )
     {
         var nextKey = jsonKeys.next();
@@ -37,7 +37,7 @@ function main()
         if (nextKey == "alf_redirect")
         {
            // store redirect url in model
-           model.redirect = json.get(nextKey);
+           model.redirect = json.get(nextKey).textValue();
            
            if (logger.isLoggingEnabled())
            {
@@ -47,7 +47,7 @@ function main()
         else
         {
            // add field to form data
-           repoFormData.addFieldData(nextKey, json.get(nextKey));
+           repoFormData.addFieldData(nextKey, jsonUtils.toObject(json.get(nextKey)));
         }
     }
 

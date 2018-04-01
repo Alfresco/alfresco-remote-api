@@ -9,7 +9,7 @@ function updateBlogPostDraftMode(postNode)
    // make sure the user doesn't try to put a non-draft
    // post back into draft node
    var currentDraft = (postNode.properties[PROP_PUBLISHED] == undefined);
-   var isDraft = json.has("draft") && json.get("draft").toString() == "true";
+   var isDraft = json.has("draft") && json.get("draft").booleanValue() == "true";
    
    // requested draft, previously non-draft: throw an exception
    if (isDraft && !currentDraft)
@@ -34,12 +34,12 @@ function updateBlogPost(postNode)
    var title = "";
    if (json.has("title"))
    {
-      title = json.get("title");
+      title = json.get("title").textValue();
    }
    var content = "";
    if (json.has("content"))
    {
-      content = json.get("content");
+      content = json.get("content").textValue();
    }
    var tags = [];
    if (json.has("tags"))
@@ -48,7 +48,7 @@ function updateBlogPost(postNode)
       var tmp = json.get("tags");
       for (var x=0; x < tmp.length(); x++)
       {
-          tags.push(tmp.get(x));
+          tags.push(tmp.get(x).textValue());
       }
    }
    
@@ -82,9 +82,9 @@ function main()
       var data =
       {
          title: model.item.node.properties.title,
-         page: json.get("page") + "?postId=" + model.item.node.properties.name
+         page: json.get("page").textValue() + "?postId=" + model.item.node.properties.name
       }
-      activities.postActivity("org.alfresco.blog.post-updated", json.get("site"), "blog", jsonUtils.toJSONString(data));
+      activities.postActivity("org.alfresco.blog.post-updated", json.get("site").textValue(), "blog", jsonUtils.toJSONString(data));
    }
 }
 

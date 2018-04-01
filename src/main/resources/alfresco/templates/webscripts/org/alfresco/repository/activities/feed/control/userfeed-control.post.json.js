@@ -4,14 +4,14 @@ function main()
 	var siteId = null;
 	var appToolId = null;
 	
-	if (! json.isNull("siteId"))
+	if (json.has("siteId"))
 	{
-	   siteId = json.get("siteId");
+	   siteId = json.get("siteId").textValue();
 	}
 	
-	if (! json.isNull("appToolId"))
+	if (json.has("appToolId"))
     {
-        appToolId = json.get("appToolId");
+        appToolId = json.get("appToolId").textValue();
     }
 	
 	if ((siteId == null || siteId.length == 0) &&

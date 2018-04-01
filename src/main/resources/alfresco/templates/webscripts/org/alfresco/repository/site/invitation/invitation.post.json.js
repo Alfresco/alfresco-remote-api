@@ -22,7 +22,7 @@ function main()
     }
    
    // Get the role 
-    var invitationType = json.get("invitationType");
+    var invitationType = json.get("invitationType").textValue();
     if (invitationType == null || invitationType.length == 0)
     {
         status.setCode(status.STATUS_BAD_REQUEST, "The invitationType is null or empty.");
@@ -57,9 +57,9 @@ function main()
                 return;
             }
 
-            var inviteeRoleName = json.get("inviteeRoleName");
-            var inviteeUserName = json.get("inviteeUserName");
-            var inviteeComments = json.get("inviteeComments");
+            var inviteeRoleName = json.get("inviteeRoleName").textValue();
+            var inviteeUserName = json.get("inviteeUserName").textValue();
+            var inviteeComments = json.get("inviteeComments").textValue();
 
             invitation = site.inviteModerated(inviteeComments, inviteeUserName, inviteeRoleName);
         }
@@ -72,14 +72,14 @@ function main()
                 status.setCode(status.STATUS_BAD_REQUEST, "The inviteeRoleName has not been set.");
                 return;
             }
-            var inviteeRoleName = json.get("inviteeRoleName");
-            var acceptUrl = json.get("acceptURL");
-            var rejectUrl = json.get("rejectURL");
+            var inviteeRoleName = json.get("inviteeRoleName").textValue();
+            var acceptUrl = json.get("acceptURL").textValue();
+            var rejectUrl = json.get("rejectURL").textValue();
 
             // Get the optional properties
-            if (json.has("inviteeUserName") && json.get("inviteeUserName") && json.get("inviteeUserName").trim() != "")
+            if (json.has("inviteeUserName") && json.get("inviteeUserName") && json.get("inviteeUserName").textValue().trim() != "")
             {
-                invitation = site.inviteNominated(json.get("inviteeUserName"), inviteeRoleName, acceptUrl, rejectUrl);
+                invitation = site.inviteNominated(json.get("inviteeUserName").textValue(), inviteeRoleName, acceptUrl, rejectUrl);
             } else
             {
                 // Get mandatory properties
@@ -99,9 +99,9 @@ function main()
                     return;
                 }
 
-                var inviteeFirstName = json.get("inviteeFirstName");
-                var inviteeLastName = json.get("inviteeLastName");
-                var inviteeEmail = json.get("inviteeEmail");
+                var inviteeFirstName = json.get("inviteeFirstName").textValue();
+                var inviteeLastName = json.get("inviteeLastName").textValue();
+                var inviteeEmail = json.get("inviteeEmail").textValue();
                 invitation = site.inviteNominated(inviteeFirstName, inviteeLastName, inviteeEmail, inviteeRoleName, acceptUrl,
                         rejectUrl);
             }
@@ -131,7 +131,7 @@ function main()
 
 function isNotDefinedOrEmpty(json, key)
 {
-    return (!json.has(key) || (json.get(key) == null || json.get(key).trim().length() == 0))
+    return (!json.has(key) || (json.get(key) == null || json.get(key).textValue().trim().length() == 0))
 }
 
 main();
