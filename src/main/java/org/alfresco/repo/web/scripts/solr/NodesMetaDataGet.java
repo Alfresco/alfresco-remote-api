@@ -281,8 +281,10 @@ public class NodesMetaDataGet extends DeclarativeWebScript
                 	StringBuilder ancestorPath = new StringBuilder();
                     ObjectNode o = AlfrescoDefaultObjectMapper.createObjectNode();
                     o.put("path", solrSerializer.serializeValue(String.class, pair.getFirst()));
-                    o.put("qname", solrSerializer.serializeValue(String.class, pair.getSecond()));
-                   
+                    if (pair.getSecond() != null)
+                    {
+                        o.put("qname", solrSerializer.serializeValue(String.class, pair.getSecond()));
+                    }
                     
                     for (NodeRef ancestor : getAncestors(pair.getFirst()))
                     {
