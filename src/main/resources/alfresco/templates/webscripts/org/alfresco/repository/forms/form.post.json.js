@@ -47,7 +47,7 @@ function main()
         else
         {
            // add field to form data
-           repoFormData.addFieldData(nextKey, jsonUtils.toObject(json.get(nextKey)));
+           repoFormData.addFieldData(nextKey, json.get(nextKey));
         }
     }
 

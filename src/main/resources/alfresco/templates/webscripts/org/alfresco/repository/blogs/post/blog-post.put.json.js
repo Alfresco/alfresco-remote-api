@@ -9,7 +9,7 @@ function updateBlogPostDraftMode(postNode)
    // make sure the user doesn't try to put a non-draft
    // post back into draft node
    var currentDraft = (postNode.properties[PROP_PUBLISHED] == undefined);
-   var isDraft = json.has("draft") && json.get("draft").booleanValue() == "true";
+   var isDraft = json.has("draft") && json.get("draft").asText() == "true";
    
    // requested draft, previously non-draft: throw an exception
    if (isDraft && !currentDraft)

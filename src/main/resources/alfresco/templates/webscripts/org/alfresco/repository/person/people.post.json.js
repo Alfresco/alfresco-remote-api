@@ -4,19 +4,22 @@ function main()
    // Get the person details
    //
    
-   if (!(json.has("userName")) || (json.get("userName").textValue().length() == 0))
+   if (!(json.has("userName")) || (json.get("userName").asText() == "null")
+       || (json.get("userName").textValue().length() == 0))
    {
       status.setCode(status.STATUS_BAD_REQUEST, "User name missing when creating person");
       return;
    }
    
-   if (!(json.has("firstName")) || (json.get("firstName").textValue().length() == 0))
+   if (!(json.has("firstName")) || (json.get("firstName").asText() == "null")
+       || (json.get("firstName").textValue().length() == 0))
    {
       status.setCode(status.STATUS_BAD_REQUEST, "First name missing when creating person");
       return;
    }
    
-   if (!(json.has("email")) || (json.get("email").textValue().length() == 0))
+   if (!(json.has("email")) || (json.get("email").asText() == "null")
+       || (json.get("email").textValue().length() == 0))
    {
       status.setCode(status.STATUS_BAD_REQUEST, "Email missing when creating person");
       return;

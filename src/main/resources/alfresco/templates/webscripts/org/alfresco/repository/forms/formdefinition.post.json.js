@@ -35,7 +35,7 @@ function main()
        var numFields = jsonFields.size();
        for (count = 0; count < numFields; count++)
        {
-          fields.push(jsonUtils.toObject(jsonFields.get(count)));
+          fields.push(jsonFields.get(count).asText());
        }
        
        if (logger.isLoggingEnabled())
@@ -51,7 +51,7 @@ function main()
         var numForcedFields = jsonForcedFields.size();
         for (count = 0; count < numForcedFields; count++)
         {
-           forcedFields.push(jsonUtils.toObject(jsonForcedFields.get(count)));
+           forcedFields.push(jsonForcedFields.get(count).asText());
         }
         
         if (logger.isLoggingEnabled())
