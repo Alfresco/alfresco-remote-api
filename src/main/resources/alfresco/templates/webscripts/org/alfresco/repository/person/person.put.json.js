@@ -92,7 +92,7 @@ function main()
    // Enable or disable account? - note that only Admin can set this
    if (json.has("disableAccount"))
    {
-      var disableAccount = (json.get("disableAccount").booleanVlue() == true);
+      var disableAccount = (json.get("disableAccount").booleanValue() == true);
       if (disableAccount && people.isAccountEnabled(userName))
       {
          people.disableAccount(userName);
