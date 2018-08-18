@@ -29,6 +29,7 @@ package org.alfresco.rest.api.impl;
 import org.alfresco.heartbeat.RenditionsDataCollector;
 import org.alfresco.model.ContentModel;
 import org.alfresco.query.PagingResults;
+import org.alfresco.repo.rendition2.RenditionService2;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.repo.thumbnail.ThumbnailDefinition;
 import org.alfresco.repo.thumbnail.ThumbnailHelper;
@@ -291,36 +292,6 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
         final NodeRef sourceNodeRef = validateNode(nodeRef.getStoreRef(), nodeRef.getId());
 
         renditionService2.render(sourceNodeRef, rendition.getId());
-
-//        final NodeRef renditionNodeRef = getRenditionByName(sourceNodeRef, rendition.getId(), parameters);
-//        if (renditionNodeRef != null)
-//        {
-//            throw new ConstraintViolatedException(rendition.getId() + " rendition already exists.");
-//        }
-//
-//        // Use the thumbnail registry to get the details of the thumbnail
-//        ThumbnailRegistry registry = thumbnailService.getThumbnailRegistry();
-//        ThumbnailDefinition thumbnailDefinition = registry.getThumbnailDefinition(rendition.getId());
-//        if (thumbnailDefinition == null)
-//        {
-//            throw new NotFoundException(rendition.getId() + " is not registered.");
-//        }
-//
-//        ContentData contentData = getContentData(sourceNodeRef, true);
-//        // Check if anything is currently available to generate thumbnails for the specified mimeType
-//        String sourceMimetype = contentData.getMimetype();
-//        if (!registry.isThumbnailDefinitionAvailable(contentData.getContentUrl(), sourceMimetype, contentData.getSize(), sourceNodeRef,
-//                thumbnailDefinition))
-//        {
-//            throw new InvalidArgumentException("Unable to create thumbnail '" + thumbnailDefinition.getName() + "' for " +
-//                    sourceMimetype + " as no transformer is currently available.");
-//        }
-//
-//        Action action = ThumbnailHelper.createCreateThumbnailAction(thumbnailDefinition, serviceRegistry);
-//        renditionsDataCollector.recordRenditionRequest(thumbnailDefinition, sourceMimetype);
-//
-//        // Create thumbnail - or else queue for async creation
-//        actionService.executeAction(action, sourceNodeRef, true, executeAsync);
     }
 
     @Override
