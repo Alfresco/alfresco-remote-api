@@ -48,6 +48,7 @@ import org.alfresco.rest.framework.core.exceptions.ConstraintViolatedException;
 import org.alfresco.rest.framework.core.exceptions.DisabledServiceException;
 import org.alfresco.rest.framework.core.exceptions.InvalidArgumentException;
 import org.alfresco.rest.framework.core.exceptions.NotFoundException;
+import org.alfresco.rest.framework.core.exceptions.StaleEntityException;
 import org.alfresco.rest.framework.resource.content.BinaryResource;
 import org.alfresco.rest.framework.resource.content.CacheDirective;
 import org.alfresco.rest.framework.resource.content.ContentInfoImpl;
@@ -285,7 +286,18 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
 
         final NodeRef sourceNodeRef = validateNode(nodeRef.getStoreRef(), nodeRef.getId());
 
-        renditionService2.render(sourceNodeRef, rendition.getId());
+        try
+        {
+            renditionService2.render(sourceNodeRef, rendition.getId());
+        }
+        catch (UnsupportedOperationException e)
+        {
+            throw new IllegalArgumentException((e.getMessage())); // 400
+        }
+        catch (IllegalStateException e)
+        {
+            throw new StaleEntityException(e.getMessage()); // 409
+        }
     }
 
     @Override
