@@ -179,7 +179,7 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
             }
         }
 
-        List<ChildAssociationRef> nodeRefRenditions = renditionService2.getRenditionChildAssociations(validatedNodeRef);
+        List<ChildAssociationRef> nodeRefRenditions = renditionService2.getRenditions(validatedNodeRef);
         if (!nodeRefRenditions.isEmpty())
         {
             for (ChildAssociationRef childAssociationRef : nodeRefRenditions)
