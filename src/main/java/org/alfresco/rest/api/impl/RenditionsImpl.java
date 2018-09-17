@@ -41,6 +41,7 @@ import org.alfresco.rest.api.model.ContentInfo;
 import org.alfresco.rest.api.model.Rendition;
 import org.alfresco.rest.api.model.Rendition.RenditionStatus;
 import org.alfresco.rest.framework.core.exceptions.ApiException;
+import org.alfresco.rest.framework.core.exceptions.ConstraintViolatedException;
 import org.alfresco.rest.framework.core.exceptions.DisabledServiceException;
 import org.alfresco.rest.framework.core.exceptions.InvalidArgumentException;
 import org.alfresco.rest.framework.core.exceptions.NotFoundException;
@@ -276,10 +277,19 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
         }
 
         final NodeRef sourceNodeRef = validateNode(nodeRef.getStoreRef(), nodeRef.getId());
+        final NodeRef renditionNodeRef = getRenditionByName(sourceNodeRef, rendition.getId(), parameters);
+        if (renditionNodeRef != null)
+        {
+            throw new ConstraintViolatedException(rendition.getId() + " rendition already exists.");
+        }
 
         try
         {
             renditionService2.render(sourceNodeRef, rendition.getId());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new NotFoundException(rendition.getId() + " is not registered."); // 404
         }
         catch (UnsupportedOperationException e)
         {
