@@ -1362,7 +1362,7 @@
         <property name="scriptThumbnailService" ref="thumbnailServiceScript" />
         <property name="serviceRegistry" ref="ServiceRegistry" />
         <property name="tenantService" ref="tenantService"/>
-        <property name="renditionService2" ref="renditionService2"/>
+        <property name="renditionService2" ref="RenditionService2"/>
         <property name="renditionsDataCollector" ref="renditionsDataCollector"/>
     </bean>
 
