@@ -223,7 +223,7 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
         // if there is no rendition, then try to find the available/registered rendition (yet to be created).
         if (renditionNodeRef == null && includeNotCreated)
         {
-            ContentData contentData = getContentData(nodeRef, true);
+            ContentData contentData = getContentData(validatedNodeRef, true);
             String sourceMimetype = contentData.getMimetype();
             long size = contentData.getSize();
             RenditionDefinitionRegistry2 renditionDefinitionRegistry2 = renditionService2.getRenditionDefinitionRegistry2();
