@@ -32,6 +32,7 @@ import org.alfresco.query.PagingResults;
 import org.alfresco.repo.rendition2.RenditionDefinition2;
 import org.alfresco.repo.rendition2.RenditionDefinitionRegistry2;
 import org.alfresco.repo.rendition2.RenditionService2;
+import org.alfresco.repo.rendition2.RenditionService2Impl;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.repo.thumbnail.script.ScriptThumbnailService;
 import org.alfresco.rest.antlr.WhereClauseParser;
@@ -271,7 +272,7 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
     public void createRendition(NodeRef nodeRef, Rendition rendition, boolean executeAsync, Parameters parameters)
     {
         // If thumbnail generation has been configured off, then don't bother.
-        if (!renditionService2.isEnabled())
+        if (!((RenditionService2Impl)renditionService2).isThumbnailsEnabled())
         {
             throw new DisabledServiceException("Rendition generation has been disabled.");
         }
