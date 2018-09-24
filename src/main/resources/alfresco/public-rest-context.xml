@@ -1359,7 +1359,6 @@
     <!--                               -->
     <bean id="renditions" class="org.alfresco.rest.api.impl.RenditionsImpl" init-method="init">
         <property name="nodes" ref="nodes" />
-        <property name="thumbnailsEnabled" value="${system.thumbnail.generate}" />
         <property name="scriptThumbnailService" ref="thumbnailServiceScript" />
         <property name="serviceRegistry" ref="ServiceRegistry" />
         <property name="tenantService" ref="tenantService"/>
