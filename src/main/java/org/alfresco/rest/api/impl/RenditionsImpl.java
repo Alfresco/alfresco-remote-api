@@ -32,7 +32,6 @@ import org.alfresco.query.PagingResults;
 import org.alfresco.repo.rendition2.RenditionDefinition2;
 import org.alfresco.repo.rendition2.RenditionDefinitionRegistry2;
 import org.alfresco.repo.rendition2.RenditionService2;
-import org.alfresco.repo.rendition2.RenditionService2Impl;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.repo.thumbnail.script.ScriptThumbnailService;
 import org.alfresco.rest.antlr.WhereClauseParser;
@@ -95,6 +94,7 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
 
     private Nodes nodes;
     private NodeService nodeService;
+    private boolean thumbnailsEnabled;    // Flag to enable/disable the generation of all thumbnails.
     private ScriptThumbnailService scriptThumbnailService;
     private MimetypeService mimetypeService;
     private ServiceRegistry serviceRegistry;
@@ -107,6 +107,8 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
     {
         this.nodes = nodes;
     }
+
+    public void setThumbnailsEnabled(boolean thumbnailsEnabled) { this.thumbnailsEnabled = thumbnailsEnabled; }
 
     public void setScriptThumbnailService(ScriptThumbnailService scriptThumbnailService)
     {
@@ -272,9 +274,9 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
     public void createRendition(NodeRef nodeRef, Rendition rendition, boolean executeAsync, Parameters parameters)
     {
         // If thumbnail generation has been configured off, then don't bother.
-        if (!((RenditionService2Impl)renditionService2).isThumbnailsEnabled())
+        if (!thumbnailsEnabled)
         {
-            throw new DisabledServiceException("Rendition generation has been disabled.");
+            throw new DisabledServiceException("Thumbnail generation has been disabled.");
         }
 
         final NodeRef sourceNodeRef = validateNode(nodeRef.getStoreRef(), nodeRef.getId());
