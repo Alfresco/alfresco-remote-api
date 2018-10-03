@@ -3827,6 +3827,57 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
     }
 
     /**
+     * Tests the download of a large file/content.
+     * <p>GET:</p>
+     * {@literal <host>:<port>/alfresco/api/-default-/public/alfresco/versions/1/nodes/<nodeId>/content}
+     */
+    @Test
+    public void testDownloadLargeFileContent() throws Exception
+    {
+        setRequestContext(user1);
+
+        String fileName = "1g.txt";
+//        String fileName = "quick.pdf";
+        File file = getResourceFile(fileName);
+        byte[] originalBytes = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
+
+        MultiPartBuilder multiPartBuilder = MultiPartBuilder.create()
+                .setFileData(new FileData(fileName, file));
+        MultiPartRequest reqBody = multiPartBuilder.build();
+
+        // Upload binary content
+        HttpResponse response = post(getNodeChildrenUrl(Nodes.PATH_MY), reqBody.getBody(), null, reqBody.getContentType(), 201);
+        Document document = RestApiUtil.parseRestApiEntry(response.getJsonResponse(), Document.class);
+
+        String contentNodeId = document.getId();
+
+        // Check the upload response
+        assertEquals(fileName, document.getName());
+        ContentInfo contentInfo = document.getContent();
+        assertNotNull(contentInfo);
+        assertEquals(MimetypeMap.MIMETYPE_TEXT_PLAIN, contentInfo.getMimeType());
+
+        // Download binary content (as bytes) - without Content-Disposition header (attachment=false)
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("attachment", "false");
+
+        response = getSingle(NodesEntityResource.class, contentNodeId + "/content", params, 200);
+        byte[] bytes = response.getResponseAsBytes();
+        assertArrayEquals(originalBytes, bytes);
+
+        Map<String, String> responseHeaders = response.getHeaders();
+        assertNotNull(responseHeaders);
+        assertNull(responseHeaders.get("Content-Disposition"));
+        assertNotNull(responseHeaders.get("Cache-Control"));
+        assertNotNull(responseHeaders.get("Expires"));
+        String lastModifiedHeader = responseHeaders.get(LAST_MODIFIED_HEADER);
+        assertNotNull(lastModifiedHeader);
+        Map<String, String> headers = Collections.singletonMap(IF_MODIFIED_SINCE_HEADER, lastModifiedHeader);
+        // Test 304 response
+        getSingle(getNodeContentUrl(contentNodeId), null, null, headers, 304);
+    }
+
+    /**
      * Tests lock of a node
      * <p>POST:</p>
      * {@literal <host>:<port>/alfresco/api/-default-/public/alfresco/versions/1/nodes/<nodeId>/lock}

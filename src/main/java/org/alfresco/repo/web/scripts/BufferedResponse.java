@@ -134,7 +134,6 @@ public class BufferedResponse implements WrappingWebScriptResponse
                 throw new AlfrescoRuntimeException("Already buffering output writer");
             }
             outputStream = streamFactory.newOutputStream();
-//            this.outputStream = new ByteArrayOutputStream(bufferSize);
         }
         return outputStream;
     }
@@ -173,7 +172,7 @@ public class BufferedResponse implements WrappingWebScriptResponse
     {
         if (outputStream != null)
         {
-//            outputStream.reset();
+            outputStream = null;
         }
         else if (outputWriter != null)
         {
@@ -251,7 +250,6 @@ public class BufferedResponse implements WrappingWebScriptResponse
                 
                 outputStream.flush();
                 FileCopyUtils.copy(outputStream.getInputStream(), res.getOutputStream());
-//                outputStream.writeTo(res.getOutputStream());
             }
         }
         catch (IOException e)
