@@ -57,8 +57,7 @@ public class WebDAVHelperIntegrationTest
    private NodeRef rootNodeRef;
    private NodeRef rootFolder;
    private NodeService nodeService;
-//   private EventPublisherForTestingOnly eventPublisher;
-   
+
    @BeforeClass
    public static void setUpSpring()
    {
@@ -79,8 +78,6 @@ public class WebDAVHelperIntegrationTest
        
        rootFolder = nodeService.createNode(rootNodeRef, ContentModel.ASSOC_CHILDREN,
                    ContentModel.ASSOC_CHILDREN, ContentModel.TYPE_FOLDER).getChildRef();
-       
-       //eventPublisher = (EventPublisherForTestingOnly) ctx.getBean("eventPublisher");
    }
    
    @Test
