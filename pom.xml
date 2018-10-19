@@ -2,13 +2,13 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>alfresco-remote-api</artifactId>
     <name>Alfresco Remote API</name>
-    <version>7.6-SNAPSHOT</version>
+    <version>7.6-REPO-3918_java_11-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
         <groupId>org.alfresco</groupId>
         <artifactId>alfresco-super-pom</artifactId>
-        <version>9</version>
+        <version>9-REPO-3918_java_11-SNAPSHOT</version>
     </parent>
 
     <scm>
@@ -35,9 +35,9 @@
         <dir.root>${project.build.directory}/alf_data</dir.root>
         <img.exe>convert</img.exe>
       
-        <dependency.alfresco-repository.version>7.18</dependency.alfresco-repository.version>
-        <dependency.alfresco-core.version>7.4</dependency.alfresco-core.version>
-        <dependency.alfresco-data-model.version>8.15</dependency.alfresco-data-model.version>
+        <dependency.alfresco-repository.version>7.21-REPO-3918_java_11-SNAPSHOT</dependency.alfresco-repository.version>
+        <dependency.alfresco-core.version>7.5-REPO-3918_java_11-SNAPSHOT</dependency.alfresco-core.version>
+        <dependency.alfresco-data-model.version>8.16-REPO-3918_java_11-SNAPSHOT</dependency.alfresco-data-model.version>
         <dependency.alfresco-pdf-renderer.version>1.1</dependency.alfresco-pdf-renderer.version>
         <dependency.jackson.version>2.9.5</dependency.jackson.version>
 
@@ -428,11 +428,17 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.1</version>
                 <executions>
                     <execution>
                         <id>default-test</id>
                         <configuration>
+                            <!-- allow all reflection access for third party libraries -->
+                            <argLine>
+                                --illegal-access=permit
+                            </argLine>
                             <!-- To prevent tests alfresco.log to be created in project roots and bother while synchronizing with SCM -->
                             <workingDirectory>${project.build.directory}</workingDirectory>
                             <systemPropertyVariables>
