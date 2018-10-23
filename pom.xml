@@ -36,7 +36,7 @@
         <img.exe>convert</img.exe>
       
         <dependency.alfresco-repository.version>7.22_REPO_3918_java_11</dependency.alfresco-repository.version>
-        <dependency.alfresco-core.version>7.5_REPO_3918_java_11</dependency.alfresco-core.version>
+        <dependency.alfresco-core.version>7.5_REPO_3918_java_11_2</dependency.alfresco-core.version>
         <dependency.alfresco-data-model.version>8.16_REPO_3918_java_11</dependency.alfresco-data-model.version>
         <dependency.alfresco-pdf-renderer.version>1.1</dependency.alfresco-pdf-renderer.version>
         <dependency.jackson.version>2.9.5</dependency.jackson.version>
@@ -430,10 +430,6 @@
                     <execution>
                         <id>default-test</id>
                         <configuration>
-                            <!-- allow all reflection access for third party libraries -->
-                            <argLine>
-                                --illegal-access=permit
-                            </argLine>
                             <!-- To prevent tests alfresco.log to be created in project roots and bother while synchronizing with SCM -->
                             <workingDirectory>${project.build.directory}</workingDirectory>
                             <systemPropertyVariables>
