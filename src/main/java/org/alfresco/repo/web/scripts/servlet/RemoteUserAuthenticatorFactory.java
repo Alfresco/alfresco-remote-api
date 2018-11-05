@@ -25,6 +25,7 @@
  */
 package org.alfresco.repo.web.scripts.servlet;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.alfresco.error.ExceptionStackUtil;
@@ -41,10 +42,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.extensions.webscripts.Authenticator;
 import org.springframework.extensions.webscripts.Description.RequiredAuthentication;
+import org.springframework.extensions.webscripts.WebScript;
 import org.springframework.extensions.webscripts.servlet.WebScriptServletRequest;
 import org.springframework.extensions.webscripts.servlet.WebScriptServletResponse;
 
 import net.sf.acegisecurity.DisabledException;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Authenticator to provide Remote User based Header authentication dropping back to Basic Auth otherwise. 
@@ -61,10 +67,15 @@ import net.sf.acegisecurity.DisabledException;
 public class RemoteUserAuthenticatorFactory extends BasicHttpAuthenticatorFactory
 {
     private static Log logger = LogFactory.getLog(RemoteUserAuthenticatorFactory.class);
-    
+    public static final long GET_REMOTE_USER_TIMEOUT_MILLISECONDS_DEFAULT = 10000L; // 10 sec
+
     protected RemoteUserMapper remoteUserMapper;
     protected AuthenticationComponent authenticationComponent;
-    
+
+    private boolean alwaysAllowBasicAuthForAdminConsole = true;
+    List<String> adminConsoleScriptFamilies;
+    long getRemoteUserTimeoutMilliseconds = GET_REMOTE_USER_TIMEOUT_MILLISECONDS_DEFAULT;
+
     public void setRemoteUserMapper(RemoteUserMapper remoteUserMapper)
     {
         this.remoteUserMapper = remoteUserMapper;
@@ -74,7 +85,37 @@ public class RemoteUserAuthenticatorFactory extends BasicHttpAuthenticatorFactor
     {
         this.authenticationComponent = authenticationComponent;
     }
-    
+
+    public boolean isAlwaysAllowBasicAuthForAdminConsole()
+    {
+        return alwaysAllowBasicAuthForAdminConsole;
+    }
+
+    public void setAlwaysAllowBasicAuthForAdminConsole(boolean alwaysAllowBasicAuthForAdminConsole)
+    {
+        this.alwaysAllowBasicAuthForAdminConsole = alwaysAllowBasicAuthForAdminConsole;
+    }
+
+    public List<String> getAdminConsoleScriptFamilies()
+    {
+        return adminConsoleScriptFamilies;
+    }
+
+    public void setAdminConsoleScriptFamilies(List<String> adminConsoleScriptFamilies)
+    {
+        this.adminConsoleScriptFamilies = adminConsoleScriptFamilies;
+    }
+
+    public long getGetRemoteUserTimeoutMilliseconds()
+    {
+        return getRemoteUserTimeoutMilliseconds;
+    }
+
+    public void setGetRemoteUserTimeoutMilliseconds(long getRemoteUserTimeoutMilliseconds)
+    {
+        this.getRemoteUserTimeoutMilliseconds = getRemoteUserTimeoutMilliseconds;
+    }
+
     @Override
     public Authenticator create(WebScriptServletRequest req, WebScriptServletResponse res)
     {
@@ -97,9 +138,52 @@ public class RemoteUserAuthenticatorFactory extends BasicHttpAuthenticatorFactor
         public boolean authenticate(RequiredAuthentication required, boolean isGuest)
         {
             boolean authenticated = false;
-            
+
+            boolean useTimeoutForAdminAccessingAdminConsole = false;
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Authenticate level required: " + required + " is guest: " + isGuest);
+            }
+
+            if (isAlwaysAllowBasicAuthForAdminConsole())
+            {
+                useTimeoutForAdminAccessingAdminConsole =
+                    RequiredAuthentication.admin.equals(required) && !isGuest && isAdminConsoleWebScript(servletReq.getServiceMatch().getWebScript());
+
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("Should ensure that the admins can login with basic auth: " + useTimeoutForAdminAccessingAdminConsole);
+                }
+
+                if (useTimeoutForAdminAccessingAdminConsole && isBasicAuthHeaderPresentForAdmin())
+                {
+                    // return REST call, after a timeout/basic auth challenge
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.debug("An Admin Console request has come in with Basic Auth headers present for an admin user.");
+                    }
+                    authenticated = super.authenticate(required, isGuest);
+                    // we return here to prompt for another password, in case it was not entered correctly
+                    // this also means, that once the admin basic auth header is present,
+                    // the authentication chain will not be used for the admin console
+                    return authenticated;
+                }
+            }
             // retrieve the remote user if configured and available - authenticate that user directly
-            final String userId = getRemoteUser();
+            final String userId;
+            try
+            {
+                userId = getRemoteUserWithTimeout(useTimeoutForAdminAccessingAdminConsole);
+            }
+            catch (AuthenticationTimeoutException e)
+            {
+                logger.warn("Returning basic auth challenge for Admin Console. Cause: " + e.getMessage(), e);
+                HttpServletResponse res = servletRes.getHttpServletResponse();
+                res.setStatus(401);
+                res.setHeader("WWW-Authenticate", "Basic realm=\"Alfresco\"");
+                return false;
+            }
+
             if (userId != null)
             {
                 try
@@ -148,7 +232,7 @@ public class RemoteUserAuthenticatorFactory extends BasicHttpAuthenticatorFactor
                     catch (AuthenticationException authErr)
                     {
                         if (logger.isDebugEnabled())
-                            logger.debug("An Authentication error occur, removing User session: ", authErr);
+                            logger.debug("An Authentication error occur. Removing User session: ", authErr);
                         session.removeAttribute(AuthenticationDriver.AUTHENTICATION_USER);
                         session.invalidate();
                         listener.authenticationFailed(new WebCredentials() {});
@@ -161,7 +245,83 @@ public class RemoteUserAuthenticatorFactory extends BasicHttpAuthenticatorFactor
             }
             return authenticated;
         }
-        
+
+        protected boolean isAdminConsoleWebScript(WebScript webScript)
+        {
+            if (webScript == null || adminConsoleScriptFamilies == null || webScript.getDescription() == null
+                || webScript.getDescription().getFamilys() == null)
+            {
+                return false;
+            }
+
+            if (logger.isTraceEnabled())
+            {
+                logger.trace("WebScript: " + webScript + " has these families: " + webScript.getDescription().getFamilys());
+            }
+
+            // intersect the "family" sets defined
+            Set<String> families = new HashSet<String>(webScript.getDescription().getFamilys());
+            families.retainAll(adminConsoleScriptFamilies);
+            final boolean isAdminConsole = !families.isEmpty();
+
+            if (logger.isDebugEnabled() && isAdminConsole)
+            {
+                logger.debug("Detected an Admin Console webscript: " + webScript );
+            }
+
+            return isAdminConsole;
+        }
+
+        protected String getRemoteUserWithTimeout(boolean useTimeout) throws AuthenticationTimeoutException
+        {
+            if (!useTimeout)
+            {
+                return getRemoteUser();
+            }
+
+            String returnedRemoteUser = null;
+            GetRemoteUserRunnable getRemoteUserRunnable = new GetRemoteUserRunnable();
+            Thread workerGettingTheRemoteUser = new Thread(getRemoteUserRunnable);
+            workerGettingTheRemoteUser.start();
+            try
+            {
+                synchronized (workerGettingTheRemoteUser)
+                {
+                    workerGettingTheRemoteUser.join(getRemoteUserTimeoutMilliseconds);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.warn("Exception trying to get the remote user: " + e.getMessage(), e);
+            }
+            returnedRemoteUser = getRemoteUserRunnable.getReturnedRemoteUser();
+            if (workerGettingTheRemoteUser.isAlive())
+            {
+                // we timed out
+                // we should request basic authentication as the chain can't be usable
+                cleanupThread(workerGettingTheRemoteUser);
+
+                final String message = "Could not get the remote user in a reasonable time: " + getRemoteUserTimeoutMilliseconds + " milliseconds. "
+                    + "Adjust the timeout property 'authentication.getRemoteUserTimeoutMilliseconds' if required.";
+
+                throw new AuthenticationTimeoutException(message);
+            }
+            return returnedRemoteUser;
+        }
+
+        private void cleanupThread(Thread workerGettingTheRemoteUser)
+        {
+            try
+            {
+                // try to clean up the thread we created, to use resources optimally
+                workerGettingTheRemoteUser.interrupt();
+            }
+            catch (Exception e)
+            {
+                // we can't really handle anything here
+            }
+        }
+
         /**
          * Retrieve the remote user from servlet request header when using a secure connection.
          * The RemoteUserMapper bean must be active and configured.
@@ -193,5 +353,42 @@ public class RemoteUserAuthenticatorFactory extends BasicHttpAuthenticatorFactor
             
             return userId;
         }
+
+        class GetRemoteUserRunnable implements Runnable
+        {
+            private volatile String returnedRemoteUser;
+
+            @Override
+            public void run()
+            {
+                returnedRemoteUser = getRemoteUser();
+            }
+
+            public String getReturnedRemoteUser()
+            {
+                return returnedRemoteUser;
+            }
+        }
+
+    }
+}
+
+class AuthenticationTimeoutException extends Exception
+{
+    static final long serialVersionUID = -3387511013124229948L;
+
+    public AuthenticationTimeoutException()
+    {
+        super();
+    }
+
+    public AuthenticationTimeoutException(String message)
+    {
+        super(message);
+    }
+
+    public AuthenticationTimeoutException(String message, Throwable t)
+    {
+        super(message, t);
     }
 }
