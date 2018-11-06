@@ -59,9 +59,6 @@ public class RemoteAuthenticatorFactoryAdminConsoleAccessTest
         "classpath:alfresco/web-scripts-application-context.xml", "classpath:alfresco/web-scripts-application-context-test.xml" };
 
     private RemoteUserAuthenticatorFactory remoteUserAuthenticatorFactory;
-    //    private PersonService personService;
-    //    private TransactionService transactionService;
-    //    private MutableAuthenticationDao authenticationDAO;
     private BlockingRemoteUserMapper blockingRemoteUserMapper;
 
     @Before
