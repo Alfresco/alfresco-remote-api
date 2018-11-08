@@ -883,6 +883,8 @@ public class PeopleImpl implements People
         checkRequiredField("userId", userId);
         checkRequiredField("client", client);
 
+        AuthenticationUtil.setFullyAuthenticatedUser(AuthenticationUtil.getAdminUserName());
+        
         // This is an un-authenticated API call so we wrap it to run as System
         AuthenticationUtil.runAsSystem(() -> {
             try
