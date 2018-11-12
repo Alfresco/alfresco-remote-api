@@ -35,6 +35,9 @@ import org.alfresco.repo.security.authentication.ResetPasswordService;
 import org.alfresco.repo.security.authentication.ResetPasswordServiceImpl.ResetPasswordDetails;
 import org.alfresco.repo.security.authentication.ResetPasswordServiceImpl.ResetPasswordWorkflowException;
 import org.alfresco.repo.security.authentication.ResetPasswordServiceImpl.ResetPasswordWorkflowInvalidUserException;
+import org.alfresco.repo.tenant.TenantService;
+import org.alfresco.repo.tenant.TenantUtil;
+import org.alfresco.repo.tenant.TenantUtil.TenantRunAsWork;
 import org.alfresco.rest.api.Nodes;
 import org.alfresco.rest.api.People;
 import org.alfresco.rest.api.Renditions;
@@ -63,6 +66,7 @@ import org.alfresco.service.cmr.repository.ContentWriter;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.*;
+import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.thumbnail.ThumbnailService;
 import org.alfresco.service.cmr.usage.ContentUsageService;
@@ -79,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,8 +124,9 @@ public class PeopleImpl implements People
     protected ThumbnailService thumbnailService;
     protected ResetPasswordService resetPasswordService;
     protected Renditions renditions;
+    private TenantService tenantService;
 
-    private final static Map<String, QName> sort_params_to_qnames;
+	private final static Map<String, QName> sort_params_to_qnames;
     static
     {
         Map<String, QName> aMap = new HashMap<>(3);
@@ -189,6 +195,11 @@ public class PeopleImpl implements People
     {
         this.renditions = renditions;
     }
+    
+    public void setTenantService(TenantService tenantService) 
+    {
+		this.tenantService = tenantService;
+	}
 
 
     /**
@@ -882,35 +893,36 @@ public class PeopleImpl implements People
         // Validate the userId and the client
         checkRequiredField("userId", userId);
         checkRequiredField("client", client);
-
-        AuthenticationUtil.setFullyAuthenticatedUser(AuthenticationUtil.getAdminUserName());
-        
-        // This is an un-authenticated API call so we wrap it to run as System
-        AuthenticationUtil.runAsSystem(() -> {
-            try
-            {
-                resetPasswordService.requestReset(userId, client);
-            }
-            catch (ResetPasswordWorkflowInvalidUserException ex)
-            {
-                // we don't throw an exception.
-                // For security reason (prevent the attackers to determine that userId exists in the system or not),
-                // the endpoint returns a 202 response if the userId does not exist or
-                // if the user is disabled by an Administrator.
-                if (LOGGER.isDebugEnabled())
+ 
+        AuthenticationUtil.runAs(new RunAsWork<Void>()
+		{
+			@Override
+			public Void doWork() throws Exception
+			{
+				try
                 {
-                    LOGGER.debug("Invalid user. " + ex.getMessage());
+                    resetPasswordService.requestReset(userId, client);
                 }
-            }
-
-            return null;
-        });
+                catch (ResetPasswordWorkflowInvalidUserException ex)
+                {
+                    // we don't throw an exception.
+                    // For security reason (prevent the attackers to determine that userId exists in the system or not),
+                    // the endpoint returns a 202 response if the userId does not exist or
+                    // if the user is disabled by an Administrator.
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Invalid user. " + ex.getMessage());
+                    }
+                }
+				return null;
+			}
+		}, tenantService.getDomainUser(AuthenticationUtil.getSystemUserName(), tenantService.getCurrentUserDomain()));
     }
 
     @Override
     public void resetPassword(String personId, final PasswordReset passwordReset)
     {
-        checkResetPasswordData(passwordReset);
+    	checkResetPasswordData(passwordReset);
         checkRequiredField("personId", personId);
 
         ResetPasswordDetails resetDetails = new ResetPasswordDetails()
@@ -921,12 +933,16 @@ public class PeopleImpl implements People
         try
         {
             // This is an un-authenticated API call so we wrap it to run as System
-            AuthenticationUtil.runAsSystem(() -> {
-                resetPasswordService.initiateResetPassword(resetDetails);
+        	AuthenticationUtil.runAs(new RunAsWork<Void>()
+            {
 
-                return null;
-            });
-
+				@Override
+				public Void doWork() throws Exception {
+					resetPasswordService.initiateResetPassword(resetDetails);
+					return null;
+				}
+            }, tenantService.getDomainUser(AuthenticationUtil.getSystemUserName(),tenantService.getCurrentUserDomain()));
+        	
         }
         catch (ResetPasswordWorkflowException ex)
         {
