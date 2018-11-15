@@ -43,7 +43,6 @@ import javax.transaction.UserTransaction;
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.filesys.ExtendedServerConfigurationAccessor;
 import org.alfresco.jlan.server.auth.ntlm.NTLM;
-import org.alfresco.jlan.server.auth.passthru.DomainMapping;
 import org.alfresco.jlan.server.config.SecurityConfigSection;
 import org.alfresco.jlan.util.IPAddress;
 import org.alfresco.repo.SessionUser;
@@ -188,8 +187,10 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
         // If a filter up the chain has marked the request as not requiring auth then respect it        
         if (request.getAttribute( NO_AUTH_REQUIRED) != null)
         {
-            if ( getLogger().isDebugEnabled())
-                getLogger().debug("Authentication not required (filter), chaining ...");
+            if ( getLogger().isTraceEnabled())
+            {
+                getLogger().trace("Authentication not required (filter), chaining ...");
+            }
             chain.doFilter(request, response);
         }
         else if (authenticateRequest(context, (HttpServletRequest) request, (HttpServletResponse) response))
@@ -253,46 +254,6 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     }
     
     /**
-     * Map a client IP address to a domain
-     * 
-     * @param clientIP String
-     * @return String
-     */
-    protected final String mapClientAddressToDomain(String clientIP)
-    {
-        // Check if there are any domain mappings
-        SecurityConfigSection securityConfigSection = getSecurityConfigSection();
-        if (securityConfigSection != null && securityConfigSection.hasDomainMappings() == false)
-        {
-            return null;
-        }
-        
-        if (securityConfigSection != null)
-        {
-            // Convert the client IP address to an integer value
-            
-            int clientAddr = IPAddress.parseNumericAddress(clientIP);
-            for (DomainMapping domainMap : securityConfigSection.getDomainMappings())
-            {
-                if (domainMap.isMemberOfDomain(clientAddr))
-                {
-                    if (getLogger().isDebugEnabled())
-                        getLogger().debug("Mapped client IP " + clientIP + " to domain " + domainMap.getDomain());
-                
-                    return domainMap.getDomain();
-                }
-            }
-        }
-        
-        if (getLogger().isDebugEnabled())
-            getLogger().debug("Failed to map client IP " + clientIP + " to a domain");
-        
-        // No domain mapping for the client address
-        
-        return null;
-    }
-    
-    /**
      * Check if the request has specified a ticket parameter to bypass the standard authentication.
      * 
      * @param servletContext
@@ -312,10 +273,12 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
         
         if (ticket != null && ticket.length() != 0)
         {
-            if (getLogger().isDebugEnabled())
-                getLogger().debug(
-                  "Logon via ticket from " + req.getRemoteHost() + " (" + req.getRemoteAddr() + ":"
-                        + req.getRemotePort() + ")" + " ticket=" + ticket);
+            if (getLogger().isTraceEnabled())
+            {
+                getLogger().trace(
+                    "Logon via ticket from " + req.getRemoteHost() + " (" + req.getRemoteAddr() + ":" + req.getRemotePort() + ")" +
+                        " ticket=" + ticket);
+            }
             
             UserTransaction tx = null;
             try
@@ -327,7 +290,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
                 if (user != null && !ticket.equals(user.getTicket()))
                 {
                    if (getLogger().isDebugEnabled())
+                   {
                        getLogger().debug("The ticket doesn't match, invalidate the session.");
+                   }
                    invalidateSession(req);
                    user = null;
                 }
@@ -336,7 +301,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
                 if (user == null)
                 {
                    if (getLogger().isDebugEnabled())
+                   {
                        getLogger().debug("There is no valid cached user, validate the ticket and create one.");
+                   }
                    authenticationService.validate(ticket);
                    user = createUserEnvironment(req.getSession(), authenticationService.getCurrentUserName(),
                          authenticationService.getCurrentTicket(), true);
@@ -349,12 +316,16 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
             catch (AuthenticationException authErr)
             {
                 if (getLogger().isDebugEnabled())
+                {
                     getLogger().debug("Failed to authenticate user ticket: " + authErr.getMessage(), authErr);
+                }
             }
             catch (Throwable e)
             {
                 if (getLogger().isDebugEnabled())
+                {
                     getLogger().debug("Error during ticket validation and user creation: " + e.getMessage(), e);
+                }
             }
             finally
             {
@@ -386,8 +357,10 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     protected void redirectToLoginPage(HttpServletRequest req, HttpServletResponse res)
         throws IOException
     {
-        if (getLogger().isDebugEnabled())
-            getLogger().debug("redirectToLoginPage...");
+        if (getLogger().isTraceEnabled())
+        {
+            getLogger().trace("redirectToLoginPage...");
+        }
         if (hasLoginPage())
             res.sendRedirect(req.getContextPath() + "/faces" + getLoginPage());
     }
@@ -479,8 +452,10 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     protected synchronized String getServerName()
     {
         // Get the local server name, try the file server config first
-        if (getLogger().isDebugEnabled())
-            getLogger().debug("Searching for local server name.");
+        if (getLogger().isTraceEnabled())
+        {
+            getLogger().trace("Searching for local server name.");
+        }
         String srvName = null;
         if (serverConfiguration != null)
         {
@@ -499,8 +474,10 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
         }
 
         m_lastResolvedServerName = null;
-        if (getLogger().isDebugEnabled())
-            getLogger().debug("Found server name in the file server configuration: " + srvName);
+        if (getLogger().isTraceEnabled())
+        {
+            getLogger().trace("Found server name in the file server configuration: " + srvName);
+        }
         m_lastConfiguredServerName = srvName;
         if (serverConfiguration != null)
         {
@@ -512,7 +489,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
                     if (resolved == null)
                     {
                         if (getLogger().isDebugEnabled())
+                        {
                             getLogger().debug("Failed to resolve the configured name.");
+                        }
 
                         m_lastResolvedServerName = serverConfiguration.getLocalServerName(true);
                     }
@@ -524,7 +503,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
                 catch (UnknownHostException ex)
                 {
                     if (getLogger().isWarnEnabled())
+                    {
                         getLogger().warn("NTLM filter, error resolving CIFS host name" + m_lastConfiguredServerName);
+                    }
                 }
             }
 
@@ -537,7 +518,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
                 // DEBUG
 
                 if (getLogger().isInfoEnabled())
+                {
                     getLogger().info("NTLM filter using server name " + m_lastResolvedServerName);
+                }
             }
         }
         else
@@ -550,7 +533,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
                 m_lastResolvedServerName = InetAddress.getLocalHost().getHostName();
 
                 if (getLogger().isInfoEnabled())
+                {
                     getLogger().info("Found FQDN " + m_lastResolvedServerName);
+                }
                 // Strip any domain name
 
                 int pos = m_lastResolvedServerName.indexOf(".");
@@ -561,8 +546,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
             }
             catch (UnknownHostException ex)
             {
-                if (getLogger().isErrorEnabled())
-                    getLogger().error("NTLM filter, error getting local host name", ex);
+                getLogger().error("NTLM filter, error getting local host name", ex);
             }
         }
 
@@ -635,9 +619,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
      */
     protected boolean performFallbackAuthentication(ServletContext context, HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException
     {
-        if (getLogger().isDebugEnabled())
+        if (getLogger().isTraceEnabled())
         {
-            getLogger().debug("Performing fallback authentication...");
+            getLogger().trace("Performing fallback authentication...");
         }
         
         boolean fallbackSuccess = fallbackDelegate.authenticateRequest(context, req, resp);
