@@ -438,7 +438,7 @@ public class RepositoryContainer extends AbstractRuntimeContainer
                 // Reset authentication for current thread
                 //
                 AuthenticationUtil.popAuthentication();
-                AuthenticationUtil.clearCurrentSecurityContext();
+
                 if (debug)
                 {
                     String currentUser = AuthenticationUtil.getFullyAuthenticatedUser();
