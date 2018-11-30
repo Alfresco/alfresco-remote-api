@@ -52,24 +52,6 @@ public class PublicApiRepositoryContainer extends TenantRepositoryContainer
 {
     protected static final Log logger = LogFactory.getLog(PublicApiRepositoryContainer.class);
 
-    /**
-     * Execute script within required level of transaction
-     */
-    @Override
-    protected void transactionedExecute(final WebScript script, final WebScriptRequest scriptReq, final WebScriptResponse scriptRes)
-        throws IOException
-    {
-        final HttpServletRequest httpServletRequest = WebScriptServletRuntime.getHttpServletRequest(scriptReq);
-        if(httpServletRequest instanceof PublicApiHttpServletRequest)
-        {
-            // reset the request input stream if it has been read e.g. by getParameter
-            PublicApiHttpServletRequest publicApiRequest = (PublicApiHttpServletRequest)httpServletRequest;
-            publicApiRequest.resetInputStream();
-        }
-
-        super.transactionedExecute(script, scriptReq, scriptRes);
-    }
-
     @Override
     public void executeScript(final WebScriptRequest scriptReq, final WebScriptResponse scriptRes, final Authenticator auth)
         throws IOException
