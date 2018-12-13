@@ -464,11 +464,11 @@ public class RenditionsTest extends AbstractBaseApiTest
         // renditionId is empty
         post(getNodeRenditionsUrl(contentNodeId), toJsonAsString(new Rendition().setId("")), 400);
 
-        // -ve test - we do not currently accept multiple create entities
+        // test we do accept multiple create entities (as of ACS 6.1)
         List<Rendition> multipleRenditionRequest = new ArrayList<>(2);
         multipleRenditionRequest.add(new Rendition().setId("doclib"));
         multipleRenditionRequest.add(new Rendition().setId("imgpreview"));
-        post(getNodeRenditionsUrl(contentNodeId), toJsonAsString(multipleRenditionRequest), 400);
+        post(getNodeRenditionsUrl(contentNodeId), toJsonAsString(multipleRenditionRequest), 201);
 
         RenditionService2Impl renditionService2 = applicationContext.getBean("renditionService2", RenditionService2Impl.class);
         // Disable thumbnail generation
