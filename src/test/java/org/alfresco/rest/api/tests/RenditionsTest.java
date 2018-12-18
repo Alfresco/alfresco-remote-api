@@ -587,14 +587,13 @@ public class RenditionsTest extends AbstractBaseApiTest
          * should NOT fail the upload.
          */
 
-        // Currently we do not support multiple rendition requests on create
         reqBody = MultiPartBuilder.create()
                 .setFileData(new FileData(fileName, file))
                 .setAutoRename(true)
                 .setRenditions(Arrays.asList(new String[]{"doclib,imgpreview"}))
                 .build();
 
-        post(getNodeChildrenUrl(folder_Id), reqBody.getBody(), null, reqBody.getContentType(), 400);
+        post(getNodeChildrenUrl(folder_Id), reqBody.getBody(), null, reqBody.getContentType(), 201);
 
         // Unknown rendition
         reqBody = MultiPartBuilder.create()
