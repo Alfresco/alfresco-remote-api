@@ -3080,7 +3080,15 @@ public class NodesImpl implements Nodes
                 RenditionDefinition2 renditionDefinition = renditionDefinitionRegistry2.getRenditionDefinition(renditionName);
                 if (renditionDefinition == null)
                 {
-                    throw new NotFoundException(renditionName + " is not registered.");
+                    // RA-1052 (REPO-47)
+                    // Rather than throw a NotFoundException (status code 404) we maintain 6.0 backward compatibility and
+                    // simply consume exception for the invalid rendition name and log it as we would have done before.
+                    // Note: The log level is not 'error' as it could easily fill out the log file.
+                    if (logger.isDebugEnabled())
+                    {
+                        // Don't throw the exception as we don't want the the upload to fail, just log it.
+                        logger.debug("Asynchronous request to create a rendition upon upload failed: " + renditionName + " is not registered.");
+                    }
                 }
             }
         }
@@ -3140,7 +3148,6 @@ public class NodesImpl implements Nodes
                         logger.debug("Asynchronous request to create a rendition upon upload failed: " + ex.getMessage());
                     }
                 }
-
             }
         }
     }
