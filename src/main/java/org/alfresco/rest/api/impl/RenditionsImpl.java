@@ -76,11 +76,13 @@ import org.springframework.core.io.ResourceLoader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.TreeMap;
 
 /**
@@ -299,6 +301,86 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
         {
             throw new StaleEntityException(e.getMessage()); // 409
         }
+    }
+
+    @Override
+    public void createRenditions(NodeRef nodeRef, List<Rendition> renditions, Parameters parameters)
+            throws NotFoundException, ConstraintViolatedException
+    {
+        if (renditions.isEmpty())
+        {
+            return;
+        }
+
+        if (!renditionService2.isEnabled())
+        {
+            throw new DisabledServiceException("Rendition generation has been disabled.");
+        }
+
+        final NodeRef sourceNodeRef = validateNode(nodeRef.getStoreRef(), nodeRef.getId());
+        RenditionDefinitionRegistry2 renditionDefinitionRegistry2 = renditionService2.getRenditionDefinitionRegistry2();
+
+        StringJoiner renditionNames = new StringJoiner(",");
+        List<Rendition> create = new ArrayList<>();
+        for (Rendition rendition : renditions)
+        {
+            String renditionName = getName(rendition);
+            renditionNames.add(renditionName);
+            if (renditionName == null)
+            {
+                throw new IllegalArgumentException(("Null rendition name supplied")); // 400
+            }
+
+            RenditionDefinition2 renditionDefinition = renditionDefinitionRegistry2.getRenditionDefinition(renditionName);
+            if (renditionDefinition == null)
+            {
+                throw new NotFoundException(renditionName + " is not registered.");
+            }
+
+            final NodeRef renditionNodeRef = getRenditionByName(sourceNodeRef, renditionName, parameters);
+            if (renditionNodeRef == null)
+            {
+                create.add(rendition);
+            }
+        }
+
+        if (create.size() == 0)
+        {
+            throw new ConstraintViolatedException((renditions.size() == 1 ? "Rendition " : "Renditions ") +
+                    renditionNames.toString() + " already exists.");
+        }
+
+        for (Rendition rendition : create)
+        {
+            try
+            {
+                String renditionName = getName(rendition);
+                renditionService2.render(sourceNodeRef, renditionName);
+            }
+            catch (UnsupportedOperationException e)
+            {
+                throw new IllegalArgumentException((e.getMessage())); // 400
+            }
+            catch (IllegalStateException e)
+            {
+                throw new StaleEntityException(e.getMessage()); // 409
+            }
+        }
+
+    }
+
+    private String getName(Rendition rendition)
+    {
+        String renditionName = rendition.getId();
+        if (renditionName != null)
+        {
+            renditionName = renditionName.trim();
+            if (renditionName.isEmpty())
+            {
+                renditionName = null;
+            }
+        }
+        return renditionName;
     }
 
     @Override

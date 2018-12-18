@@ -90,18 +90,7 @@ public class NodeRenditionsRelation implements RelationshipResourceAction.Read<R
     public List<Rendition> create(String nodeId, List<Rendition> entity, Parameters parameters)
     {
         NodeRef nodeRef = new NodeRef(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE, nodeId);
-        for (Rendition rendition : entity)
-        {
-            try
-            {
-                renditions.createRendition(nodeRef, rendition, parameters);
-            }
-            catch (Exception e)
-            {
-                // TODO replace the following
-                e.printStackTrace();
-            }
-        }
+        renditions.createRenditions(nodeRef, entity, parameters);
         return null;
     }
 

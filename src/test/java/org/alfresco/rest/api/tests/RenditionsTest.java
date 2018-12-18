@@ -323,8 +323,8 @@ public class RenditionsTest extends AbstractBaseApiTest
         // Create a node without any content. Test only if OpenOffice is available
         if(isOpenOfficeAvailable())
         {
-        String emptyContentNodeId = addToDocumentLibrary(userOneN1Site, "emptyDoc.txt", TYPE_CM_CONTENT, userOneN1.getId());
-        getSingle(getNodeRenditionsUrl(emptyContentNodeId), "doclib", 200);
+            String emptyContentNodeId = addToDocumentLibrary(userOneN1Site, "emptyDoc.txt", TYPE_CM_CONTENT, userOneN1.getId());
+            getSingle(getNodeRenditionsUrl(emptyContentNodeId), "doclib", 200);
         }
 
         // Create multipart request
@@ -464,14 +464,31 @@ public class RenditionsTest extends AbstractBaseApiTest
         // renditionId is empty
         post(getNodeRenditionsUrl(contentNodeId), toJsonAsString(new Rendition().setId("")), 400);
 
-        // test we do accept multiple create entities (as of ACS 6.1)
-        List<Rendition> multipleRenditionRequest = new ArrayList<>(2);
-        multipleRenditionRequest.add(new Rendition().setId("doclib"));
-        multipleRenditionRequest.add(new Rendition().setId("imgpreview"));
-        post(getNodeRenditionsUrl(contentNodeId), toJsonAsString(multipleRenditionRequest), 201);
+        // Multiple rendition request (as of ACS 6.1)
 
-        RenditionService2Impl renditionService2 = applicationContext.getBean("renditionService2", RenditionService2Impl.class);
+        // Multiple rendition request, including an empty id
+        List<Rendition> multipleRenditionRequest = new ArrayList<>(2);
+        multipleRenditionRequest.add(new Rendition().setId(""));
+        multipleRenditionRequest.add(new Rendition().setId("medium"));
+        post(getNodeRenditionsUrl(contentNodeId), toJsonAsString(multipleRenditionRequest), 400);
+
+        // Multiple rendition request. doclib has already been done
+        multipleRenditionRequest = new ArrayList<>(2);
+        multipleRenditionRequest.add(new Rendition().setId("doclib"));
+        multipleRenditionRequest.add(new Rendition().setId("medium"));
+        multipleRenditionRequest.add(new Rendition().setId("avatar"));
+        post(getNodeRenditionsUrl(contentNodeId), toJsonAsString(multipleRenditionRequest), 202);
+        assertRenditionCreatedWithWait(contentNodeId, "doclib", "medium", "avatar");
+
+        // Multiple rendition request. All have already been done.
+        multipleRenditionRequest = new ArrayList<>(2);
+        multipleRenditionRequest.add(new Rendition().setId("doclib"));
+        multipleRenditionRequest.add(new Rendition().setId("medium"));
+        multipleRenditionRequest.add(new Rendition().setId("avatar"));
+        post(getNodeRenditionsUrl(contentNodeId), toJsonAsString(multipleRenditionRequest), 409);
+
         // Disable thumbnail generation
+        RenditionService2Impl renditionService2 = applicationContext.getBean("renditionService2", RenditionService2Impl.class);
         renditionService2.setThumbnailsEnabled(false);
         try
         {
@@ -541,24 +558,21 @@ public class RenditionsTest extends AbstractBaseApiTest
 
         if(isOpenOfficeAvailable())
         {
-        // Create multipart request - Word doc file
-        renditionName = "doclib";
-        fileName = "farmers_markets_list_2003.doc";
-        file = getResourceFile(fileName);
-        reqBody = MultiPartBuilder.create()
-                .setFileData(new FileData(fileName, file))
-                .setRenditions(Collections.singletonList(renditionName))
-                .build();
+            // Create multipart request - Word doc file
+            renditionName = "doclib";
+            fileName = "farmers_markets_list_2003.doc";
+            file = getResourceFile(fileName);
+            reqBody = MultiPartBuilder.create()
+                    .setFileData(new FileData(fileName, file))
+                    .setRenditions(Collections.singletonList(renditionName))
+                    .build();
 
-        // Upload file into 'folder' - including request to create 'doclib' thumbnail
-        response = post(getNodeChildrenUrl(folder_Id), reqBody.getBody(), null, reqBody.getContentType(), 201);
-        document = RestApiUtil.parseRestApiEntry(response.getJsonResponse(), Document.class);
-        contentNodeId = document.getId();
+            // Upload file into 'folder' - including request to create 'doclib' thumbnail
+            response = post(getNodeChildrenUrl(folder_Id), reqBody.getBody(), null, reqBody.getContentType(), 201);
+            document = RestApiUtil.parseRestApiEntry(response.getJsonResponse(), Document.class);
+            contentNodeId = document.getId();
 
-        // wait and check that rendition is created ...
-        rendition = waitAndGetRendition(contentNodeId, renditionName);
-        assertNotNull(rendition);
-        assertEquals(RenditionStatus.CREATED, rendition.getStatus());
+            assertRenditionCreatedWithWait(contentNodeId, renditionName);
         }
 
         /* RA-834: commented-out since not currently applicable for empty file
@@ -581,18 +595,12 @@ public class RenditionsTest extends AbstractBaseApiTest
         assertEquals(RenditionStatus.CREATED, rendition.getStatus());
         */
 
-
-        /*
-         * Per RA-1052, the failure of the async request to create a rendition
-         * should NOT fail the upload.
-         */
-
+        // Multiple renditions requested
         reqBody = MultiPartBuilder.create()
                 .setFileData(new FileData(fileName, file))
                 .setAutoRename(true)
                 .setRenditions(Arrays.asList(new String[]{"doclib,imgpreview"}))
                 .build();
-
         post(getNodeChildrenUrl(folder_Id), reqBody.getBody(), null, reqBody.getContentType(), 201);
 
         // Unknown rendition
@@ -601,8 +609,7 @@ public class RenditionsTest extends AbstractBaseApiTest
                 .setAutoRename(true)
                 .setRenditions(Arrays.asList(new String[]{"unknown"}))
                 .build();
-
-        post(getNodeChildrenUrl(folder_Id), reqBody.getBody(), null, reqBody.getContentType(), 201);
+        post(getNodeChildrenUrl(folder_Id), reqBody.getBody(), null, reqBody.getContentType(), 404);
 
         // ThumbnailService is disabled
         ThumbnailService thumbnailService = applicationContext.getBean("thumbnailService", ThumbnailService.class);
@@ -622,6 +629,16 @@ public class RenditionsTest extends AbstractBaseApiTest
         finally
         {
             thumbnailService.setThumbnailsEnabled(true);
+        }
+    }
+
+    protected void assertRenditionCreatedWithWait(String contentNodeId, String... renditionNames) throws Exception
+    {
+        for (String renditionName : renditionNames)
+        {
+            Rendition rendition = waitAndGetRendition(contentNodeId, renditionName);
+            assertNotNull(rendition);
+            assertEquals(RenditionStatus.CREATED, rendition.getStatus());
         }
     }
 
