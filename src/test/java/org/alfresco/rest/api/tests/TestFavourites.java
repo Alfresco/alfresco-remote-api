@@ -548,52 +548,6 @@ public class TestFavourites extends AbstractBaseApiTest
             assertEquals(HttpStatus.SC_NOT_FOUND, e.getHttpResponse().getStatusCode());
         }
 
-        // cloud-2468
-        // invalid type
-        // NOTE: The test below has swapped to attempt to favorite a comment rather than a
-        //       a wiki page as the WikiService has moved to the Share Services AMP in 5.1
-
-        try
-        {
-            log("cloud-2468");
-
-            publicApiClient.setRequestContext(new RequestContext(network1.getId(), person10Id));
-
-            final NodeRef document = personDocs.get(0);
-            final NodeRef comment = TenantUtil.runAsUserTenant(new TenantRunAsWork<NodeRef>()
-            {
-                @Override
-                public NodeRef doWork() throws Exception
-                {
-                    NodeRef comment = repoService.createComment(document, new Comment("Title", "Content"));
-                    return comment;
-                }
-            }, person10Id, network1.getId());
-
-            final String guid = comment.getId();
-            JSONAble commentJSON = new JSONAble()
-            {
-                @SuppressWarnings("unchecked")
-                @Override
-                public JSONObject toJSON()
-                {
-                    JSONObject json = new JSONObject();
-                    json.put("guid", guid);
-                    return json;
-                }
-            };
-
-            FavouritesTarget target = new InvalidFavouriteTarget("comment", commentJSON, guid);
-            Favourite favourite = new Favourite(target);
-
-            favouritesProxy.createFavourite(person10Id, favourite);
-            fail();
-        }
-        catch(PublicApiException e)
-        {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getHttpResponse().getStatusCode());
-        }
-
         try
         {
             log("cloud-2468");

@@ -58,7 +58,6 @@ import org.alfresco.repo.content.MimetypeMap;
 import org.alfresco.repo.content.cleanup.ContentStoreCleaner;
 import org.alfresco.repo.domain.activities.ActivityFeedEntity;
 import org.alfresco.repo.domain.activities.ActivityPostDAO;
-import org.alfresco.repo.forum.CommentService;
 import org.alfresco.repo.invitation.InvitationSearchCriteriaImpl;
 import org.alfresco.repo.management.subsystems.ChildApplicationContextFactory;
 import org.alfresco.repo.model.filefolder.HiddenAspect;
@@ -177,7 +176,6 @@ public class RepoService
     protected FeedGenerator feedGenerator;
     protected FileFolderService fileFolderService;
     protected ContentService contentService;
-    protected CommentService commentService;
     protected NodeService nodeService;
     protected PreferenceService preferenceService;
     protected TaggingService taggingService;
@@ -238,7 +236,6 @@ public class RepoService
     	this.activityService = (ActivityService)applicationContext.getBean("activityService");
     	this.fileFolderService = (FileFolderService)applicationContext.getBean("FileFolderService");
     	this.contentService = (ContentService)applicationContext.getBean("ContentService");
-    	this.commentService = (CommentService)applicationContext.getBean("CommentService");
     	this.nodeService = (NodeService)applicationContext.getBean("NodeService");
     	this.preferenceService = (PreferenceService)applicationContext.getBean("PreferenceService");
     	this.taggingService = (TaggingService)applicationContext.getBean("TaggingService");
@@ -1161,17 +1158,6 @@ public class RepoService
     public void addAspect(NodeRef nodeRef, QName aspectTypeQName, Map<QName, Serializable> aspectProperties)
     {
     	nodeService.addAspect(nodeRef, aspectTypeQName, aspectProperties);
-    }
-    
-    public NodeRef createComment(NodeRef nodeRef, final Comment comment)
-    {
-		NodeRef commentNodeRef = commentService.createComment(nodeRef, comment.getTitle(), comment.getContent(), false);
-		comment.setId(commentNodeRef.getId());
-		Date created = (Date)nodeService.getProperty(commentNodeRef, ContentModel.PROP_CREATED);
-		comment.setCreatedAt(PublicApiDateFormat.getDateFormat().format(created));
-		TestPerson person = getPerson((String)nodeService.getProperty(commentNodeRef, ContentModel.PROP_CREATOR));
-		comment.setCreatedBy(person);
-		return commentNodeRef;
     }
     
     public TestNetwork createNetworkWithAlias(String alias, boolean enabled)
