@@ -80,7 +80,9 @@ public class BlogPostLibJs
         {
             data.put("author", person);
         }
-
+        
+        data.put("commentCount", CommentsLibJs.getCommentsCount(node, services));
+       
         // is the post published
         Serializable published = services.getNodeService().getProperty(node, ContentModel.PROP_PUBLISHED);
         boolean isPublished = published != null;

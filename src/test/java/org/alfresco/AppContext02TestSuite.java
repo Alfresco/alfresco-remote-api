@@ -60,6 +60,7 @@ import org.junit.runners.Suite;
     org.alfresco.rest.api.tests.TestFavouriteSites.class,
     org.alfresco.rest.api.tests.TestFavourites.class,
     org.alfresco.rest.api.tests.TestNetworks.class,
+    org.alfresco.rest.api.tests.TestNodeComments.class,
     org.alfresco.rest.api.tests.TestNodeRatings.class,
     org.alfresco.rest.api.tests.TestPersonSites.class,
     org.alfresco.rest.api.tests.TestPublicApi128.class,

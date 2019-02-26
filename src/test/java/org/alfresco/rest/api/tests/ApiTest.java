@@ -60,6 +60,7 @@ import org.junit.runners.Suite;
     WherePredicateApiTest.class,
     DiscoveryApiTest.class,
     TestSites.class,
+    TestNodeComments.class,
     TestFavouriteSites.class,
     TestSiteContainers.class,
     TestNodeRatings.class,
