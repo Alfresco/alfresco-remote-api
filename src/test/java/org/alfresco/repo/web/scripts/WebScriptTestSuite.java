@@ -37,7 +37,6 @@ import org.alfresco.repo.web.scripts.blogs.BlogServiceTest;
 import org.alfresco.repo.web.scripts.comment.CommentsApiTest;
 import org.alfresco.repo.web.scripts.custommodel.CustomModelImportTest;
 import org.alfresco.repo.web.scripts.dictionary.DictionaryRestApiTest;
-import org.alfresco.repo.web.scripts.discussion.DiscussionRestApiTest;
 import org.alfresco.repo.web.scripts.facet.FacetRestApiTest;
 import org.alfresco.repo.web.scripts.forms.FormRestApiGet_Test;
 import org.alfresco.repo.web.scripts.forms.FormRestApiJsonPost_Test;
