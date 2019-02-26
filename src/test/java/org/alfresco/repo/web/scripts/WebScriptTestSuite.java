@@ -81,7 +81,6 @@ public class WebScriptTestSuite extends TestSuite
         suite.addTestSuite( AuditWebScriptTest.class );
         suite.addTestSuite( BlogServiceTest.class );
         suite.addTestSuite( DictionaryRestApiTest.class );
-        suite.addTestSuite( DiscussionRestApiTest.class );
         suite.addTestSuite( FeedControlTest.class );
         suite.addTestSuite( FormRestApiGet_Test.class );
         suite.addTestSuite( FormRestApiJsonPost_Test.class );
