@@ -2614,6 +2614,21 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
         getAll(getNodeChildrenUrl(f2Id), paging, params, 400);
     }
 
+    /**
+     * REPO-24
+     * Tests upload fails with empty multipart/form-data.
+     * <p>POST:</p>
+     * {@literal <host>:<port>/alfresco/api/-default-/public/alfresco/versions/1/nodes/<nodeId>/children}
+     */
+    @Test
+    public void testEmptyMultipartFormDataUpload() throws Exception
+    {
+        setRequestContext(user1);
+
+        // Upload text content
+        HttpResponse response = post(getNodeChildrenUrl(Nodes.PATH_MY), "", null, "multipart/form-data; boundary=7cgH0q1hSgrlmU7tUe8kGSWT4Un6aRH", 400);
+    }
+
 
     /**
      * Tests create empty file.
