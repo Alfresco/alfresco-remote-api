@@ -226,8 +226,9 @@ public class GetMethod extends WebDAVMethod
             }
             urlStr.append(rootURL).append(WebDAVHelper.encodeURL(fname, m_userAgent));
             urlStr.append("\r\n");
-           
-            m_response.setHeader(WebDAV.HEADER_CONTENT_TYPE, "text/plain; charset=ISO-8859-1");
+
+            String contentTypeHeader = "text/plain; charset=" + getDAVHelper().getContentTypeCharset();
+            m_response.setHeader(WebDAV.HEADER_CONTENT_TYPE, contentTypeHeader);
             m_response.setHeader(WebDAV.HEADER_CONTENT_LENGTH, String.valueOf(urlStr.length()));
             m_response.getWriter().write(urlStr.toString());
         }

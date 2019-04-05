@@ -131,6 +131,7 @@ public class WebDAVHelper
     private BehaviourFilter m_policyBehaviourFilter;
 
     private String m_urlPathPrefix;
+    private String contentTypeCharset;
         
     private long sizeLimit = -1L;
     
@@ -417,6 +418,16 @@ public class WebDAVHelper
     public void setPolicyBehaviourFilter(BehaviourFilter behaviourFilter)
     {
         m_policyBehaviourFilter = behaviourFilter;
+    }
+
+    public String getContentTypeCharset()
+    {
+        return contentTypeCharset;
+    }
+
+    public void setContentTypeCharset(String contentTypeCharset)
+    {
+        this.contentTypeCharset = contentTypeCharset;
     }
 
     /**

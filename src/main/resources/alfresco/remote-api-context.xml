@@ -78,6 +78,9 @@
          <value>${system.webdav.url.path.prefix}</value>
       </property>
       <property name="eventPublisher" ref="eventPublisher" />
+      <property name="contentTypeCharset">
+         <value>${system.webdav.content-type-charset}</value>
+      </property>
     </bean>   
    
    <bean id="defaultImageResolver" class="org.alfresco.repo.utils.FacesImageResolver" />
