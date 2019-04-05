@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>alfresco-remote-api</artifactId>
     <name>Alfresco Remote API</name>
-    <version>7.50-SNAPSHOT</version>
+    <version>zap-7.50-SNAPSHOT-test1</version>
     <packaging>jar</packaging>
 
     <parent>
