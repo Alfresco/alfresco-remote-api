@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.DispatcherType;
@@ -37,9 +38,13 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.util.EnumSet;
+import java.util.Properties;
 
 public class CORSContextListener implements ServletContextListener
 {
+    private static final String BEAN_GLOBAL_PROPERTIES = "global-properties";
+    private static final String CORS_ENABLED = "cors.enabled";
+
     private Log logger = LogFactory.getLog(getClass());
 
     private final EnumSet<DispatcherType> DISPATCHER_TYPE = EnumSet
@@ -60,8 +65,17 @@ public class CORSContextListener implements ServletContextListener
     private void initCORS(ServletContext servletContext, ApplicationContext rootContext)
     {
         Environment env = rootContext.getEnvironment();
-        Boolean corsEnabled = env.getProperty("cors.enabled", Boolean.class, false);
-        if (corsEnabled)
+        WebApplicationContext wc = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
+
+        // Boolean corsEnabled = env.getProperty("cors.enabled", Boolean.class, false);
+        Properties globalProperties = (Properties) wc.getBean(BEAN_GLOBAL_PROPERTIES);
+        String corsEnabled = globalProperties.getProperty(CORS_ENABLED);
+
+        if(logger.isDebugEnabled())
+        {
+            logger.debug(CORS_ENABLED + ": " + corsEnabled);
+        }
+        if (corsEnabled.equals("true"))
         {
             if(logger.isDebugEnabled())
             {
