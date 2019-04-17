@@ -44,6 +44,12 @@ public class CORSContextListener implements ServletContextListener
 {
     private static final String BEAN_GLOBAL_PROPERTIES = "global-properties";
     private static final String CORS_ENABLED = "cors.enabled";
+    private static final String CORS_ALLOWED_ORIGINS = "cors.allowed.origins";
+    private static final String CORS_ALLOWED_METHODS = "cors.allowed.methods";
+    private static final String CORS_ALLOWED_HEADERS = "cors.allowed.headers";
+    private static final String CORS_EXPOSED_HEADERS = "cors.exposed.headers";
+    private static final String CORS_SUPPORT_CREDENTIALS = "cors.support.credentials";
+    private static final String CORS_PREFLIGHT_CREDENTIALS = "cors.preflight.maxage";
 
     private Log logger = LogFactory.getLog(getClass());
 
@@ -54,22 +60,18 @@ public class CORSContextListener implements ServletContextListener
     public void contextInitialized(ServletContextEvent sce)
     {
         ServletContext servletContext = sce.getServletContext();
-        ApplicationContext rootContext = WebApplicationContextUtils.getRequiredWebApplicationContext(sce.getServletContext());
-        initCORS(servletContext, rootContext);
-
+        initCORS(servletContext);
     }
 
     /**
      * Initializes CORS filter
      */
-    private void initCORS(ServletContext servletContext, ApplicationContext rootContext)
+    private void initCORS(ServletContext servletContext)
     {
-        Environment env = rootContext.getEnvironment();
         WebApplicationContext wc = WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
 
-        // Boolean corsEnabled = env.getProperty("cors.enabled", Boolean.class, false);
-        Properties globalProperties = (Properties) wc.getBean(BEAN_GLOBAL_PROPERTIES);
-        String corsEnabled = globalProperties.getProperty(CORS_ENABLED);
+        Properties gP = (Properties) wc.getBean(BEAN_GLOBAL_PROPERTIES);
+        String corsEnabled = gP.getProperty(CORS_ENABLED);
 
         if(logger.isDebugEnabled())
         {
@@ -82,12 +84,12 @@ public class CORSContextListener implements ServletContextListener
                 logger.debug("Registering CORS Filter");
             }
             FilterRegistration.Dynamic corsFilter = servletContext.addFilter("CorsFilter", "org.apache.catalina.filters.CorsFilter");
-            corsFilter.setInitParameter("cors.allowed.origins", env.getProperty("cors.allowed.origins"));
-            corsFilter.setInitParameter("cors.allowed.methods", env.getProperty("cors.allowed.methods"));
-            corsFilter.setInitParameter("cors.allowed.headers", env.getProperty("cors.allowed.headers"));
-            corsFilter.setInitParameter("cors.exposed.headers", env.getProperty("cors.exposed.headers"));
-            corsFilter.setInitParameter("cors.support.credentials", env.getProperty("cors.support.credentials", Boolean.class, false).toString());
-            corsFilter.setInitParameter("cors.preflight.maxage", env.getProperty("cors.preflight.maxage"));
+            corsFilter.setInitParameter(CORS_ALLOWED_ORIGINS, gP.getProperty(CORS_ALLOWED_ORIGINS));
+            corsFilter.setInitParameter(CORS_ALLOWED_METHODS, gP.getProperty(CORS_ALLOWED_METHODS));
+            corsFilter.setInitParameter(CORS_ALLOWED_HEADERS, gP.getProperty(CORS_ALLOWED_HEADERS));
+            corsFilter.setInitParameter(CORS_EXPOSED_HEADERS, gP.getProperty(CORS_EXPOSED_HEADERS));
+            corsFilter.setInitParameter(CORS_SUPPORT_CREDENTIALS, gP.getProperty(CORS_SUPPORT_CREDENTIALS));
+            corsFilter.setInitParameter(CORS_PREFLIGHT_CREDENTIALS, gP.getProperty(CORS_PREFLIGHT_CREDENTIALS));
             corsFilter.addMappingForUrlPatterns(DISPATCHER_TYPE, false, "/*");
         }
         else
