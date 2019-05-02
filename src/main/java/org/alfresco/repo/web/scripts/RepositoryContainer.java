@@ -513,9 +513,10 @@ public class RepositoryContainer extends AbstractRuntimeContainer
                             }
                             else
                             {
-                                // Reset the request and response in case of a transaction retry
+                                // Reset the request in case of a transaction retry
                                 bufferedReq.reset();
-                                bufferedRes.reset();
+                                // REPO-4388 Reset only the response buffer and not the headers
+                                bufferedRes.resetBuffer();
                                 script.execute(bufferedReq, bufferedRes);
                             }
                         }
