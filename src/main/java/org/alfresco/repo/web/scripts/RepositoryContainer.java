@@ -2,7 +2,7 @@
  * #%L
  * Alfresco Remote API
  * %%
- * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * Copyright (C) 2005 - 2019 Alfresco Software Limited
  * %%
  * This file is part of the Alfresco software. 
  * If the software was purchased under a paid Alfresco license, the terms of 
@@ -515,7 +515,8 @@ public class RepositoryContainer extends AbstractRuntimeContainer
                             {
                                 // Reset the request and response in case of a transaction retry
                                 bufferedReq.reset();
-                                bufferedRes.reset();
+                                // REPO-4388 don't reset CORS headers if exist
+                                bufferedRes.reset("Access-Control-.*");
                                 script.execute(bufferedReq, bufferedRes);
                             }
                         }
