@@ -197,6 +197,7 @@
         <property name="tempDirectoryName" value="${webscripts.tempDirectoryName}"/>
         <property name="memoryThreshold" value="${webscripts.memoryThreshold}"/>
         <property name="maxContentSize" value="${webscripts.setMaxContentSize}"/>
+        <property name="exceptHeadersPattern" value="${webscripts.transaction.exceptHeadersPattern}"/>
         <property name="transactionService" ref="transactionService" />
     </bean>
  
