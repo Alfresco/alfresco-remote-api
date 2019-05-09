@@ -97,7 +97,7 @@ public class RepositoryContainer extends AbstractRuntimeContainer
     private int memoryThreshold = 4 * 1024 * 1024; // 4mb
     private long maxContentSize = (long) 4 * 1024 * 1024 * 1024; // 4gb
     private TempStoreOutputStreamFactory streamFactory = null;
-    private String exceptHeadersPattern = null;
+    private String preserveHeadersPattern = null;
 
     private Class<?>[] notPublicExceptions = new Class<?>[] {};
     private Class<?>[] publicExceptions = new Class<?>[] {};
@@ -140,9 +140,9 @@ public class RepositoryContainer extends AbstractRuntimeContainer
 		}
 	}
 
-    public void setExceptHeadersPattern(String exceptHeadersPattern)
+    public void setPreserveHeadersPattern(String preserveHeadersPattern)
     {
-        this.exceptHeadersPattern = exceptHeadersPattern;
+        this.preserveHeadersPattern = preserveHeadersPattern;
     }
 
 	/**
@@ -522,7 +522,7 @@ public class RepositoryContainer extends AbstractRuntimeContainer
                                 // Reset the request and response in case of a transaction retry
                                 bufferedReq.reset();
                                 // REPO-4388 don't reset specified headers
-                                bufferedRes.reset(exceptHeadersPattern);
+                                bufferedRes.reset(preserveHeadersPattern);
                                 script.execute(bufferedReq, bufferedRes);
                             }
                         }

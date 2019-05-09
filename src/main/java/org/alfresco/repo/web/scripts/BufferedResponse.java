@@ -184,7 +184,7 @@ public class BufferedResponse implements WrappingWebScriptResponse
     /* (non-Javadoc)
      * @see org./alfresco.web.scripts.WebScriptResponse#resetjava.lang.String)
      */
-    public void reset(String exceptHeadersPattern)
+    public void reset(String preserveHeadersPattern)
     {
         if (outputStream != null)
         {
@@ -194,7 +194,7 @@ public class BufferedResponse implements WrappingWebScriptResponse
         {
             outputWriter = null;
         }
-        res.reset(exceptHeadersPattern);
+        res.reset(preserveHeadersPattern);
     }
 
     /*
