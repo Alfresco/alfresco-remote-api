@@ -333,7 +333,7 @@ public class RenditionsImpl implements Renditions, ResourceLoaderAware
         for (Rendition rendition : renditions)
         {
             String name = getName(rendition);
-            Set<String> requestedRenditions = NodesImpl.getRequestedRenditions(name);
+            Set<String> requestedRenditions = NodesImpl.splitCommaSeparatedString(name);
             if (requestedRenditions == null)
             {
                 renditionNames.add(null);

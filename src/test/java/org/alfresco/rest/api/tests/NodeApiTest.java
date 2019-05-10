@@ -2638,6 +2638,28 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
 
         // Upload with multipart with missing boundary e.g. multipart/form-data; boundary=7cgH0q1hSgrlmU7tUe8kGSWT4Un6aRH
         post(getNodeChildrenUrl(Nodes.PATH_MY), reqBody.getBody(), null, "multipart/form-data", 415);
+
+        // set aspect which doesn't exist
+        List<String> aspects = new ArrayList<>();
+        aspects.add("hackathon:2019");
+        aspects.add("papi:dessertable");
+        multiPartBuilder.setAspects(aspects);
+        reqBody = multiPartBuilder.build();
+        post(getNodeChildrenUrl(Nodes.PATH_MY), reqBody.getBody(), null, reqBody.getContentType(), 400);
+
+        // set aspect which exist
+        aspects = new ArrayList<>();
+        aspects.add("papi:dessertable");
+        multiPartBuilder.setAspects(aspects);
+        reqBody = multiPartBuilder.build();
+        HttpResponse response = post(getNodeChildrenUrl(Nodes.PATH_MY), reqBody.getBody(), null, reqBody.getContentType(), 201);
+
+        Document document = RestApiUtil.parseRestApiEntry(response.getJsonResponse(), Document.class);
+
+        // Check the upload response
+        assertEquals("quick-1.txt", document.getName());
+        assertNotNull(document.getAspectNames());
+        assertTrue("Doesn't contains papi:dessertable in aspects", document.getAspectNames().contains("papi:dessertable"));
     }
 
 

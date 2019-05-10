@@ -2,7 +2,7 @@
  * #%L
  * Alfresco Remote API
  * %%
- * Copyright (C) 2005 - 2017 Alfresco Software Limited
+ * Copyright (C) 2005 - 2019 Alfresco Software Limited
  * %%
  * This file is part of the Alfresco software. 
  * If the software was purchased under a paid Alfresco license, the terms of 
@@ -72,9 +72,6 @@ import org.alfresco.repo.security.authentication.AuthenticationUtil.RunAsWork;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
 import org.alfresco.repo.site.SiteModel;
 import org.alfresco.repo.tenant.TenantUtil;
-import org.alfresco.repo.thumbnail.ThumbnailDefinition;
-import org.alfresco.repo.thumbnail.ThumbnailHelper;
-import org.alfresco.repo.thumbnail.ThumbnailRegistry;
 import org.alfresco.repo.transaction.AlfrescoTransactionSupport;
 import org.alfresco.repo.transaction.RetryingTransactionHelper;
 import org.alfresco.repo.version.VersionModel;
@@ -103,7 +100,6 @@ import org.alfresco.rest.framework.core.exceptions.InvalidArgumentException;
 import org.alfresco.rest.framework.core.exceptions.NotFoundException;
 import org.alfresco.rest.framework.core.exceptions.PermissionDeniedException;
 import org.alfresco.rest.framework.core.exceptions.RequestEntityTooLargeException;
-import org.alfresco.rest.framework.core.exceptions.StaleEntityException;
 import org.alfresco.rest.framework.core.exceptions.UnsupportedMediaTypeException;
 import org.alfresco.rest.framework.resource.content.BasicContentInfo;
 import org.alfresco.rest.framework.resource.content.BinaryResource;
@@ -1878,6 +1874,7 @@ public class NodesImpl implements Nodes
         return newNode;
     }
 
+    @Override
     public void addCustomAspects(NodeRef nodeRef, List<String> aspectNames, List<QName> excludedAspects)
     {
         if (aspectNames == null)
@@ -2866,6 +2863,7 @@ public class NodesImpl implements Nodes
         String versionComment = null;
         String relativePath = null;
         String renditionNames = null;
+        String aspectNames = null;
 
         Map<String, Object> qnameStrProps = new HashMap<>();
         Map<QName, Serializable> properties = null;
@@ -2923,6 +2921,10 @@ public class NodesImpl implements Nodes
                     renditionNames = getStringOrNull(field.getValue());
                     break;
 
+                case "aspectnames":
+                    aspectNames = getStringOrNull(field.getValue());
+                    break;
+
                 default:
                 {
                     final String propName = field.getName();
@@ -2957,7 +2959,8 @@ public class NodesImpl implements Nodes
         // if requested, make (get or create) path
         parentNodeRef = getOrCreatePath(parentNodeRef, relativePath);
         final QName assocTypeQName = ContentModel.ASSOC_CONTAINS;
-        final Set<String> renditions = getRequestedRenditions(renditionNames);
+        final Set<String> renditions = splitCommaSeparatedString(renditionNames);
+        final Set<String> aspects = splitCommaSeparatedString(aspectNames);
 
         try
         {
@@ -3009,7 +3012,15 @@ public class NodesImpl implements Nodes
             checkRenditionNames(renditions);
             requestRenditions(renditions, fileNode);
 
-            return fileNode;
+            if(aspects != null)
+            {
+                List<String> aspectsList = new ArrayList<>(aspects);
+                addCustomAspects(nodeRef, aspectsList, EXCLUDED_ASPECTS);
+            }
+
+            Node newNode = getFolderOrDocument(nodeRef.getId(), parameters);
+
+            return newNode;
 
             // Do not clean formData temp files to allow for retries.
             // Temp files will be deleted later when GC call DiskFileItem#finalize() method or by temp file cleaner.
@@ -3096,25 +3107,25 @@ public class NodesImpl implements Nodes
         }
     }
 
-    static Set<String> getRequestedRenditions(String renditionsParam)
+    static Set<String> splitCommaSeparatedString(String fieldValue)
     {
-        if (renditionsParam == null)
+        if (fieldValue == null)
         {
             return null;
         }
 
-        String[] renditionNames = renditionsParam.split(",");
+        String[] fieldValues = fieldValue.split(",");
 
-        Set<String> renditions = new LinkedHashSet<>(renditionNames.length);
-        for (String name : renditionNames)
+        Set<String> fieldValuesSet = new LinkedHashSet<>(fieldValues.length);
+        for (String name : fieldValues)
         {
             name = name.trim();
             if (!name.isEmpty())
             {
-                renditions.add(name.trim());
+                fieldValuesSet.add(name.trim());
             }
         }
-        return renditions;
+        return fieldValuesSet;
     }
 
     private void requestRenditions(Set<String> renditionNames, Node fileNode)

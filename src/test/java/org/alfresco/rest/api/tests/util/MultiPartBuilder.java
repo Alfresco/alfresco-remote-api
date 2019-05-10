@@ -278,7 +278,7 @@ public class MultiPartBuilder
         addPartIfNotNull(parts, "updatenoderef", updateNodeRef);
         addPartIfNotNull(parts, "description", description);
         addPartIfNotNull(parts, "contenttype", contentTypeQNameStr);
-        addPartIfNotNull(parts, "aspects", getCommaSeparated(aspects));
+        addPartIfNotNull(parts, "aspectnames", getCommaSeparated(aspects));
         addPartIfNotNull(parts, "majorversion", majorVersion);
         addPartIfNotNull(parts, "overwrite", overwrite);
         addPartIfNotNull(parts, "autorename", autoRename);
