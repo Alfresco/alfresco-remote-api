@@ -3107,25 +3107,25 @@ public class NodesImpl implements Nodes
         }
     }
 
-    static Set<String> splitCommaSeparatedString(String fieldValue)
+    static Set<String> splitCommaSeparatedString(String listString)
     {
-        if (fieldValue == null)
+        if (listString == null)
         {
             return null;
         }
 
-        String[] fieldValues = fieldValue.split(",");
+        String[] subValues = listString.split(",");
 
-        Set<String> fieldValuesSet = new LinkedHashSet<>(fieldValues.length);
-        for (String name : fieldValues)
+        Set<String> subValuesSet = new LinkedHashSet<>(subValues.length);
+        for (String name : subValues)
         {
             name = name.trim();
             if (!name.isEmpty())
             {
-                fieldValuesSet.add(name.trim());
+                subValuesSet.add(name.trim());
             }
         }
-        return fieldValuesSet;
+        return subValuesSet;
     }
 
     private void requestRenditions(Set<String> renditionNames, Node fileNode)
