@@ -38,15 +38,18 @@ public class Query
     private final String language;
     private final String query;
     private final String userQuery;
+    private final String qf;
 
     @JsonCreator
-    public Query(@JsonProperty("language")  String language,
-                 @JsonProperty("query")     String query,
-                 @JsonProperty("userQuery") String userQuery)
+    public Query(@JsonProperty("language") String language,
+                 @JsonProperty("query") String query,
+                 @JsonProperty("userQuery") String userQuery,
+                 @JsonProperty("qf") String qf)
     {
         this.language = language;
         this.query = query;
         this.userQuery = userQuery;
+        this.qf = qf;
     }
 
     public String getLanguage()
@@ -64,4 +67,7 @@ public class Query
         return userQuery;
     }
 
+    public String getQf() {
+        return qf;
+    }
 }

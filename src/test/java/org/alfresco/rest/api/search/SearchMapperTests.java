@@ -131,20 +131,20 @@ public class SearchMapperTests
         SearchParameters searchParameters = new SearchParameters();
         try
         {
-            searchMapper.fromQuery(searchParameters, new Query(null,null, null));
+            searchMapper.fromQuery(searchParameters, new Query(null,null, null, null));
             fail();
         } catch (IllegalArgumentException iae)
         {
             assertTrue(iae.getLocalizedMessage().contains("query is a mandatory parameter"));
         }
 
-        Query q = new Query(null,"hello", null);
+        Query q = new Query(null,"hello", null, null);
 
         searchMapper.fromQuery(searchParameters, q);
         //Default
         assertEquals(LANGUAGE_FTS_ALFRESCO, searchParameters.getLanguage());
 
-        q = new Query("world", "hello", null);
+        q = new Query("world", "hello", null, null);
 
         try
         {
@@ -156,21 +156,21 @@ public class SearchMapperTests
             //world is not a valid language type
         }
 
-        q = new Query("afts", "hello", null);
+        q = new Query("afts", "hello", null, null);
         searchMapper.fromQuery(searchParameters, q);
         assertEquals(LANGUAGE_FTS_ALFRESCO, searchParameters.getLanguage());
 
-        q = new Query("cMiS", "hello", null);
+        q = new Query("cMiS", "hello", null, null);
         searchMapper.fromQuery(searchParameters, q);
         assertEquals(LANGUAGE_CMIS_ALFRESCO, searchParameters.getLanguage());
 
-        q = new Query("LuCENE", "hello", null);
+        q = new Query("LuCENE", "hello", null, null);
         searchMapper.fromQuery(searchParameters, q);
         assertEquals(LANGUAGE_LUCENE, searchParameters.getLanguage());
 
         assertEquals("hello", searchParameters.getQuery());
 
-        q = new Query("LuCENE", "hello", "Heload");
+        q = new Query("LuCENE", "hello", "Heload", null);
         searchMapper.fromQuery(searchParameters, q);
         assertEquals("Heload", searchParameters.getSearchTerm());
     }
@@ -1078,7 +1078,7 @@ public class SearchMapperTests
     @Test
     public void facetFormatV2()
     {
-        Query query = new Query("afts", "a*", "");
+        Query query = new Query("afts", "a*", "", null);
         SearchQuery sq = new SearchQuery(query, null, null, null, null, null, null, null,
                     null, null, null, null, null, null, null, null,
                     null, null,null, null,FacetFormat.V2);
@@ -1135,7 +1135,7 @@ public class SearchMapperTests
     
     private SearchQuery minimalQuery()
     {
-        Query query = new Query("cmis", "foo", "");
+        Query query = new Query("cmis", "foo", "", null);
         SearchQuery sq = new SearchQuery(query, null, null, null, null, null, null, null,
                     null, null, null, null, null, null, null, null,
                     null, null,null, null,null);
