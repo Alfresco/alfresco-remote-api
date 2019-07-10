@@ -35,9 +35,9 @@
         <dir.root>${project.build.directory}/alf_data</dir.root>
         <img.exe>convert</img.exe>
 
-        <dependency.alfresco-repository.version>6.56.26</dependency.alfresco-repository.version>
+        <dependency.alfresco-repository.version>6.56.27</dependency.alfresco-repository.version>
         <dependency.alfresco-core.version>7.5</dependency.alfresco-core.version>
-        <dependency.alfresco-data-model.version>8.18.6</dependency.alfresco-data-model.version>
+        <dependency.alfresco-data-model.version>8.18.7</dependency.alfresco-data-model.version>
 
         <maven.build.sourceVersion>11</maven.build.sourceVersion>
 
@@ -49,7 +49,7 @@
         <dependency.spring.version>5.0.4.RELEASE</dependency.spring.version>
         <dependency.postgresql.version>42.2.5</dependency.postgresql.version>
         <dependency.mysql.version>5.1.40</dependency.mysql.version>
-        <dependency.cxf.version>3.2.7</dependency.cxf.version>
+        <dependency.cxf.version>3.3.2</dependency.cxf.version>
     </properties>
 
     <dependencyManagement>
