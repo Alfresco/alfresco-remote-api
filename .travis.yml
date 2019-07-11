@@ -14,7 +14,7 @@ branches:
   only:
     - master
     - /support\/.*/
-    - fix/REPO-4504_Upgrade_cxf-rt-transports-http_6.1
+    - fix/REPO-4504_Upgrade_cxf-rt-transports-http_6.0
 
 stages:
   - test
@@ -48,7 +48,7 @@ jobs:
       script: travis_wait 20 mvn test -B -Dtest=AppContextExtraTestSuite -Ddb.driver=org.postgresql.Driver -Ddb.name=alfresco -Ddb.url=jdbc:postgresql://localhost:5433/alfresco -Ddb.username=alfresco -Ddb.password=alfresco
     - stage: release
       name: "Push to Nexus"
-      if: fork = false AND (branch = fix/REPO-4504_Upgrade_cxf-rt-transports-http_6.1) AND type != pull_request AND commit_message !~ /\[no-release\]/
+      if: fork = false AND (branch = fix/REPO-4504_Upgrade_cxf-rt-transports-http_6.0) AND type != pull_request AND commit_message !~ /\[no-release\]/
       before_install:
         - "cp .travis.settings.xml $HOME/.m2/settings.xml"
       script:
