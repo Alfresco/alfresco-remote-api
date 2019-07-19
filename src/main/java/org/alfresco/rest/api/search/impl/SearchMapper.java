@@ -39,6 +39,8 @@ import static org.alfresco.rest.api.Nodes.PARAM_INCLUDE_PROPERTIES;
 import static org.alfresco.service.cmr.search.SearchService.LANGUAGE_CMIS_ALFRESCO;
 import static org.alfresco.service.cmr.search.SearchService.LANGUAGE_FTS_ALFRESCO;
 import static org.alfresco.service.cmr.search.SearchService.LANGUAGE_LUCENE;
+import static org.alfresco.service.cmr.search.SearchService.LANGUAGE_SOLR_MORE_LIKE_THIS;
+
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.repo.search.impl.lucene.LuceneQueryLanguageSPI;
 import org.alfresco.rest.api.search.context.SearchRequestContext;
@@ -104,6 +106,7 @@ public class SearchMapper
     public static final String CMIS = "cmis";
     public static final String LUCENE = "lucene";
     public static final String AFTS = "afts";
+    private static final String QUERY_FIELDS = "qf";
     private StoreMapper storeMapper;
 
     /**
@@ -163,6 +166,9 @@ public class SearchMapper
             case AFTS:
                 sp.setLanguage(LANGUAGE_FTS_ALFRESCO);
                 break;
+            case LANGUAGE_SOLR_MORE_LIKE_THIS:
+                sp.setLanguage(LANGUAGE_SOLR_MORE_LIKE_THIS);
+                break;
             case LUCENE:
                 sp.setLanguage(LANGUAGE_LUCENE);
                 break;
@@ -171,10 +177,14 @@ public class SearchMapper
                 break;
             default:
                 throw new InvalidArgumentException(InvalidArgumentException.DEFAULT_MESSAGE_ID,
-                            new Object[] { ": language allowed values: afts,lucene,cmis" });
+                            new Object[] { ": language allowed values: afts,lucene,cmis,solr-mlt" });
         }
+        String qf = q.getQf();
         sp.setQuery(q.getQuery());
         sp.setSearchTerm(q.getUserQuery());
+        if(qf!=null){
+            sp.addExtraParameter(QUERY_FIELDS,qf);
+        }
     }
 
     /**
