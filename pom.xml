@@ -36,7 +36,7 @@
         <img.exe>convert</img.exe>
 
         <dependency.alfresco-core.version>7.5.6</dependency.alfresco-core.version>
-        <dependency.alfresco-repository.version>6.56.32</dependency.alfresco-repository.version>
+        <dependency.alfresco-repository.version>6.56.33</dependency.alfresco-repository.version>
         <dependency.alfresco-data-model.version>8.18.11</dependency.alfresco-data-model.version>
 
         <maven.build.sourceVersion>11</maven.build.sourceVersion>
@@ -47,7 +47,7 @@
         <dependency.webscripts.version>7.8</dependency.webscripts.version>
         <dependency.opencmis.version>1.0.0</dependency.opencmis.version>
         <dependency.spring.version>5.1.8.RELEASE</dependency.spring.version>
-        <dependency.postgresql.version>42.2.5</dependency.postgresql.version>
+        <dependency.postgresql.version>42.2.6</dependency.postgresql.version>
         <dependency.mysql.version>5.1.40</dependency.mysql.version>
         <dependency.cxf.version>3.3.2</dependency.cxf.version>
     </properties>
