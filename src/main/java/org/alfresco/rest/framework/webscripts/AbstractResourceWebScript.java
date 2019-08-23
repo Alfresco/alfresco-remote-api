@@ -94,17 +94,8 @@ public abstract class AbstractResourceWebScript extends ApiWebScript implements 
         
         try
         {
-            final Map<String, Object> respons = new HashMap<String, Object>();
             final Map<String, String> templateVars = req.getServiceMatch().getTemplateVars();
             final ResourceWithMetadata resource = locator.locateResource(api,templateVars, httpMethod);
-
-            final BufferedRequest bufferedReq;
-            final BufferedResponse bufferedRes;
-
-            bufferedReq = (BufferedRequest) req;
-            bufferedRes = (BufferedResponse) res;
-                    
-            
             final boolean isReadOnly = HttpMethod.GET==httpMethod;
 
             // MNT-20308 - allow write transactions for authentication api
@@ -118,17 +109,15 @@ public abstract class AbstractResourceWebScript extends ApiWebScript implements 
                 {
                     try
                     {
-                        final Params params = paramsExtractor.extractParams(resource.getMetaData(), bufferedReq);
-                        return AbstractResourceWebScript.this.execute(resource, params, bufferedRes, isReadOnly);
+                        final Params params = paramsExtractor.extractParams(resource.getMetaData(), req);
+                        return AbstractResourceWebScript.this.execute(resource, params, res, isReadOnly);
                     }
                     catch (Exception e)
                     {
-                        boolean resetRequest = true;
-
-                        if (resetRequest)
+                        if (req instanceof BufferedRequest)
                         {
                             // Reset the request in case of a transaction retry
-                            bufferedReq.reset();
+                            ((BufferedRequest) req).reset();
                         }
 
                         // re-throw original exception for retry
