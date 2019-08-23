@@ -26,11 +26,18 @@
 package org.alfresco.repo.web.scripts;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 
+import org.alfresco.util.TempFileProvider;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisConstraintException;
 import org.apache.chemistry.opencmis.commons.server.TempStoreOutputStream;
 import org.apache.chemistry.opencmis.server.shared.TempStoreOutputStreamFactory;
 import org.springframework.extensions.surf.util.Content;
@@ -46,6 +53,8 @@ public class BufferedRequest implements WrappingWebScriptRequest
 	private TempStoreOutputStreamFactory streamFactory;
     private WebScriptRequest req;
     private File requestBody;
+//    private TempStoreOutputStream bufferStream;
+    private TempOutputStream bufferStream;
     private InputStream contentStream;
     private BufferedReader contentReader;
     
@@ -53,6 +62,39 @@ public class BufferedRequest implements WrappingWebScriptRequest
     {
         this.req = req;
         this.streamFactory = streamFactory;
+    }
+
+    private TempOutputStream getBufferedBodyAsTempStream() throws IOException
+    {
+        if (bufferStream == null)
+        {
+            bufferStream = new TempOutputStream(streamFactory.getMemoryThreshold(), streamFactory.getMaxContentSize());
+//            bufferStream = new TempOutputStream(0, streamFactory.getMaxContentSize());
+//            // copy the streams
+//            LimitedStreamCopier streamCopier = new LimitedStreamCopier();
+//            long bytes = streamCopier.copyStreamsLong(req.getContent().getInputStream(), bufferStream, streamFactory.getMaxContentSize());
+            try
+            {
+                FileCopyUtils.copy(req.getContent().getInputStream(), bufferStream);
+            }
+            catch (IOException e)
+            {
+                throw e;
+            }
+        }
+        
+        return bufferStream;
+    }
+
+    private InputStream bufferInputStream2() throws IOException {
+        if (contentReader != null) {
+            throw new IllegalStateException("Reader in use");
+        }
+        if (contentStream == null) {
+            contentStream = getBufferedBodyAsTempStream().getInputStream();
+        }
+        
+        return contentStream;
     }
 
     private InputStream bufferInputStream() throws IOException
@@ -70,6 +112,124 @@ public class BufferedRequest implements WrappingWebScriptRequest
         }
 
         return bufferStream.getInputStream();
+    }
+
+    private class TempByteArrayOutputStream extends ByteArrayOutputStream
+    {
+        public TempByteArrayOutputStream()
+        {
+        }
+
+        /**
+         * @return The internal buffer where data is stored
+         */
+        public byte[] getBuffer() {
+            return buf;
+        }
+
+        /**
+         * @return The number of valid bytes in the buffer.
+         */
+        public int getCount()
+        {
+            return count;
+        }
+    }
+    
+    private class TempOutputStream extends OutputStream
+    {
+        private final int DEFAULT_MEMORY_THRESHOLD = 4 * 1024 * 1024; // 4mb
+        private long DEFAULT_MAX_CONTENT_SIZE = (long) 4 * 1024 * 1024 * 1024; // 4gb
+
+        private final int memoryThreshold;
+        private final long maxContentSize;
+
+        private OutputStream outputStream;
+//        private File tempFile;
+        private TempByteArrayOutputStream tempStream;
+
+        public TempOutputStream(int memoryThreshold, long maxContentSize) {
+            this.memoryThreshold = (memoryThreshold < 0 ) ? DEFAULT_MEMORY_THRESHOLD : memoryThreshold;
+            this.maxContentSize = maxContentSize;
+
+            this.tempStream = new TempByteArrayOutputStream();
+            this.outputStream = this.tempStream;
+        }
+
+        /**
+         * Returns the data as an InputStream.
+         */
+        public InputStream getInputStream() throws IOException
+        {
+            if (requestBody != null)
+            {
+                return new FileInputStream(requestBody);
+            }
+            else
+            {
+                return new ByteArrayInputStream(tempStream.getBuffer(), 0, tempStream.getCount());
+            }
+        }
+
+        @Override
+        public void write(int b) throws IOException
+        {
+            update(1);
+            outputStream.write(b);
+        }
+
+        public void write(byte b[], int off, int len) throws IOException
+        {
+            update(len);
+            outputStream.write(b, off, len);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            outputStream.flush();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            outputStream.close();
+
+//            if (tempFile != null)
+//            {
+//                try
+//                {
+//                    tempFile.delete();
+//                }
+//                finally
+//                {
+//                    tempFile = null;
+//                }
+//            }
+        }
+        
+        private void update(int len) throws IOException
+        {
+            if (requestBody == null && (tempStream.getCount() + len) > memoryThreshold)
+            {
+                File file = TempFileProvider.createTempFile("ws_request_", ".bin");
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                fileOutputStream.write(this.tempStream.getBuffer(), 0, this.tempStream.getCount());
+                fileOutputStream.flush();
+
+                try
+                {
+                    tempStream.close();
+                }
+                catch (IOException e)
+                {
+                    // Ignore exception
+                }
+                tempStream = null;
+
+                requestBody = file;
+                outputStream = fileOutputStream;
+            }
+        }
     }
 
     public void reset()
@@ -184,7 +344,7 @@ public class BufferedRequest implements WrappingWebScriptRequest
                 {
                     try
                     {
-                        BufferedRequest.this.contentStream = bufferInputStream();
+                        BufferedRequest.this.contentStream = bufferInputStream2();
                     }
                     catch (IOException e)
                     {
@@ -204,7 +364,7 @@ public class BufferedRequest implements WrappingWebScriptRequest
                 if (BufferedRequest.this.contentReader == null)
                 {
                     String encoding = wrapped.getEncoding();
-                    InputStream in = bufferInputStream();
+                    InputStream in = bufferInputStream2();
                     BufferedRequest.this.contentReader = new BufferedReader(new InputStreamReader(in, encoding == null ? "ISO-8859-1" : encoding));
                 }
                 return BufferedRequest.this.contentReader;

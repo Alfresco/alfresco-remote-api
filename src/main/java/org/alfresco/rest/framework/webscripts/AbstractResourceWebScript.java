@@ -34,6 +34,8 @@ import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.metrics.rest.RestMetricsReporter;
 import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.repo.transaction.RetryingTransactionHelper;
+import org.alfresco.repo.web.scripts.BufferedRequest;
+import org.alfresco.repo.web.scripts.BufferedResponse;
 import org.alfresco.repo.web.scripts.content.ContentStreamer;
 import org.alfresco.rest.framework.Api;
 import org.alfresco.rest.framework.core.HttpMethodSupport;
@@ -95,12 +97,49 @@ public abstract class AbstractResourceWebScript extends ApiWebScript implements 
             final Map<String, Object> respons = new HashMap<String, Object>();
             final Map<String, String> templateVars = req.getServiceMatch().getTemplateVars();
             final ResourceWithMetadata resource = locator.locateResource(api,templateVars, httpMethod);
-            final Params params = paramsExtractor.extractParams(resource.getMetaData(),req);
+
+            final BufferedRequest bufferedReq;
+            final BufferedResponse bufferedRes;
+
+            bufferedReq = (BufferedRequest) req;
+            bufferedRes = (BufferedResponse) res;
+                    
+            
             final boolean isReadOnly = HttpMethod.GET==httpMethod;
 
+            // MNT-20308 - allow write transactions for authentication api
+            RetryingTransactionHelper transHelper = getTransactionHelper(resource.getMetaData().getApi().getName());
+
+            // encapsulate script within transaction
+            RetryingTransactionHelper.RetryingTransactionCallback<Object> work = new RetryingTransactionHelper.RetryingTransactionCallback<Object>()
+            {
+                @Override
+                public Object execute() throws Throwable
+                {
+                    try
+                    {
+                        final Params params = paramsExtractor.extractParams(resource.getMetaData(), bufferedReq);
+                        return AbstractResourceWebScript.this.execute(resource, params, bufferedRes, isReadOnly);
+                    }
+                    catch (Exception e)
+                    {
+                        boolean resetRequest = true;
+
+                        if (resetRequest)
+                        {
+                            // Reset the request in case of a transaction retry
+                            bufferedReq.reset();
+                        }
+
+                        // re-throw original exception for retry
+                        throw e;
+                    }
+                }
+            };
+
             //This execution usually takes place in a Retrying Transaction (see subclasses)
-            final Object toSerialize = execute(resource, params, res, isReadOnly);
-            
+            final Object toSerialize = transHelper.doInTransaction(work, isReadOnly, true);
+
             //Outside the transaction.
             if (toSerialize != null)
             {
@@ -182,9 +221,9 @@ public abstract class AbstractResourceWebScript extends ApiWebScript implements 
                         {
                             return result; //don't postprocess it.
                         }
-                        return helper.processAdditionsToTheResponse(res, resource.getMetaData().getApi(), entityCollectionName, params, result);
+        return helper.processAdditionsToTheResponse(res, resource.getMetaData().getApi(), entityCollectionName, params, result);
                     }
-                }, isReadOnly, true);
+                }, isReadOnly, false);
         setResponse(res,callBack);
         return toReturn;
     }
