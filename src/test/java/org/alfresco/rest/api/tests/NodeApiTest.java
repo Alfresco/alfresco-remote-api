@@ -2795,7 +2795,7 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
     public void testUpdateNodeConcurrentlyUsingFileBacked() throws Exception
     {
         // Bigger than its memory threshold ( 5 > 4 MB )
-        updateNodeConcurrently(5 * 1024 * 1024 * 1024L);
+        updateNodeConcurrently(5 * 1024 * 1024L);
     }
 
     private void updateNodeConcurrently(Long contentSize) throws Exception
