@@ -40,7 +40,7 @@ import org.springframework.util.FileCopyUtils;
 
 public class BufferedRequest implements WrappingWebScriptRequest
 {
-	private TempOutputStreamFactory streamFactory;
+    private TempOutputStreamFactory streamFactory;
     private WebScriptRequest req;
     private TempOutputStream bufferStream;
     private InputStream contentStream;

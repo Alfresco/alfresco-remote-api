@@ -27,19 +27,40 @@ package org.alfresco.repo.web.scripts;
 
 import java.io.File;
 
+/**
+ * Factory for {@link TempOutputStream}
+ */
 public class TempOutputStreamFactory
 {
+    /**
+     * A temporary directory, i.e. <code>isDir == true</code>, that will be used as
+     * parent directory for creating temp file backed streams.
+     */
     private final File tempDir;
     private int memoryThreshold;
     private long maxContentSize;
     private boolean encrypt;
     private boolean deleteTempFileOnClose;
 
-    protected TempOutputStreamFactory(File tempDir, int memoryThreshold, long maxContentSize)
-    {
-        this(tempDir, memoryThreshold, maxContentSize, false, true);
-    }
-
+    /**
+     * Creates a {@link TempOutputStream} factory.
+     * 
+     * @param tempDir
+     *            the temporary directory, i.e. <code>isDir == true</code>, that
+     *            will be used as * parent directory for creating temp file backed
+     *            streams
+     * @param memoryThreshold
+     *            the memory threshold in B
+     * @param maxContentSize
+     *            the max content size in B
+     * @param encrypt
+     *            true if temp files should be encrypted
+     * @param deleteTempFileOnClose
+     *            true if temp files should be deleted on output stream close
+     *            (useful if we need to cache the content for further reads). If
+     *            this is false then we need to make sure we call
+     *            {@link TempOutputStream}.destroy to clean up properly.
+     */
     public TempOutputStreamFactory(File tempDir, int memoryThreshold, long maxContentSize, boolean encrypt, boolean deleteTempFileOnClose)
     {
         this.tempDir = tempDir;
@@ -49,9 +70,12 @@ public class TempOutputStreamFactory
         this.deleteTempFileOnClose = deleteTempFileOnClose;
     }
 
+    /**
+     * Creates a new {@link TempOutputStream} object
+     */
     public TempOutputStream createOutputStream()
     {
-        return new TempOutputStream(tempDir, memoryThreshold, maxContentSize, deleteTempFileOnClose);
+        return new TempOutputStream(tempDir, memoryThreshold, maxContentSize, encrypt, deleteTempFileOnClose);
     }
 
     public File getTempDir()

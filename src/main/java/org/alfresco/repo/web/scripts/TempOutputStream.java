@@ -48,6 +48,31 @@ import org.alfresco.util.TempFileProvider;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+/**
+ * An output stream implementation that keeps the data in memory if is less then
+ * the specified <b>memoryThreshold</b> otherwise it writes it to a temp file.
+ * <p/>
+ *
+ * Close the stream before any call to
+ * {@link TempOutputStream}.getInputStream().
+ * <p/>
+ * 
+ * If <b>deleteTempFileOnClose</b> is false then use proper try-finally patterns
+ * to ensure that the temp file is destroyed after it is no longer needed.
+ * 
+ * <pre>
+ *   <code>try
+ *   {
+ *      StreamUtils.copy(new BufferedInputStream(new FileInputStream(file)), tempOutputStream);
+ *      tempOutputStream.close();
+ *   }
+ *   finally
+ *   {
+ *       tempOutputStream.destroy();
+ *   }
+ *   </code>
+ * </pre>
+ */
 public class TempOutputStream extends OutputStream
 {
     private static final Log logger = LogFactory.getLog(TempOutputStream.class);
@@ -58,6 +83,7 @@ public class TempOutputStream extends OutputStream
     private static final String PADDING = "PKCS5Padding";
     private static final String TRANSFORMATION = ALGORITHM + '/' + MODE + '/' + PADDING;
     private static final int KEY_SIZE = 128;
+    public static final String TEMP_FILE_PREFIX = "tempStreamFile-";
 
     private final File tempDir;
     private final int memoryThreshold;
@@ -73,16 +99,31 @@ public class TempOutputStream extends OutputStream
     private Key symKey;
     private byte[] iv;
 
-    public TempOutputStream(File tempDir, int memoryThreshold, long maxContentSize)
-    {
-        this(tempDir, memoryThreshold, maxContentSize, true);
-    }
-
-    public TempOutputStream(File tempDir, int memoryThreshold, long maxContentSize, boolean deleteTempFileOnClose)
+    /**
+     * Creates a TempOutputStream.
+     * 
+     * @param tempDir
+     *            the temporary directory, i.e. <code>isDir == true</code>, that
+     *            will be used as * parent directory for creating temp file backed
+     *            streams
+     * @param memoryThreshold
+     *            the memory threshold in B
+     * @param maxContentSize
+     *            the max content size in B
+     * @param encrypt
+     *            true if temp files should be encrypted
+     * @param deleteTempFileOnClose
+     *            true if temp files should be deleted on output stream close
+     *            (useful if we need to cache the content for further reads). If
+     *            this is false then we need to make sure we call
+     *            {@link TempOutputStream}.destroy to clean up properly.
+     */
+    public TempOutputStream(File tempDir, int memoryThreshold, long maxContentSize, boolean encrypt, boolean deleteTempFileOnClose)
     {
         this.tempDir = tempDir;
         this.memoryThreshold = (memoryThreshold < 0) ? DEFAULT_MEMORY_THRESHOLD : memoryThreshold;
         this.maxContentSize = maxContentSize;
+        this.encrypt = encrypt;
         this.deleteTempFileOnClose = deleteTempFileOnClose;
 
         this.tempStream = new TempByteArrayOutputStream();
@@ -90,7 +131,7 @@ public class TempOutputStream extends OutputStream
     }
 
     /**
-     * Returns the data as an InputStream.
+     * Returns the data as an InputStream
      */
     public InputStream getInputStream() throws IOException
     {
@@ -133,7 +174,8 @@ public class TempOutputStream extends OutputStream
         outputStream.write(b);
     }
 
-    public void write(byte b[], int off, int len) throws IOException
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException
     {
         update(len);
         outputStream.write(b, off, len);
@@ -161,7 +203,7 @@ public class TempOutputStream extends OutputStream
         return length;
     }
 
-    private void close(boolean deleteTempFileOnClose)
+    private void closeOutputStream()
     {
         if (outputStream != null)
         {
@@ -189,8 +231,11 @@ public class TempOutputStream extends OutputStream
                 }
             }
         }
+    }
 
-        if (deleteTempFileOnClose && (tempFile != null))
+    private void deleteTempFile()
+    {
+        if (tempFile != null)
         {
             try
             {
@@ -217,53 +262,66 @@ public class TempOutputStream extends OutputStream
         }
     }
 
+    private void close(boolean deleteTempFileOnClose)
+    {
+        closeOutputStream();
+
+        if (deleteTempFileOnClose)
+        {
+            deleteTempFile();
+        }
+    }
+
+    private BufferedOutputStream createOutputStream(File file) throws IOException
+    {
+        BufferedOutputStream fileOutputStream;
+        if (encrypt)
+        {
+            try
+            {
+                // Generate a symmetric key
+                final KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
+                keyGen.init(KEY_SIZE);
+                symKey = keyGen.generateKey();
+
+                Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+                cipher.init(Cipher.ENCRYPT_MODE, symKey);
+
+                iv = cipher.getIV();
+
+                fileOutputStream = new BufferedOutputStream(new CipherOutputStream(new FileOutputStream(file), cipher));
+            }
+            catch (Exception e)
+            {
+                if (logger.isErrorEnabled())
+                {
+                    logger.error("Cannot initialize encryption cipher", e);
+                }
+
+                throw new IOException("Cannot initialize encryption cipher", e);
+            }
+        }
+        else
+        {
+            fileOutputStream = new BufferedOutputStream(new FileOutputStream(file));
+        }
+
+        return fileOutputStream;
+    }
+
     private void update(int len) throws IOException
     {
         if (maxContentSize > -1 && length + len > maxContentSize)
         {
             destroy();
-            StringBuilder msg = new StringBuilder();
-            msg.append("Content size violation, limit = ").append(maxContentSize);
-
-            throw new ContentLimitViolationException(msg.toString());
+            throw new ContentLimitViolationException("Content size violation, limit = " + maxContentSize);
         }
 
         if (tempFile == null && (tempStream.getCount() + len) > memoryThreshold)
         {
-            File file = TempFileProvider.createTempFile("ws_request_", ".bin", tempDir);
+            File file = TempFileProvider.createTempFile(TEMP_FILE_PREFIX, ".bin", tempDir);
 
-            BufferedOutputStream fileOutputStream;
-            if (encrypt)
-            {
-                try
-                {
-                    // Generate a symmetric key
-                    final KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM);
-                    keyGen.init(KEY_SIZE);
-                    symKey = keyGen.generateKey();
-
-                    Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-                    cipher.init(Cipher.ENCRYPT_MODE, symKey);
-
-                    iv = cipher.getIV();
-
-                    fileOutputStream = new BufferedOutputStream(new CipherOutputStream(new FileOutputStream(tempFile), cipher));
-                }
-                catch (Exception e)
-                {
-                    if (logger.isErrorEnabled())
-                    {
-                        logger.error("Cannot initialize encryption cipher", e);
-                    }
-
-                    throw new IOException("Cannot initialize encryption cipher", e);
-                }
-            }
-            else
-            {
-                fileOutputStream = new BufferedOutputStream(new FileOutputStream(file));
-            }
-
+            BufferedOutputStream fileOutputStream = createOutputStream(file);
             fileOutputStream.write(this.tempStream.getBuffer(), 0, this.tempStream.getCount());
             fileOutputStream.flush();
 
