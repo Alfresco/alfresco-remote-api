@@ -27,12 +27,12 @@ package org.alfresco.rest.framework.webscripts;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.repo.transaction.RetryingTransactionHelper;
+import org.alfresco.repo.web.scripts.BufferedRequest;
 import org.alfresco.repo.web.scripts.content.ContentStreamer;
 import org.alfresco.rest.framework.Api;
 import org.alfresco.rest.framework.core.HttpMethodSupport;
@@ -89,15 +89,41 @@ public abstract class AbstractResourceWebScript extends ApiWebScript implements 
     {
         try
         {
-            final Map<String, Object> respons = new HashMap<String, Object>();
             final Map<String, String> templateVars = req.getServiceMatch().getTemplateVars();
             final ResourceWithMetadata resource = locator.locateResource(api,templateVars, httpMethod);
-            final Params params = paramsExtractor.extractParams(resource.getMetaData(),req);
             final boolean isReadOnly = HttpMethod.GET==httpMethod;
 
+            // MNT-20308 - allow write transactions for authentication api
+            RetryingTransactionHelper transHelper = getTransactionHelper(resource.getMetaData().getApi().getName());
+
+            // encapsulate script within transaction
+            RetryingTransactionHelper.RetryingTransactionCallback<Object> work = new RetryingTransactionHelper.RetryingTransactionCallback<Object>()
+            {
+                @Override
+                public Object execute() throws Throwable
+                {
+                    try
+                    {
+                        final Params params = paramsExtractor.extractParams(resource.getMetaData(), req);
+                        return AbstractResourceWebScript.this.execute(resource, params, res, isReadOnly);
+                    }
+                    catch (Exception e)
+                    {
+                        if (req instanceof BufferedRequest)
+                        {
+                            // Reset the request in case of a transaction retry
+                            ((BufferedRequest) req).reset();
+                        }
+
+                        // re-throw original exception for retry
+                        throw e;
+                    }
+                }
+            };
+
             //This execution usually takes place in a Retrying Transaction (see subclasses)
-            final Object toSerialize = execute(resource, params, res, isReadOnly);
-            
+            final Object toSerialize = transHelper.doInTransaction(work, isReadOnly, true);
+
             //Outside the transaction.
             if (toSerialize != null)
             {
@@ -159,7 +185,11 @@ public abstract class AbstractResourceWebScript extends ApiWebScript implements 
         final String entityCollectionName = ResourceInspector.findEntityCollectionNameName(resource.getMetaData());
         final ResourceOperation operation = resource.getMetaData().getOperation(getHttpMethod());
         final WithResponse callBack = new WithResponse(operation.getSuccessStatus(), DEFAULT_JSON_CONTENT,CACHE_NEVER);
-        Object toReturn = transactionService.getRetryingTransactionHelper().doInTransaction(
+
+        // MNT-20308 - allow write transactions for authentication api
+        RetryingTransactionHelper transHelper = getTransactionHelper(resource.getMetaData().getApi().getName());
+
+        Object toReturn = transHelper.doInTransaction(
                 new RetryingTransactionHelper.RetryingTransactionCallback<Object>()
                 {
                     @Override
@@ -171,11 +201,21 @@ public abstract class AbstractResourceWebScript extends ApiWebScript implements 
                         {
                             return result; //don't postprocess it.
                         }
-                        return helper.processAdditionsToTheResponse(res, resource.getMetaData().getApi(), entityCollectionName, params, result);
+        return helper.processAdditionsToTheResponse(res, resource.getMetaData().getApi(), entityCollectionName, params, result);
                     }
-                }, isReadOnly, true);
+                }, isReadOnly, false);
         setResponse(res,callBack);
         return toReturn;
+    }
+
+    protected RetryingTransactionHelper getTransactionHelper(String api)
+    {
+        RetryingTransactionHelper transHelper = transactionService.getRetryingTransactionHelper();
+        if (api.equals("authentication"))
+        {
+            transHelper.setForceWritable(true);
+        }
+        return transHelper;
     }
 
     protected void streamResponse(final WebScriptRequest req, final WebScriptResponse res, BinaryResource resource) throws IOException
