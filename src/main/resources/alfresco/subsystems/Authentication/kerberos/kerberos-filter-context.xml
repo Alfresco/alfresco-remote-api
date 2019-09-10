@@ -72,6 +72,9 @@
       <property name="fallback">
          <ref bean="kerberos_SSOFallbackBasicAuthenticationDriver"/>
       </property>
+      <property name="container">
+         <ref bean="webscripts.container" />
+      </property>
    </bean>
 
    <bean id="webscriptAuthenticationFilter" class="org.alfresco.web.app.servlet.WebScriptSSOAuthenticationFilter">
@@ -149,6 +152,9 @@
       </property>
       <property name="loginPageLink">
          <value>${kerberos.authentication.sso.login.page.link}</value>
+      </property>
+      <property name="container">
+         <ref bean="webscripts.container" />
       </property>
    </bean>
 </beans>

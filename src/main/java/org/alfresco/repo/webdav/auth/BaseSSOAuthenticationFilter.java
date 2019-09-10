@@ -44,13 +44,16 @@ import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.filesys.ExtendedServerConfigurationAccessor;
 import org.alfresco.jlan.server.auth.ntlm.NTLM;
 import org.alfresco.jlan.server.config.SecurityConfigSection;
-import org.alfresco.jlan.util.IPAddress;
 import org.alfresco.repo.SessionUser;
 import org.alfresco.repo.management.subsystems.ActivateableBean;
 import org.alfresco.repo.security.authentication.AuthenticationException;
 import org.alfresco.repo.web.auth.WebCredentials;
 import org.alfresco.repo.web.filter.beans.DependencyInjectedFilter;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.extensions.surf.util.URLDecoder;
+import org.springframework.extensions.webscripts.Match;
+import org.springframework.extensions.webscripts.RuntimeContainer;
+import org.springframework.extensions.webscripts.Description.RequiredAuthentication;
 
 /**
  * Base class with common code and initialisation for single signon authentication filters.
@@ -85,6 +88,15 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     protected static final String MIME_HTML_TEXT = "text/html";
 
     protected String loginPageLink;
+    private RuntimeContainer container; 
+    
+    /**
+     * @param container the container to set
+     */
+    public void setContainer(RuntimeContainer container)
+    {
+        this.container = container;
+    }
 
     /**
      * @return login page link, which is send back to the client if the login fails in the filter.
@@ -184,13 +196,37 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     public void doFilter(ServletContext context, ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException
     {
-        // If a filter up the chain has marked the request as not requiring auth then respect it        
+    	 // Get the HTTP request/response
+        HttpServletRequest req = (HttpServletRequest)request;
+        
+        // find a webscript match for the requested URI
+        String requestURI = req.getRequestURI();
+        String pathInfo = requestURI.substring((req.getContextPath() + req.getServletPath()).length());
+    	
+        Match match = container.getRegistry().findWebScript(req.getMethod(), URLDecoder.decode(pathInfo));
+        
+    	// If a filter up the chain has marked the request as not requiring auth then respect it        
         if (request.getAttribute( NO_AUTH_REQUIRED) != null)
         {
             if ( getLogger().isTraceEnabled())
             {
                 getLogger().trace("Authentication not required (filter), chaining ...");
             }
+            chain.doFilter(request, response);
+        }
+        else if (match != null && match.getWebScript() != null)
+        {
+            // check the authentication required - if none then we don't want any of
+            // the filters down the chain to require any authentication checks
+            if (RequiredAuthentication.none == match.getWebScript().getDescription().getRequiredAuthentication())
+            {
+                if (getLogger().isDebugEnabled())
+                {
+                    getLogger().debug("Found webscript with no authentication - set NO_AUTH_REQUIRED flag.");
+                }
+                req.setAttribute(NO_AUTH_REQUIRED, Boolean.TRUE);
+            }
+            
             chain.doFilter(request, response);
         }
         else if (authenticateRequest(context, (HttpServletRequest) request, (HttpServletResponse) response))
