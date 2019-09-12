@@ -258,7 +258,9 @@ public abstract class BaseKerberosAuthenticationFilter extends BaseSSOAuthentica
     public boolean authenticateRequest(ServletContext context, HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException
     {
-        // Check if there is an authorization header with an SPNEGO security blob
+    	getLogger().info("BaseKerberosAuthenticationFilter + authenticateRequest" + "Authentication required (user), chaining ...");
+    	
+    	// Check if there is an authorization header with an SPNEGO security blob
         
         String authHdr = req.getHeader("Authorization");
         boolean reqAuth = false;

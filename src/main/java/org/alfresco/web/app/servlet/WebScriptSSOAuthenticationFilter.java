@@ -99,21 +99,29 @@ public class WebScriptSSOAuthenticationFilter extends BaseAuthenticationFilter i
         
         // find a webscript match for the requested URI
         String requestURI = req.getRequestURI();
-        String pathInfo = requestURI.substring((req.getContextPath() + req.getServletPath()).length());
-
+        String pathInfo = requestURI.substring((req.getContextPath() + req.getServletPath()).length());       
+        
         if (getLogger().isTraceEnabled())
         {
             getLogger().trace("Processing request: " + requestURI + " SID:" + (req.getSession(false) != null ? req.getSession().getId() : null));
         }
-        
+      
         Match match = container.getRegistry().findWebScript(req.getMethod(), URLDecoder.decode(pathInfo));
+        
+        getLogger().info("match find" + match);
+        getLogger().info("webscript find" + match.getWebScript());
+        getLogger().info("Description find" + match.getWebScript().getDescription());
+    	getLogger().info("NO_AUTH_REQUIRED" + match.getWebScript().getDescription().getRequiredAuthentication());
+        
+        
         if (match != null && match.getWebScript() != null)
         {
             // check the authentication required - if none then we don't want any of
             // the filters down the chain to require any authentication checks
             if (RequiredAuthentication.none == match.getWebScript().getDescription().getRequiredAuthentication())
             {
-                if (getLogger().isDebugEnabled())
+                
+            	if (getLogger().isDebugEnabled())
                 {
                     getLogger().debug("Found webscript with no authentication - set NO_AUTH_REQUIRED flag.");
                 }

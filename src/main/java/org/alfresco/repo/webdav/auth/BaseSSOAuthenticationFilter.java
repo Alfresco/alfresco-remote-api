@@ -196,6 +196,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     public void doFilter(ServletContext context, ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException
     {
+    	
+    	getLogger().info("BaseSSOAuthenticationFilter" + "doFilter"); 
+    	 	
     	 // Get the HTTP request/response
         HttpServletRequest req = (HttpServletRequest)request;
         
@@ -205,9 +208,18 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     	
         Match match = container.getRegistry().findWebScript(req.getMethod(), URLDecoder.decode(pathInfo));
         
-    	// If a filter up the chain has marked the request as not requiring auth then respect it        
+        getLogger().info("match find" + match);
+        getLogger().info("webscript find" + match.getWebScript());
+        getLogger().info("Description find" + match.getWebScript().getDescription());
+    	getLogger().info("NO_AUTH_REQUIRED" + match.getWebScript().getDescription().getRequiredAuthentication());
+        
+        
+        // If a filter up the chain has marked the request as not requiring auth then respect it        
         if (request.getAttribute( NO_AUTH_REQUIRED) != null)
         {
+        	 getLogger().info("Authentication not required (filter), chaining ...");
+        	
+        	
             if ( getLogger().isTraceEnabled())
             {
                 getLogger().trace("Authentication not required (filter), chaining ...");
@@ -216,6 +228,8 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
         }
         else if (match != null && match.getWebScript() != null)
         {
+        	 getLogger().info("Found webscript with no authentication - set NO_AUTH_REQUIRED flag.");
+        	
             // check the authentication required - if none then we don't want any of
             // the filters down the chain to require any authentication checks
             if (RequiredAuthentication.none == match.getWebScript().getDescription().getRequiredAuthentication())
