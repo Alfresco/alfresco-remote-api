@@ -208,9 +208,9 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     	
         Match match = container.getRegistry().findWebScript(req.getMethod(), URLDecoder.decode(pathInfo));
         
-        getLogger().info("match find" + match);
-        getLogger().info("webscript find" + match.getWebScript());
-        getLogger().info("Description find" + match.getWebScript().getDescription());
+        getLogger().info("match find " + match);
+        getLogger().info("webscript find " + match.getWebScript());
+        getLogger().info("Description find " + match.getWebScript().getDescription());
     	getLogger().info("NO_AUTH_REQUIRED" + match.getWebScript().getDescription().getRequiredAuthentication());
         
         

@@ -73,7 +73,7 @@
          <ref bean="kerberos_SSOFallbackBasicAuthenticationDriver"/>
       </property>
       <property name="container">
-         <ref bean="webscripts.container" />
+         <ref bean="publicapi.container" />
       </property>
    </bean>
 
@@ -154,7 +154,7 @@
          <value>${kerberos.authentication.sso.login.page.link}</value>
       </property>
       <property name="container">
-         <ref bean="webscripts.container" />
+         <ref bean="publicapi.container" />
       </property>
    </bean>
 </beans>
