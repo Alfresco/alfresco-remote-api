@@ -631,7 +631,7 @@ public class PeopleImpl implements People
                 }
                 else
                 {
-                    nodeService.setProperty(nodeRef, ContentModel.PROP_PERSONDESC, null);
+                    nodeService.removeProperty(nodeRef, ContentModel.PROP_PERSONDESC);
                 }
                 return null;
             }
