@@ -49,11 +49,14 @@ import org.alfresco.repo.management.subsystems.ActivateableBean;
 import org.alfresco.repo.security.authentication.AuthenticationException;
 import org.alfresco.repo.web.auth.WebCredentials;
 import org.alfresco.repo.web.filter.beans.DependencyInjectedFilter;
+import org.alfresco.rest.api.PublicApiTenantWebScriptServletRequest;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.extensions.surf.util.URLDecoder;
+import org.springframework.extensions.webscripts.Description.RequiredAuthentication;
 import org.springframework.extensions.webscripts.Match;
 import org.springframework.extensions.webscripts.RuntimeContainer;
-import org.springframework.extensions.webscripts.Description.RequiredAuthentication;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
  * Base class with common code and initialisation for single signon authentication filters.
@@ -62,41 +65,32 @@ import org.springframework.extensions.webscripts.Description.RequiredAuthenticat
  * @author kroast
  */
 public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilter implements DependencyInjectedFilter, AuthenticationDriver, ActivateableBean, InitializingBean
-{   
+{
     // Allow an authentication ticket to be passed as part of a request to bypass authentication
 
     private ExtendedServerConfigurationAccessor serverConfiguration;
-    
+
     // Various services required by NTLM authenticator
 
     private String m_loginPage;
-    
+
     // Indicate whether ticket based logons are supported
-    
+
     private boolean m_ticketLogons;
-    
+
     // User object attribute name
-    
+
     private String m_lastConfiguredServerName;
     private String m_lastResolvedServerName;
-    
+
     private boolean m_isActive = true;
-            
+
     private AuthenticationDriver fallbackDelegate;
     private boolean m_isFallbackEnabled = true;
-            
+
     protected static final String MIME_HTML_TEXT = "text/html";
 
     protected String loginPageLink;
-    private RuntimeContainer container; 
-    
-    /**
-     * @param container the container to set
-     */
-    public void setContainer(RuntimeContainer container)
-    {
-        this.container = container;
-    }
 
     /**
      * @return login page link, which is send back to the client if the login fails in the filter.
@@ -126,7 +120,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     {
         this.serverConfiguration = serverConfiguration;
     }
-    
+
     /**
      * Activates or deactivates the bean
      * 
@@ -167,7 +161,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
         this.m_isFallbackEnabled = fallbackEnabled;
     }
 
-    /** 
+    /**
      * @return <code>true</code> if fallback authentication enabled
      */
     public final boolean isFallbackEnabled()
@@ -187,7 +181,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
             init();
         }
     }
-    
+
     /*
      * (non-Javadoc)
      * @see org.alfresco.repo.web.filter.beans.DependencyInjectedFilter#doFilter(javax.servlet.ServletContext,
@@ -196,57 +190,105 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     public void doFilter(ServletContext context, ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException
     {
-    	
-    	getLogger().info("BaseSSOAuthenticationFilter" + "doFilter"); 
-    	 	
-    	 // Get the HTTP request/response
-        HttpServletRequest req = (HttpServletRequest)request;
-        
-        // find a webscript match for the requested URI
-        String requestURI = req.getRequestURI();
-        String pathInfo = requestURI.substring((req.getContextPath() + req.getServletPath()).length());
-    	
-        Match match = container.getRegistry().findWebScript(req.getMethod(), URLDecoder.decode(pathInfo));
-        
-        getLogger().info("match find " + match);
-        getLogger().info("webscript find " + match.getWebScript());
-        getLogger().info("Description find " + match.getWebScript().getDescription());
-    	getLogger().info("NO_AUTH_REQUIRED" + match.getWebScript().getDescription().getRequiredAuthentication());
-        
-        
-        // If a filter up the chain has marked the request as not requiring auth then respect it        
-        if (request.getAttribute( NO_AUTH_REQUIRED) != null)
+
+        // Get the publicapi.container bean.
+        ApplicationContext appContext = WebApplicationContextUtils.getRequiredWebApplicationContext(context);
+        RuntimeContainer container = (RuntimeContainer) appContext.getBean("publicapi.container");
+
+        // Get the HTTP request/response
+        HttpServletRequest req = (HttpServletRequest) request;
+
+        Match match = container.getRegistry().findWebScript(req.getMethod(), getScriptUrl(req));
+
+        // If a filter up the chain has marked the request as not requiring auth
+        // then
+        // respect it
+        if (request.getAttribute(NO_AUTH_REQUIRED) != null)
         {
-        	 getLogger().info("Authentication not required (filter), chaining ...");
-        	
-        	
-            if ( getLogger().isTraceEnabled())
+
+            if (getLogger().isTraceEnabled())
             {
                 getLogger().trace("Authentication not required (filter), chaining ...");
             }
+
             chain.doFilter(request, response);
         }
         else if (match != null && match.getWebScript() != null)
         {
-        	 getLogger().info("Found webscript with no authentication - set NO_AUTH_REQUIRED flag.");
-        	
-            // check the authentication required - if none then we don't want any of
+
+            // check the authentication required - if none then we don't want
+            // any of
             // the filters down the chain to require any authentication checks
             if (RequiredAuthentication.none == match.getWebScript().getDescription().getRequiredAuthentication())
             {
+
                 if (getLogger().isDebugEnabled())
                 {
                     getLogger().debug("Found webscript with no authentication - set NO_AUTH_REQUIRED flag.");
                 }
+
                 req.setAttribute(NO_AUTH_REQUIRED, Boolean.TRUE);
             }
-            
+
             chain.doFilter(request, response);
         }
         else if (authenticateRequest(context, (HttpServletRequest) request, (HttpServletResponse) response))
         {
+
             chain.doFilter(request, response);
         }
+    }
+
+    protected String getScriptUrl(HttpServletRequest req)
+    {
+        // NOTE: Don't use req.getPathInfo() - it truncates the path at first
+        // semi-colon
+        // in Tomcat
+        final String requestURI = req.getRequestURI();
+        final String serviceContextPath = req.getContextPath() + req.getServletPath();
+        String pathInfo;
+
+        if (serviceContextPath.length() > requestURI.length())
+        {
+            // NOTE: assume a redirect has taken place e.g. tomcat welcome-page
+            // NOTE: this is unlikely, and we'll take the hit if the path
+            // contains a
+            // semi-colon
+            pathInfo = req.getPathInfo();
+        }
+        // MNT-13057 fix, do not decode CMIS uris.
+        // else if (CMIS_URI_PATTERN.matcher(requestURI).matches())
+        // {
+        // pathInfo = requestURI.substring(serviceContextPath.length());
+        // }
+        else
+        {
+            pathInfo = URLDecoder.decode(requestURI.substring(serviceContextPath.length()));
+        }
+
+        // NOTE: must contain at least root / and single character for tenant
+        // name
+        if (pathInfo.length() < 2 || pathInfo.equals("/"))
+        {
+            // url path has no tenant id -> get networks request
+            pathInfo = PublicApiTenantWebScriptServletRequest.NETWORKS_PATH;
+        }
+        else
+        {
+            if (!pathInfo.substring(0, 6).toLowerCase().equals("/cmis/") && !pathInfo.equals("/discovery"))
+            {
+                // remove tenant
+                int idx = pathInfo.indexOf('/', 1);
+                pathInfo = pathInfo.substring(idx == -1 ? pathInfo.length() : idx);
+                if (pathInfo.equals("") || pathInfo.equals("/"))
+                {
+                    // url path is just a tenant id -> get network request
+                    pathInfo = PublicApiTenantWebScriptServletRequest.NETWORK_PATH;
+                }
+            }
+        }
+
+        return pathInfo;
     }
 
     /**
@@ -256,11 +298,11 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     protected void init() throws ServletException
     {
     }
-    
+
     /**
      * Callback executed on successful ticket validation during Type3 Message processing.
      * 
-     * @param sc
+          * @param sc
      *           the servlet context
      * @param req
      *           the request
@@ -271,7 +313,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     {
         authenticationListener.userAuthenticated(credentials);
     }
-    
+
     /**
      * Callback executed on failed authentication of a user ticket during Type3 Message processing
      * 
@@ -281,15 +323,15 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
      *  @param session HttpSession
      */
     protected void onValidateFailed(ServletContext sc, HttpServletRequest req, HttpServletResponse res, HttpSession session, WebCredentials credentials)
-        throws IOException
+            throws IOException
     {
         authenticationListener.authenticationFailed(credentials);
-        
+
         // Restart the login challenge process if validation fails
-        
+
         restartLoginChallenge(sc, req, res);
     }
-    
+
     /**
      * Callback executed on completion of NTLM login
      * 
@@ -298,11 +340,11 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
      * @return true to continue filter chaining, false otherwise
      */
     protected boolean onLoginComplete(ServletContext sc, HttpServletRequest req, HttpServletResponse res, boolean userInit)
-        throws IOException
+            throws IOException
     {
         return true;
     }
-    
+
     /**
      * Check if the request has specified a ticket parameter to bypass the standard authentication.
      * 
@@ -320,47 +362,47 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
 
         boolean ticketValid = false;
         String ticket = req.getParameter(ARG_TICKET);
-        
+
         if (ticket != null && ticket.length() != 0)
         {
             if (getLogger().isTraceEnabled())
             {
                 getLogger().trace(
-                    "Logon via ticket from " + req.getRemoteHost() + " (" + req.getRemoteAddr() + ":" + req.getRemotePort() + ")" +
-                        " ticket=" + ticket);
+                        "Logon via ticket from " + req.getRemoteHost() + " (" + req.getRemoteAddr() + ":" + req.getRemotePort() + ")" +
+                            " ticket=" + ticket);
             }
-            
+
             UserTransaction tx = null;
             try
             {
                 // Get a cached user with a valid ticket
                 SessionUser user = getSessionUser(servletContext, req, resp, true);
-                
+
                 // If this isn't the same ticket, invalidate the session
                 if (user != null && !ticket.equals(user.getTicket()))
                 {
-                   if (getLogger().isDebugEnabled())
-                   {
-                       getLogger().debug("The ticket doesn't match, invalidate the session.");
-                   }
-                   invalidateSession(req);
-                   user = null;
+                    if (getLogger().isDebugEnabled())
+                    {
+                        getLogger().debug("The ticket doesn't match, invalidate the session.");
+                    }
+                    invalidateSession(req);
+                    user = null;
                 }
-                
+
                 // If we don't yet have a valid cached user, validate the ticket and create one
                 if (user == null)
                 {
-                   if (getLogger().isDebugEnabled())
-                   {
-                       getLogger().debug("There is no valid cached user, validate the ticket and create one.");
-                   }
-                   authenticationService.validate(ticket);
-                   user = createUserEnvironment(req.getSession(), authenticationService.getCurrentUserName(),
-                         authenticationService.getCurrentTicket(), true);
+                    if (getLogger().isDebugEnabled())
+                    {
+                        getLogger().debug("There is no valid cached user, validate the ticket and create one.");
+                    }
+                    authenticationService.validate(ticket);
+                    user = createUserEnvironment(req.getSession(), authenticationService.getCurrentUserName(),
+                            authenticationService.getCurrentTicket(), true);
                 }
-                
+
                 // Indicate the ticket parameter was specified, and valid
-                
+
                 ticketValid = true;
             }
             catch (AuthenticationException authErr)
@@ -391,12 +433,12 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
                 }
             }
         }
-        
+
         // Return the ticket parameter status
-        
+
         return ticketValid;
     }
-    
+
     /**
      * Redirect to the login page
      * 
@@ -405,7 +447,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
      * @exception IOException
      */
     protected void redirectToLoginPage(HttpServletRequest req, HttpServletResponse res)
-        throws IOException
+            throws IOException
     {
         if (getLogger().isTraceEnabled())
         {
@@ -414,7 +456,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
         if (hasLoginPage())
             res.sendRedirect(req.getContextPath() + "/faces" + getLoginPage());
     }
-    
+
     /**
      * Determine if the login page is available
      * 
@@ -424,7 +466,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     {
         return m_loginPage != null ? true : false;
     }
-    
+
     /**
      * Return the login page address
      * 
@@ -434,17 +476,17 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     {
         return m_loginPage;
     }
-    
+
     /**
      * Set the login page address
      * 
      * @param loginPage String
      */
-    protected final void setLoginPage( String loginPage)
+    protected final void setLoginPage(String loginPage)
     {
         m_loginPage = loginPage;
     }
-    
+
     /**
      * Check if ticket based logons are allowed
      * 
@@ -454,13 +496,13 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     {
         return m_ticketLogons;
     }
-    
+
     /**
      * Set the ticket based logons allowed flag
      * 
      * @param ticketsAllowed boolean
      */
-    public final void setTicketLogons( boolean ticketsAllowed)
+    public final void setTicketLogons(boolean ticketsAllowed)
     {
         m_ticketLogons = ticketsAllowed;
     }
@@ -472,24 +514,24 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
      * @param offset int
      * @return boolean
      */
-    protected final boolean isNTLMSSPBlob( byte[] byts, int offset)
+    protected final boolean isNTLMSSPBlob(byte[] byts, int offset)
     {
         // Check if the blob has the NTLMSSP signature
 
         boolean isNTLMSSP = false;
-        
-        if (( byts.length - offset) >= NTLM.Signature.length) {
-          
-          // Check for the NTLMSSP signature
-          
-          int idx = 0;
-          while ( idx < NTLM.Signature.length && byts[offset + idx] == NTLM.Signature[ idx])
-            idx++;
-          
-          if ( idx == NTLM.Signature.length)
-            isNTLMSSP = true;
+
+        if ((byts.length - offset) >= NTLM.Signature.length) {
+
+            // Check for the NTLMSSP signature
+
+            int idx = 0;
+            while (idx < NTLM.Signature.length && byts[offset + idx] == NTLM.Signature[idx])
+                idx++;
+
+            if (idx == NTLM.Signature.length)
+                isNTLMSSP = true;
         }
-        
+
         return isNTLMSSP;
     }
 
@@ -514,7 +556,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
             {
                 srvName = null;
             }
-
+            
         }
 
         if (m_lastResolvedServerName != null
@@ -560,7 +602,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
             }
 
             // If we still do not have a name use the DNS name of the server, with the domain part removed
-
+            
             if (m_lastResolvedServerName == null)
             {
                 m_lastResolvedServerName = serverConfiguration.getLocalServerName(true);
@@ -609,12 +651,12 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
 
         return m_lastResolvedServerName;
     }
-    
+
     protected SecurityConfigSection getSecurityConfigSection()
     {
         return serverConfiguration == null ? null : (SecurityConfigSection) serverConfiguration.getConfigSection(SecurityConfigSection.SectionName);
     }
-    
+
     /**
      * Writes link to login page and refresh tag which cause user
      * to be redirected to the login page.
@@ -626,7 +668,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
      */
     protected void writeLoginPageLink(ServletContext context, HttpServletRequest req, HttpServletResponse resp) throws IOException
     {
-        if ( hasLoginPage())
+        if (hasLoginPage())
         {
             resp.setContentType(MIME_HTML_TEXT);
 
@@ -653,7 +695,7 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     {
         fallbackDelegate.restartLoginChallenge(context, req, resp);
     }
-    
+
     /**
      * Delegate authentication to the fallback mechanism
      * 
@@ -670,24 +712,24 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
         {
             getLogger().trace("Performing fallback authentication...");
         }
-        
+
         boolean fallbackSuccess = fallbackDelegate.authenticateRequest(context, req, resp);
-        
+
         if (!fallbackSuccess)
         {
             restartLoginChallenge(context, req, resp);
-    
+
             if (getLogger().isDebugEnabled())
             {
                 getLogger().debug("Fallback authentication failed. Restarting login...");
             }
         }
-    
+
         if (fallbackSuccess && getLogger().isDebugEnabled())
         {
             getLogger().debug("Fallback authentication succeeded.");
         }
-        
+
         return fallbackSuccess;
     }
 }
