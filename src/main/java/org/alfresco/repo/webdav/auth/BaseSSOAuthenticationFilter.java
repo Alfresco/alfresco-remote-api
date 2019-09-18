@@ -50,7 +50,14 @@ import org.alfresco.repo.management.subsystems.ActivateableBean;
 import org.alfresco.repo.security.authentication.AuthenticationException;
 import org.alfresco.repo.web.auth.WebCredentials;
 import org.alfresco.repo.web.filter.beans.DependencyInjectedFilter;
+import org.alfresco.rest.api.PublicApiTenantWebScriptServletRequest;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.extensions.webscripts.RuntimeContainer;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.extensions.webscripts.Description.RequiredAuthentication;
+import org.springframework.extensions.surf.util.URLDecoder;
+import org.springframework.extensions.webscripts.Match;
 
 /**
  * Base class with common code and initialisation for single signon authentication filters.
@@ -184,6 +191,15 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
     public void doFilter(ServletContext context, ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException
     {
+    	// Get the publicapi.container bean.
+        ApplicationContext appContext = WebApplicationContextUtils.getRequiredWebApplicationContext(context);
+        RuntimeContainer container = (RuntimeContainer) appContext.getBean("publicapi.container");
+
+        // Get the HTTP request/response
+        HttpServletRequest req = (HttpServletRequest) request;
+
+        Match match = container.getRegistry().findWebScript(req.getMethod(), getScriptUrl(req));
+        
         // If a filter up the chain has marked the request as not requiring auth then respect it        
         if (request.getAttribute( NO_AUTH_REQUIRED) != null)
         {
@@ -191,6 +207,25 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
             {
                 getLogger().trace("Authentication not required (filter), chaining ...");
             }
+            chain.doFilter(request, response);
+        }
+        else if (match != null && match.getWebScript() != null)
+        {
+
+            // check the authentication required - if none then we don't want
+            // any of
+            // the filters down the chain to require any authentication checks
+            if (RequiredAuthentication.none == match.getWebScript().getDescription().getRequiredAuthentication())
+            {
+
+                if (getLogger().isDebugEnabled())
+                {
+                    getLogger().debug("Found webscript with no authentication - set NO_AUTH_REQUIRED flag.");
+                }
+
+                req.setAttribute(NO_AUTH_REQUIRED, Boolean.TRUE);
+            }
+
             chain.doFilter(request, response);
         }
         else if (authenticateRequest(context, (HttpServletRequest) request, (HttpServletResponse) response))
@@ -639,5 +674,55 @@ public abstract class BaseSSOAuthenticationFilter extends BaseAuthenticationFilt
         }
         
         return fallbackSuccess;
+    }
+    
+    /* (non-Javadoc)
+     * @see org.alfresco.web.scripts.WebScriptRuntime#getScriptUrl()
+     */
+    protected String getScriptUrl(HttpServletRequest req)
+    {
+        // NOTE: Don't use req.getPathInfo() - it truncates the path at first semi-colon in Tomcat
+        final String requestURI = req.getRequestURI();
+        final String serviceContextPath = req.getContextPath() + req.getServletPath();
+        String pathInfo;
+        
+        if (serviceContextPath.length() > requestURI.length())
+        {
+            // NOTE: assume a redirect has taken place e.g. tomcat welcome-page
+            // NOTE: this is unlikely, and we'll take the hit if the path contains a semi-colon
+            pathInfo = req.getPathInfo();
+        }
+        // MNT-13057 fix, do not decode CMIS uris.
+       // else if (CMIS_URI_PATTERN.matcher(requestURI).matches())
+        //{
+          //  pathInfo = requestURI.substring(serviceContextPath.length());
+        //}
+        else
+        {
+            pathInfo = URLDecoder.decode(requestURI.substring(serviceContextPath.length()));
+        }
+        
+        // NOTE: must contain at least root / and single character for tenant name
+        if (pathInfo.length() < 2 || pathInfo.equals("/"))
+        {
+            // url path has no tenant id -> get networks request
+            pathInfo = PublicApiTenantWebScriptServletRequest.NETWORKS_PATH;
+        }
+        else
+        {
+            if(!pathInfo.substring(0, 6).toLowerCase().equals("/cmis/") && !pathInfo.equals("/discovery"))
+            {
+                // remove tenant
+                int idx = pathInfo.indexOf('/', 1);
+                pathInfo = pathInfo.substring(idx == -1 ? pathInfo.length() : idx);
+                if(pathInfo.equals("") || pathInfo.equals("/"))
+                {
+                    // url path is just a tenant id -> get network request
+                    pathInfo = PublicApiTenantWebScriptServletRequest.NETWORK_PATH;
+                }
+            }
+        }
+
+        return pathInfo;
     }
 }
