@@ -2403,7 +2403,7 @@ public class NodesImpl implements Nodes
             {
                 nodeService.setType(nodeRef, destNodeTypeQName);
             }
-            else
+            else if (! destNodeTypeQName.equals(nodeTypeQName))
             {
                 throw new InvalidArgumentException("Failed to change (specialise) node type - from "+nodeTypeQName+" to "+destNodeTypeQName);
             }
