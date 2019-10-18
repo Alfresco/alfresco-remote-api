@@ -2445,7 +2445,6 @@ public class NodesImpl implements Nodes
     @Override
     public Node moveOrCopyNode(String sourceNodeId, String targetParentId, String name, Parameters parameters, boolean isCopy)
     {
-        FileInfo fi = retryingTransactionHelper.doInTransaction(() -> {
             if ((sourceNodeId == null) || (sourceNodeId.isEmpty()))
             {
                 throw new InvalidArgumentException("Missing sourceNodeId");
@@ -2459,12 +2458,8 @@ public class NodesImpl implements Nodes
             final NodeRef parentNodeRef = validateOrLookupNode(targetParentId, null);
             final NodeRef sourceNodeRef = validateOrLookupNode(sourceNodeId, null);
     
-            return moveOrCopyImpl(sourceNodeRef, parentNodeRef, name, isCopy);
-        }, false, true);
-
-        return retryingTransactionHelper.doInTransaction(() -> {
+        FileInfo fi = moveOrCopyImpl(sourceNodeRef, parentNodeRef, name, isCopy);
             return getFolderOrDocument(fi.getNodeRef().getId(), parameters);
-        }, false, false);
     }
     
     public void updateCustomAspects(NodeRef nodeRef, List<String> aspectNames, List<QName> excludedAspects)
@@ -3283,7 +3278,6 @@ public class NodesImpl implements Nodes
     @Override
     public Node lock(String nodeId, LockInfo lockInfo, Parameters parameters)
     {
-        retryingTransactionHelper.doInTransaction(() -> {
             NodeRef nodeRef = validateOrLookupNode(nodeId, null);
 
             if (isSpecialNode(nodeRef, getNodeType(nodeRef)))
@@ -3299,12 +3293,7 @@ public class NodesImpl implements Nodes
             LockInfo validatedLockInfo = validateLockInformation(lockInfo);
             lockService.lock(nodeRef, validatedLockInfo.getMappedType(), validatedLockInfo.getTimeToExpire(), validatedLockInfo.getLifetime());
 
-            return null;
-        }, false, true);
-
-        return retryingTransactionHelper.doInTransaction(() -> {
             return getFolderOrDocument(nodeId, parameters);
-        }, false, false);
     }
 
     private LockInfo validateLockInformation(LockInfo lockInfo)
@@ -3328,7 +3317,6 @@ public class NodesImpl implements Nodes
     @Override
     public Node unlock(String nodeId, Parameters parameters)
     {
-        retryingTransactionHelper.doInTransaction(() -> {
             NodeRef nodeRef = validateOrLookupNode(nodeId, null);
 
             if (isSpecialNode(nodeRef, getNodeType(nodeRef)))
@@ -3341,12 +3329,7 @@ public class NodesImpl implements Nodes
             }
 
             lockService.unlock(nodeRef);
-            return null;
-        }, false, true);
-
-        return retryingTransactionHelper.doInTransaction(() -> {
             return getFolderOrDocument(nodeId, parameters);
-        }, false, false);
     }
 
     /**
