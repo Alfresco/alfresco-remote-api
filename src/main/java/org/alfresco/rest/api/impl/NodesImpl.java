@@ -2270,6 +2270,67 @@ public class NodesImpl implements Nodes
             props.put(ContentModel.PROP_NAME, name);
         }
 
+        String nodeType = nodeInfo.getNodeType();
+        if ((nodeType != null) && (! nodeType.isEmpty()))
+        {
+            // update node type - ensure that we are performing a specialise (we do not support generalise)
+            QName destNodeTypeQName = createQName(nodeType);
+
+            if ((! destNodeTypeQName.equals(nodeTypeQName)) &&
+                 isSubClass(destNodeTypeQName, nodeTypeQName) &&
+                 (! isSubClass(destNodeTypeQName, ContentModel.TYPE_SYSTEM_FOLDER)))
+            {
+                nodeService.setType(nodeRef, destNodeTypeQName);
+            }
+            else if (! destNodeTypeQName.equals(nodeTypeQName))
+            {
+                throw new InvalidArgumentException("Failed to change (specialise) node type - from "+nodeTypeQName+" to "+destNodeTypeQName);
+            }
+        }
+
+        NodeRef parentNodeRef = nodeInfo.getParentId();
+        if (parentNodeRef != null)
+        {
+            NodeRef currentParentNodeRef = getParentNodeRef(nodeRef);
+            if (currentParentNodeRef == null)
+            {
+                // implies root (Company Home) hence return 403 here
+                throw new PermissionDeniedException();
+            }
+
+            if (! currentParentNodeRef.equals(parentNodeRef))
+            {
+                //moveOrCopy(nodeRef, parentNodeRef, name, false); // not currently supported - client should use explicit POST /move operation instead
+                throw new InvalidArgumentException("Cannot update parentId of "+nodeId+" via PUT /nodes/{nodeId}. Please use explicit POST /nodes/{nodeId}/move operation instead");
+            }
+        }
+
+        List<String> aspectNames = nodeInfo.getAspectNames();
+        updateCustomAspects(nodeRef, aspectNames, EXCLUDED_ASPECTS);
+
+        if (props.size() > 0)
+        {
+            validatePropValues(props);
+
+            try
+            {
+                handleNodeRename(props, nodeRef);
+                // update node properties - note: null will unset the specified property
+                nodeService.addProperties(nodeRef, props);
+            }
+            catch (DuplicateChildNodeNameException dcne)
+            {
+                throw new ConstraintViolatedException(dcne.getMessage());
+            }
+        }
+
+        processNodePermissions(nodeRef, nodeInfo);
+        
+        return nodeRef;
+    }
+
+    protected void processNodePermissions(NodeRef nodeRef, Node nodeInfo)
+    {
         NodePermissions nodePerms = nodeInfo.getPermissions();
         if (nodePerms != null)
         {
@@ -2385,63 +2446,22 @@ public class NodesImpl implements Nodes
                 }
             }
         }
+            }
 
-        String nodeType = nodeInfo.getNodeType();
-        if ((nodeType != null) && (! nodeType.isEmpty()))
+    private void handleNodeRename(Map<QName, Serializable> props, NodeRef nodeRef)
+            {
+        Serializable nameProp = props.get(ContentModel.PROP_NAME);
+        if ((nameProp != null))
         {
-            // update node type - ensure that we are performing a specialise (we do not support generalise)
-            QName destNodeTypeQName = createQName(nodeType);
-
-            if ((! destNodeTypeQName.equals(nodeTypeQName)) &&
-                 isSubClass(destNodeTypeQName, nodeTypeQName) &&
-                 (! isSubClass(destNodeTypeQName, ContentModel.TYPE_SYSTEM_FOLDER)))
+            String currentName = (String) nodeService.getProperty(nodeRef, ContentModel.PROP_NAME);
+            String newName = (String) nameProp;
+            if (!currentName.equals(newName))
             {
-                nodeService.setType(nodeRef, destNodeTypeQName);
+                rename(nodeRef, newName);
             }
-            else if (! destNodeTypeQName.equals(nodeTypeQName))
-            {
-                throw new InvalidArgumentException("Failed to change (specialise) node type - from "+nodeTypeQName+" to "+destNodeTypeQName);
-            }
-        }
-
-        NodeRef parentNodeRef = nodeInfo.getParentId();
-        if (parentNodeRef != null)
-        {
-            NodeRef currentParentNodeRef = getParentNodeRef(nodeRef);
-            if (currentParentNodeRef == null)
-            {
-                // implies root (Company Home) hence return 403 here
-                throw new PermissionDeniedException();
-            }
-
-            if (! currentParentNodeRef.equals(parentNodeRef))
-            {
-                //moveOrCopy(nodeRef, parentNodeRef, name, false); // not currently supported - client should use explicit POST /move operation instead
-                throw new InvalidArgumentException("Cannot update parentId of "+nodeId+" via PUT /nodes/{nodeId}. Please use explicit POST /nodes/{nodeId}/move operation instead");
-            }
-        }
-
-        List<String> aspectNames = nodeInfo.getAspectNames();
-        updateCustomAspects(nodeRef, aspectNames, EXCLUDED_ASPECTS);
-
-        if (props.size() > 0)
-        {
-            validatePropValues(props);
-
-            try
-            {
-                // update node properties - note: null will unset the specified property
-                nodeService.addProperties(nodeRef, props);
-            }
-            catch (DuplicateChildNodeNameException dcne)
-            {
-                throw new ConstraintViolatedException(dcne.getMessage());
             }
         }
         
-        return nodeRef;
-    }
-
     @Override
     public Node moveOrCopyNode(String sourceNodeId, String targetParentId, String name, Parameters parameters, boolean isCopy)
     {
@@ -2535,6 +2555,24 @@ public class NodesImpl implements Nodes
         }
     }
     
+    private void rename(NodeRef nodeRef, String name)
+    {
+        try
+        {
+            fileFolderService.rename(nodeRef, name);
+        }
+        catch (FileNotFoundException fnfe)
+        {
+            // convert checked exception
+            throw new EntityNotFoundException(nodeRef.getId());
+        }
+        catch (FileExistsException fee)
+        {
+            // duplicate - name clash
+            throw new ConstraintViolatedException("Name already exists in target parent: " + name);
+        }
+    }
+
     protected FileInfo moveOrCopyImpl(NodeRef nodeRef, NodeRef parentNodeRef, String name, boolean isCopy)
     {
         String targetParentId = parentNodeRef.getId();
