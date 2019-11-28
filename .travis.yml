@@ -18,6 +18,7 @@ branches:
   only:
     - master
     - /support\/.*/
+    - fix/REPO-4751
 
 stages:
   - test
@@ -34,7 +35,7 @@ jobs:
     - stage: test
       name: "WhiteSource scan"
       # only on support branches or master and if it is not a PR
-      if: fork = false AND (branch = master OR branch =~ /support\/SP\/.*/) AND type != pull_request
+      if: fork = false AND (branch = master OR branch =~ /support\/SP\/.*/ OR branch = fix/REPO-4751) AND type != pull_request
       script:
         # Download the latest version of WhiteSource Unified Agent
         - curl -LJO https://github.com/whitesource/unified-agent-distribution/raw/master/standAlone/wss-unified-agent.jar
@@ -61,4 +62,4 @@ jobs:
         # Add email to link commits to user
         - git config user.email "${GIT_EMAIL}"
         # Skip building of release commits
-        - mvn --batch-mode -DscmCommentPrefix="[maven-release-plugin][skip ci] " -Dusername="${GIT_USERNAME}" -Dpassword="${GIT_PASSWORD}" -DskipTests -Darguments=-DskipTests release:clean release:prepare release:perform
+        - mvn --batch-mode -DscmCommentPrefix="[maven-release-plugin][skip ci] " -Dusername="${GIT_USERNAME}" -Dpassword="${GIT_PASSWORD}" -DskipTests -Darguments=-DskipTests -DreleaseVersion=repo-4751 -DdevelopmentVersion=8.32-SNAPSHOT release:clean release:prepare release:perform
