@@ -25,18 +25,6 @@
  */
 package org.alfresco.rest.api.impl;
 
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.model.ContentModel;
 import org.alfresco.query.PagingResults;
@@ -47,23 +35,10 @@ import org.alfresco.rest.api.Favourites;
 import org.alfresco.rest.api.Nodes;
 import org.alfresco.rest.api.People;
 import org.alfresco.rest.api.Sites;
-import org.alfresco.rest.api.model.Document;
-import org.alfresco.rest.api.model.DocumentTarget;
-import org.alfresco.rest.api.model.Favourite;
-import org.alfresco.rest.api.model.Folder;
-import org.alfresco.rest.api.model.FolderTarget;
-import org.alfresco.rest.api.model.Node;
-import org.alfresco.rest.api.model.PathInfo;
-import org.alfresco.rest.api.model.Site;
-import org.alfresco.rest.api.model.SiteTarget;
-import org.alfresco.rest.api.model.Target;
+import org.alfresco.rest.api.model.*;
 import org.alfresco.rest.framework.core.exceptions.InvalidArgumentException;
 import org.alfresco.rest.framework.core.exceptions.RelationshipResourceNotFoundException;
-import org.alfresco.rest.framework.resource.parameters.CollectionWithPagingInfo;
-import org.alfresco.rest.framework.resource.parameters.Paging;
-import org.alfresco.rest.framework.resource.parameters.Parameters;
-import org.alfresco.rest.framework.resource.parameters.Params;
-import org.alfresco.rest.framework.resource.parameters.SortColumn;
+import org.alfresco.rest.framework.resource.parameters.*;
 import org.alfresco.rest.framework.resource.parameters.where.QueryHelper;
 import org.alfresco.rest.framework.resource.parameters.where.QueryHelper.WalkerCallbackAdapter;
 import org.alfresco.service.cmr.favourites.FavouritesService;
@@ -78,6 +53,9 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Public REST API: Centralises access to favourites functionality and maps between representations repository and api representations.
@@ -194,7 +172,7 @@ public class FavouritesImpl implements Favourites
 
     private Map<String, Object> filterProps(Map<String, Object> properties, List<QName> toRemove)
     {
-        Map<String, Object> filteredProps = new HashMap<>(properties);
+        Map<String, Object> filteredProps = properties == null ? new HashMap<>() : new HashMap<>(properties);
         List<String> propsToRemove = toRemove.stream().map(e -> e.toPrefixString(namespaceService)).collect(Collectors.toList());
         filteredProps.keySet().removeAll(propsToRemove);
         return filteredProps;

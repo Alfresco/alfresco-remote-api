@@ -25,7 +25,6 @@
  */
 package org.alfresco.rest.framework.resource.parameters;
 
-import java.util.List;
 
 import org.alfresco.rest.framework.core.exceptions.InvalidArgumentException;
 import org.alfresco.rest.framework.jacksonextensions.BeanPropertiesFilter;
@@ -33,6 +32,12 @@ import org.alfresco.rest.framework.resource.content.BasicContentInfo;
 import org.alfresco.rest.framework.resource.parameters.where.Query;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.extensions.webscripts.WebScriptRequest;
+
+import java.util.List;
+
+
+
+
 
 
 /**
