@@ -389,15 +389,17 @@ public class UserCSVUploadPost extends DeclarativeWebScript
         throws IOException
     {
         InputStreamReader reader = new InputStreamReader(input, Charset.forName("UTF-8"));
-        CSVFormat format = CSVFormat.EXCEL.withHeader();
+        CSVFormat format = CSVFormat.EXCEL;
         CSVParser csv = format.parse(reader);
-        String delimiter = String.valueOf(format.getDelimiter());
 
-        String[][] data = (String[][]) csv.getRecords().stream()
-                .map(record -> record.toString().split(delimiter))
-                .toArray();
+        String[][] data = csv.getRecords().stream()
+            .map(record -> {
+                List<String> recordValues = new ArrayList<>();
+                record.iterator().forEachRemaining(recordValues::add);
+                return recordValues.toArray(String[]::new);
+            }).toArray(String[][]::new);
 
-        if(data != null && data.length > 0)
+        if (data.length > 0)
         {
             processSpreadsheetUpload(data, users);
         }
