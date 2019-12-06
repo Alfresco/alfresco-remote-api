@@ -356,7 +356,58 @@ public class GroupsTest extends BaseWebScriptTest
     	}
     
     }
-    
+
+	/**
+	 * Detailed test of create root group
+	 * Detailed test of delete root group
+	 */
+	public void testCreateGroup() throws Exception
+	{
+		String myGroupName = "GT_CRG";
+		String myDisplayName = "GT_CRGDisplay";
+		String id = String.valueOf(System.currentTimeMillis());
+
+		this.authenticationComponent.setSystemUserAsCurrentUser();
+
+		/*
+		 * Create a group
+		 */
+		{
+			JSONObject newGroupJSON = new JSONObject();
+			newGroupJSON.put("id", id);
+			newGroupJSON.put("displayName", myDisplayName);
+			Response response = sendRequest(new PostRequest(URL_GROUPS,  newGroupJSON.toString(), "application/json"), Status.STATUS_CREATED);
+		}
+
+		/*
+		 * Negative test Create a root group that already exists
+		 */
+		{
+			JSONObject newGroupJSON = new JSONObject();
+			newGroupJSON.put("id", String.valueOf(System.currentTimeMillis()));
+			newGroupJSON.put("displayName", myDisplayName);
+			Response response = sendRequest(new PostRequest(URL_GROUPS,  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);
+		}
+
+		/*
+		 * Negative test Create a root group with illegal characters in the group identifier
+		 */
+		{
+			for (char ch : GroupsImpl.ILLEGAL_CHARACTERS)
+			{
+				JSONObject newGroupJSON = new JSONObject();
+				newGroupJSON.put("id",myGroupName + ch + "_INVALID_GROUP");
+				newGroupJSON.put("displayName", myDisplayName + System.currentTimeMillis());
+				sendRequest(new PostRequest(URL_GROUPS + "/",  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);
+			}
+		}
+
+		/*
+		 * Delete the group
+		 */
+		sendRequest(new DeleteRequest(URL_GROUPS + "/" + id), Status.STATUS_OK);
+	}
+
     /**
      * Detailed test of create root group
      * Detailed test of delete root group
@@ -401,19 +452,6 @@ public class GroupsTest extends BaseWebScriptTest
     			newGroupJSON.put("displayName", myDisplayName); 
     			sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + myGroupName,  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);   
     		}
-
-			/**
-			 * Negative test Create a root group with illegal characters in the group identifier
-			 */
-			{
-				for (char ch : GroupsImpl.ILLEGAL_CHARACTERS)
-				{
-					String id = myGroupName + ch + "_INVALID_GROUP";
-					JSONObject newGroupJSON = new JSONObject();
-					newGroupJSON.put("displayName", myDisplayName + System.currentTimeMillis());
-					sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + id,  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);
-				}
-			}
     		
     		/**
     		 * Delete the root group
