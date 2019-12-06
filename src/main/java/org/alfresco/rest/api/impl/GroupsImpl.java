@@ -25,6 +25,7 @@
  */
 package org.alfresco.rest.api.impl;
 
+import static java.util.Optional.ofNullable;
 import static org.alfresco.repo.security.authentication.AuthenticationUtil.runAsSystem;
 
 import java.text.Collator;
@@ -35,7 +36,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,22 +87,19 @@ public class GroupsImpl implements Groups
     private static final String DISPLAY_NAME = "displayName";
     private static final String AUTHORITY_NAME = "authorityName";
     private static final String ERR_MSG_MODIFY_FIXED_AUTHORITY = "Trying to modify a fixed authority";
-    private static final char[] illegalCharacters = {'/', '\\', '\r', '\n'};
+    private static final char[] ILLEGAL_CHARACTERS = {'/', '\\', '\r', '\n'};
 
-    private final static Map<String, String> SORT_PARAMS_TO_NAMES;
+    private final static Map<String, String> SORT_PARAMS_TO_NAMES = new HashMap<>();
     static
     {
-        Map<String, String> aMap = new HashMap<>(2);
-        aMap.put(PARAM_ID, AUTHORITY_NAME);
-        aMap.put(PARAM_DISPLAY_NAME, DISPLAY_NAME);
-
-        SORT_PARAMS_TO_NAMES = Collections.unmodifiableMap(aMap);
+        SORT_PARAMS_TO_NAMES.put(PARAM_ID, AUTHORITY_NAME);
+        SORT_PARAMS_TO_NAMES.put(PARAM_DISPLAY_NAME, DISPLAY_NAME);
     }
 
     // List groups filtering (via where clause)
-    private final static Set<String> LIST_GROUPS_EQUALS_QUERY_PROPERTIES = new HashSet<>(Arrays.asList(new String[] { PARAM_IS_ROOT }));
+    private final static Set<String> LIST_GROUPS_EQUALS_QUERY_PROPERTIES = new HashSet<>(Collections.singletonList(PARAM_IS_ROOT));
 
-    private final static Set<String> LIST_GROUP_MEMBERS_QUERY_PROPERTIES = new HashSet<>(Arrays.asList(new String[] { PARAM_MEMBER_TYPE }));
+    private final static Set<String> LIST_GROUP_MEMBERS_QUERY_PROPERTIES = new HashSet<>(Collections.singletonList(PARAM_MEMBER_TYPE));
 
     protected AuthorityService authorityService;
     private AuthorityDAO authorityDAO;
@@ -225,7 +222,7 @@ public class GroupsImpl implements Groups
         // Create response.
         final List<AuthorityInfo> page = pagingResult.getPage();
         int totalItems = pagingResult.getTotalResultCount().getFirst();
-        List<Group> groups = new AbstractList<Group>()
+        List<Group> groups = new AbstractList<>()
         {
             @Override
             public Group get(int index)
@@ -359,7 +356,7 @@ public class GroupsImpl implements Groups
                 // layer. It is done here because sorting is not supported at
                 // service layer.
                 AuthorityInfoComparator authorityComparator = new AuthorityInfoComparator(sortProp.getFirst(), sortProp.getSecond());
-                Collections.sort(groupList, authorityComparator);
+                groupList.sort(authorityComparator);
             }
             else
             {
@@ -375,17 +372,8 @@ public class GroupsImpl implements Groups
                 // layer. It is done here because filtering by "isRoot" is not
                 // supported at service layer.
                 groupList = nonPagingResult.getPage();
-                if (groupList != null)
-                {
-                    for (Iterator<AuthorityInfo> i = groupList.iterator(); i.hasNext();)
-                    {
-                        AuthorityInfo authorityInfo = i.next();
-                        if (!isRootParam.equals(isRootAuthority(rootAuthorities, authorityInfo.getAuthorityName())))
-                        {
-                            i.remove();
-                        }
-                    }
-                }
+                ofNullable(groupList)
+                        .ifPresent(groups -> groups.removeIf(authorityInfo -> !isRootParam.equals(isRootAuthority(rootAuthorities, authorityInfo.getAuthorityName()))));
             }
 
             // Post process paging - this should be moved to service layer.
@@ -406,8 +394,8 @@ public class GroupsImpl implements Groups
      * when filtered by zone.
      *
      * @see #zonePredicate(Set, String)
-     * @param groupName
-     * @param zone
+     * @param groupName the group name.
+     * @param zone the zone filter.
      * @return true if result should be included.
      */
     private boolean zonePredicate(String groupName, String zone)
@@ -427,11 +415,6 @@ public class GroupsImpl implements Groups
      * If isRootParam is null, then no results will be filtered. Otherwise
      * results will be filtered to return only those that are root or non-root,
      * depending on the value of isRootParam.
-     *
-     * @param isRootParam
-     * @param rootAuthorities
-     * @param authority
-     * @return
      */
     private boolean isRootPredicate(Boolean isRootParam, Set<String> rootAuthorities, String authority)
     {
@@ -451,8 +434,6 @@ public class GroupsImpl implements Groups
      * If the requiredZone parameter is not null (i.e. a filter must be applied) and the
      * {@code zones}) list is {@code null} then the predicate will return false.
      *
-     * @param zones
-     * @param requiredZone
      * @return true if result should be included.
      */
     private boolean zonePredicate(Set<String> zones, String requiredZone)
@@ -496,10 +477,8 @@ public class GroupsImpl implements Groups
      * Retrieve authority info by name. <b>Node id field isn't used at this time
      * and it is set to null.</b>
      *
-     * @param id
-     *            The authority name.
-     * @param defaultDisplayNameIfNull
-     *            True if we would like to get a default value (e.g. shortName of the authority) if the authority display name is null.
+     * @param id The authority name.
+     * @param defaultDisplayNameIfNull True if we would like to get a default value (e.g. shortName of the authority) if the authority display name is null.
      * @return The authority info.
      */
     private AuthorityInfo getAuthorityInfo(String id, boolean defaultDisplayNameIfNull)
@@ -689,7 +668,7 @@ public class GroupsImpl implements Groups
         }
 
         // Get cascade param - default false (if not provided).
-        boolean cascade = Boolean.valueOf(parameters.getParameter(PARAM_CASCADE));
+        boolean cascade = Boolean.parseBoolean(parameters.getParameter(PARAM_CASCADE));
 
         try
         {
@@ -747,7 +726,7 @@ public class GroupsImpl implements Groups
         // Create response.
         final List<AuthorityInfo> page = pagingResult.getPage();
         int totalItems = pagingResult.getTotalResultCount().getFirst();
-        List<GroupMember> groupMembers = new AbstractList<GroupMember>()
+        List<GroupMember> groupMembers = new AbstractList<>()
         {
             @Override
             public GroupMember get(int index)
@@ -812,7 +791,6 @@ public class GroupsImpl implements Groups
         validateGroupMemberId(groupMemberId);
 
         // Verify if groupMemberId is member of groupId
-        AuthorityType authorityType = AuthorityType.getAuthorityType(groupMemberId);
         Set<String> parents = authorityService.getContainingAuthorities(AuthorityType.GROUP, groupMemberId, true);
         if (!parents.contains(groupId))
         {
@@ -861,7 +839,7 @@ public class GroupsImpl implements Groups
         // layer. It is done here because sorting is not supported at
         // service layer.
         AuthorityInfoComparator authorityComparator = new AuthorityInfoComparator(sortProp.getFirst(), sortProp.getSecond());
-        Collections.sort(authorityInfoList, authorityComparator);
+        authorityInfoList.sort(authorityComparator);
 
         // Post process paging - this should be moved to service layer.
         return Util.wrapPagingResults(paging, authorityInfoList);
@@ -949,7 +927,7 @@ public class GroupsImpl implements Groups
                 throw new InvalidArgumentException("groupId is null or empty");
             }
 
-            for (char illegalCharacter : illegalCharacters)
+            for (char illegalCharacter : ILLEGAL_CHARACTERS)
             {
                 if (groupId.indexOf(illegalCharacter) != -1)
                 {

@@ -82,7 +82,7 @@ public interface Groups
      *        including:
      *        - include param (parentIds, zones)
      * @return a {@code org.alfresco.rest.api.model.Group} object
-     * @throws EntityNotFoundException
+     * @throws EntityNotFoundException when the group cannot be found.
      */
     Group getGroup(String groupId, Parameters parameters) throws EntityNotFoundException;
 
@@ -141,10 +141,10 @@ public interface Groups
 
     /**
      *
-     * Delete group membership
+     * Delete group membership.
      *
-     * @param groupId
-     * @param groupMemberId
+     * @param groupId the group identifier.
+     * @param groupMemberId the group membership identifier.
      */
     void deleteGroupMembership(String groupId, String groupMemberId);
 }
