@@ -35,6 +35,7 @@ import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.web.scripts.BaseWebScriptTest;
+import org.alfresco.rest.api.impl.GroupsImpl;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
@@ -51,6 +52,8 @@ import org.springframework.extensions.webscripts.TestWebScriptServer.GetRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PostRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.PutRequest;
 import org.springframework.extensions.webscripts.TestWebScriptServer.Response;
+
+import static java.util.Arrays.stream;
 
 /**
  * Unit test of Groups REST APIs. 
@@ -398,6 +401,19 @@ public class GroupsTest extends BaseWebScriptTest
     			newGroupJSON.put("displayName", myDisplayName); 
     			sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + myGroupName,  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);   
     		}
+
+			/**
+			 * Negative test Create a root group with illegal characters in the group identifier
+			 */
+			{
+				for (char ch : GroupsImpl.ILLEGAL_CHARACTERS)
+				{
+					String id = myGroupName + ch + "_INVALID_GROUP";
+					JSONObject newGroupJSON = new JSONObject();
+					newGroupJSON.put("displayName", myDisplayName + System.currentTimeMillis());
+					sendRequest(new PostRequest(URL_ROOTGROUPS + "/" + id,  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);
+				}
+			}
     		
     		/**
     		 * Delete the root group
