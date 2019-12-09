@@ -35,7 +35,6 @@ import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationComponent;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.web.scripts.BaseWebScriptTest;
-import org.alfresco.rest.api.impl.GroupsImpl;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.MutableAuthenticationService;
@@ -116,7 +115,7 @@ public class GroupsTest extends BaseWebScriptTest
     		rootGroupName = authorityService.getName(AuthorityType.GROUP, TEST_ROOTGROUP);
     	}
     	
-        Set<String> shareZones = new HashSet<String>(1, 1.0f);
+        Set<String> shareZones = new HashSet<>(1, 1.0f);
         shareZones.add(AuthorityService.ZONE_APP_SHARE);
     	
         if(!authorityService.authorityExists(rootGroupName))
@@ -200,7 +199,7 @@ public class GroupsTest extends BaseWebScriptTest
         super.tearDown();
         this.authenticationComponent.setCurrentUser(AuthenticationUtil.getAdminUserName());
     }
-    
+
     /**
      * Detailed test of get root groups
      */
@@ -356,57 +355,6 @@ public class GroupsTest extends BaseWebScriptTest
     	}
     
     }
-
-	/**
-	 * Detailed test of create root group
-	 * Detailed test of delete root group
-	 */
-	public void testCreateGroup() throws Exception
-	{
-		String myGroupName = "GT_CRG";
-		String myDisplayName = "GT_CRGDisplay";
-		String id = String.valueOf(System.currentTimeMillis());
-
-		this.authenticationComponent.setSystemUserAsCurrentUser();
-
-		/*
-		 * Create a group
-		 */
-		{
-			JSONObject newGroupJSON = new JSONObject();
-			newGroupJSON.put("id", id);
-			newGroupJSON.put("displayName", myDisplayName);
-			Response response = sendRequest(new PostRequest(URL_GROUPS,  newGroupJSON.toString(), "application/json"), Status.STATUS_CREATED);
-		}
-
-		/*
-		 * Negative test Create a root group that already exists
-		 */
-		{
-			JSONObject newGroupJSON = new JSONObject();
-			newGroupJSON.put("id", String.valueOf(System.currentTimeMillis()));
-			newGroupJSON.put("displayName", myDisplayName);
-			Response response = sendRequest(new PostRequest(URL_GROUPS,  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);
-		}
-
-		/*
-		 * Negative test Create a root group with illegal characters in the group identifier
-		 */
-		{
-			for (char ch : GroupsImpl.ILLEGAL_CHARACTERS)
-			{
-				JSONObject newGroupJSON = new JSONObject();
-				newGroupJSON.put("id",myGroupName + ch + "_INVALID_GROUP");
-				newGroupJSON.put("displayName", myDisplayName + System.currentTimeMillis());
-				sendRequest(new PostRequest(URL_GROUPS + "/",  newGroupJSON.toString(), "application/json"), Status.STATUS_BAD_REQUEST);
-			}
-		}
-
-		/*
-		 * Delete the group
-		 */
-		sendRequest(new DeleteRequest(URL_GROUPS + "/" + id), Status.STATUS_OK);
-	}
 
     /**
      * Detailed test of create root group
