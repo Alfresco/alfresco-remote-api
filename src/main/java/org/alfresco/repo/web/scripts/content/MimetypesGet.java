@@ -36,6 +36,7 @@ import org.alfresco.repo.content.metadata.MetadataExtracter;
 import org.alfresco.repo.content.metadata.MetadataExtracterRegistry;
 import org.alfresco.repo.content.transform.LocalTransformServiceRegistry;
 import org.alfresco.service.cmr.repository.MimetypeService;
+import org.alfresco.transform.client.registry.TransformServiceRegistry;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -55,7 +56,7 @@ public class MimetypesGet extends DeclarativeWebScript
     public static final String MODEL_MIMETYPE_DETAILS = "details";
    
     private MimetypeService mimetypeService;
-    private LocalTransformServiceRegistry localTransformServiceRegistry;
+    private TransformServiceRegistry localTransformServiceRegistry;
     private MetadataExtracterRegistry metadataExtracterRegistry;
 
     /**
@@ -66,7 +67,7 @@ public class MimetypesGet extends DeclarativeWebScript
        this.mimetypeService = mimetypeService;
     }
 
-    public void setLocalTransformServiceRegistry(LocalTransformServiceRegistry localTransformServiceRegistry)
+    public void setLocalTransformServiceRegistry(TransformServiceRegistry localTransformServiceRegistry)
     {
         this.localTransformServiceRegistry = localTransformServiceRegistry;
     }
