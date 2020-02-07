@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>alfresco-remote-api</artifactId>
     <name>Alfresco Remote API</name>
-    <version>8.83-SNAPSHOT</version>
+    <version>8.103-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -37,9 +37,9 @@
         <dir.root>${project.build.directory}/alf_data</dir.root>
         <img.exe>convert</img.exe>
 
-        <dependency.alfresco-repository.version>repo-4710-2</dependency.alfresco-repository.version>
-        <dependency.alfresco-data-model.version>8.84</dependency.alfresco-data-model.version>
-        <dependency.alfresco-core.version>8.18</dependency.alfresco-core.version>
+        <dependency.alfresco-repository.version>8.100</dependency.alfresco-repository.version>
+        <dependency.alfresco-data-model.version>8.87</dependency.alfresco-data-model.version>
+        <dependency.alfresco-core.version>8.21</dependency.alfresco-core.version>
 
         <dependency.alfresco-pdf-renderer.version>1.1</dependency.alfresco-pdf-renderer.version>
         <dependency.jackson.version>2.10.2</dependency.jackson.version>
@@ -47,9 +47,9 @@
 
         <dependency.webscripts.version>8.1</dependency.webscripts.version>
         <dependency.opencmis.version>1.0.0</dependency.opencmis.version>
-        <dependency.spring.version>5.2.2.RELEASE</dependency.spring.version>
+        <dependency.spring.version>5.2.3.RELEASE</dependency.spring.version>
         <dependency.postgresql.version>42.2.9</dependency.postgresql.version>
-        <dependency.cxf.version>3.3.4</dependency.cxf.version>
+        <dependency.cxf.version>3.3.5</dependency.cxf.version>
     </properties>
 
     <dependencyManagement>
@@ -142,7 +142,12 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.7</version>
+            <version>1.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.santuario</groupId>
+            <artifactId>xmlsec</artifactId>
+            <version>1.5.8</version>
         </dependency>
         <!-- newer version, see REPO-3133 -->
         <dependency>
@@ -162,12 +167,6 @@
             <artifactId>chemistry-opencmis-test-tck</artifactId>
             <version>${dependency.opencmis.version}</version>
             <!-- <scope>test</scope> -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.chemistry.opencmis</groupId>
-                    <artifactId>chemistry-opencmis-client-impl</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- the cxf libs were updated, see dependencyManagement section -->
 
@@ -239,7 +238,7 @@
         <dependency>
             <groupId>org.alfresco.cmis.client</groupId>
             <artifactId>alfresco-opencmis-extension</artifactId>
-            <version>1.1</version>
+            <version>2.0</version>
             <scope>test</scope> 
         </dependency>   
     </dependencies>
