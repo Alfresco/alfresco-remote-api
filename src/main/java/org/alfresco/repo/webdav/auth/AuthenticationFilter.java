@@ -110,26 +110,8 @@ public class AuthenticationFilter extends BaseAuthenticationFilter implements De
     public void doFilter(ServletContext context, ServletRequest req, ServletResponse resp, FilterChain chain)
             throws IOException, ServletException
     {
-        try
-        {
-            doFilterInternal(context, req, resp, chain);
-        }
-        finally
-        {
-            if (logger.isTraceEnabled())
-            {
-                logger.debug("About to clear the security context");
-            }
-            AuthenticationUtil.clearCurrentSecurityContext();
-        }
-    }
-    protected void doFilterInternal(ServletContext context, ServletRequest req, ServletResponse resp, FilterChain chain)
-        throws IOException, ServletException
-    {
-        if (logger.isTraceEnabled())
-        {
-            logger.trace("Entering AuthenticationFilter.");
-        }
+        if (logger.isDebugEnabled())
+            logger.debug("Entering AuthenticationFilter.");
         
         // Assume it's an HTTP request
 
@@ -142,9 +124,7 @@ public class AuthenticationFilter extends BaseAuthenticationFilter implements De
         if (user == null)
         {
             if (logger.isDebugEnabled())
-            {
                 logger.debug("There is no user in the session.");
-            }
             // Get the authorization header
             
             String authHdr = httpReq.getHeader("Authorization");
@@ -152,9 +132,7 @@ public class AuthenticationFilter extends BaseAuthenticationFilter implements De
             if ( authHdr != null && authHdr.length() > 5 && authHdr.substring(0,5).equalsIgnoreCase("BASIC"))
             {
                 if (logger.isDebugEnabled())
-                {
                     logger.debug("Basic authentication details present in the header.");
-                }
                 byte[] encodedString = Base64.decodeBase64(authHdr.substring(5).getBytes());
                 
                 // ALF-13621: Due to browser inconsistencies we have to try a fallback path of encodings
@@ -207,34 +185,24 @@ public class AuthenticationFilter extends BaseAuthenticationFilter implements De
                         }
                         
                         user = createUserEnvironment(httpReq.getSession(), authenticationService.getCurrentUserName(), authenticationService.getCurrentTicket(), false);
-                        if (logger.isTraceEnabled())
-                        {
-                            logger.trace("Successfully created user environment, login using basic auth or ROLE_TICKET for user: " +
-                                AuthenticationUtil.maskUsername(user.getUserName()));
-                        }
+                        
                         // Success so break out
                         break;
                     }
                     catch (CharacterCodingException e)
                     {
                         if (logger.isDebugEnabled())
-                        {
                             logger.debug("Didn't decode using " + decoder.getClass().getName(), e);
-                        }
                     }
                     catch (AuthenticationException ex)
                     {
                         if (logger.isDebugEnabled())
-                        {
                             logger.debug("Authentication error ", ex);
-                        }
                     }
                     catch (NoSuchPersonException e)
                     {
                         if (logger.isDebugEnabled())
-                        {
                             logger.debug("There is no such person error ", e);
-                        }
                     }
                 }
             }
@@ -252,14 +220,14 @@ public class AuthenticationFilter extends BaseAuthenticationFilter implements De
                         ticket = ticket.substring(0, ticket.length() - PPT_EXTN.length());
                     }
 
-                    if (logger.isTraceEnabled())
-                    {
-                        logger.trace("Logon via ticket from " + req.getRemoteHost() +
-                            " (" + req.getRemoteAddr() + ":" + req.getRemotePort() + ")" +
-                            " ticket=" + ticket);
-                    }
+                    // Debug
+
+                    if (logger.isDebugEnabled())
+                        logger.debug("Logon via ticket from " + req.getRemoteHost() + " (" + req.getRemoteAddr() + ":"
+                                + req.getRemotePort() + ")" + " ticket=" + ticket);
 
                     // Validate the ticket
+
                     authenticationService.validate(ticket);
                     if(authenticationListener != null)
                     {
@@ -271,11 +239,6 @@ public class AuthenticationFilter extends BaseAuthenticationFilter implements De
                     String currentUsername = authenticationService.getCurrentUserName();
 
                     user = createUserEnvironment(httpReq.getSession(), currentUsername, ticket, false);
-                    if (logger.isTraceEnabled())
-                    {
-                        logger.trace("Successfully created user environment, login using TICKET for user: " +
-                            AuthenticationUtil.maskUsername(user.getUserName()));
-                    }
                 }
             }
 
@@ -284,9 +247,7 @@ public class AuthenticationFilter extends BaseAuthenticationFilter implements De
             if (user == null)
             {
                 if (logger.isDebugEnabled())
-                {
                     logger.debug("No user/ticket, force the client to prompt for logon details.");
-                }
     
                 httpResp.setHeader("WWW-Authenticate", "BASIC realm=\"Alfresco DAV Server\"");
                 httpResp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -300,10 +261,6 @@ public class AuthenticationFilter extends BaseAuthenticationFilter implements De
             if(authenticationListener != null)
             {
                 authenticationListener.userAuthenticated(new TicketCredentials(user.getTicket()));
-            }
-            if (logger.isTraceEnabled())
-            {
-                logger.trace("User already set to: " + AuthenticationUtil.maskUsername(user.getUserName()));
             }
         }
 
