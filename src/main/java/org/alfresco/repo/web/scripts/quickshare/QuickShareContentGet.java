@@ -180,8 +180,28 @@ public class QuickShareContentGet extends ContentGet implements ServletContextAw
         
         // determine attachment
         boolean attach = Boolean.valueOf(req.getParameter("a"));
-        
+
+        // MNT-21118 (XSS prevention)
+        // Force the attachment in case of asking for the content file only
+        // (thumbnails don't need this treatment as there not html|xml|...)
+        if (!attach && checkInvokedWebScript(req))
+        {
+            attach = true;
+        }
+
         // Stream the content
         streamContentLocal(req, res, nodeRef, attach, propertyQName, model);
 	}
+
+    /**
+     * Check the id of the webscript to know whether it's a quickshare content file invocation
+     * see QuickShareContentGet Bean
+     *
+     * @param req
+     * @return
+     */
+    private boolean checkInvokedWebScript(WebScriptRequest req)
+    {
+        return req.getServiceMatch().getWebScript().getDescription().getId().endsWith("quickshare.content-noauth.get");
+    }
 }
