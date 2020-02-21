@@ -382,9 +382,6 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         rsp = sendRequest(new GetRequest(SHARE_CONTENT_URL.replace("{shared_id}", sharedId)), 200, USER_TWO);
         assertNotNull("The response should contain a Content-Disposition entry in the header", rsp.getHeader("Content-Disposition"));
 
-        rsp = sendRequest(new GetRequest(SHARE_METADATA_URL.replace("{shared_id}", sharedId)), 200, USER_TWO);
-        assertNull("The response should not contain a Content-Disposition entry in the header", rsp.getHeader("Content-Disposition"));
-
         rsp = sendRequest(new GetRequest(SHARE_CONTENT_THUMBNAIL_URL.replace("{shared_id}", sharedId).replace("{thumbnailname}", "doclib")), 200, USER_TWO);
         assertNull("The response should not contain a Content-Disposition entry in the header", rsp.getHeader("Content-Disposition"));
     }
