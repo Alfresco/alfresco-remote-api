@@ -135,8 +135,11 @@ public class QuickShareContentGet extends ContentGet implements ServletContextAw
                     {
                         throw new InvalidNodeRefException(nodeRef);
                     }
-                    
-                    executeImpl(nodeRef, params, req, res, null);
+
+                    // MNT-21118 (XSS prevention)
+                    // Force the attachment in case of asking for the content file only
+                    // (will be overridden for thumbnails)
+                    executeImpl(nodeRef, params, req, res, null, true);
                     
                     return null;
                 }
@@ -160,7 +163,7 @@ public class QuickShareContentGet extends ContentGet implements ServletContextAw
         }
     }
 	
-	protected void executeImpl(NodeRef nodeRef, Map<String, String> templateVars, WebScriptRequest req, WebScriptResponse res, Map<String, Object> model) throws IOException
+	protected void executeImpl(NodeRef nodeRef, Map<String, String> templateVars, WebScriptRequest req, WebScriptResponse res, Map<String, Object> model, boolean attach) throws IOException
 	{
 	    // render content
         QName propertyQName = ContentModel.PROP_CONTENT;
@@ -177,26 +180,8 @@ public class QuickShareContentGet extends ContentGet implements ServletContextAw
                 propertyQName = QName.createQName(propertyName, namespaceService);
             }
         }
-        
-        // determine attachment
-        // MNT-21118 (XSS prevention)
-        // Force the attachment in case of asking for the content file only
-        // (thumbnails don't need this treatment as there not html|xml|...)
-        boolean attach = Boolean.valueOf(req.getParameter("a")) || checkInvokedWebScript(req);
 
         // Stream the content
         streamContentLocal(req, res, nodeRef, attach, propertyQName, model);
 	}
-
-    /**
-     * Check the id of the webscript to know whether it's a quickshare content file invocation
-     * see QuickShareContentGet Bean
-     *
-     * @param req
-     * @return
-     */
-    private boolean checkInvokedWebScript(WebScriptRequest req)
-    {
-        return req.getServiceMatch().getWebScript().getDescription().getId().endsWith("quickshare/content-noauth.get");
-    }
 }
