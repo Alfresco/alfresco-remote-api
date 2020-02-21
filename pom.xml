@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>alfresco-remote-api</artifactId>
     <name>Alfresco Remote API</name>
-    <version>8.103-SNAPSHOT</version>
+    <version>8.108-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -37,7 +37,7 @@
         <dir.root>${project.build.directory}/alf_data</dir.root>
         <img.exe>convert</img.exe>
 
-        <dependency.alfresco-repository.version>8.100</dependency.alfresco-repository.version>
+        <dependency.alfresco-repository.version>8.103</dependency.alfresco-repository.version>
         <dependency.alfresco-data-model.version>8.87</dependency.alfresco-data-model.version>
         <dependency.alfresco-core.version>8.21</dependency.alfresco-core.version>
 
@@ -45,7 +45,7 @@
         <dependency.jackson.version>2.10.2</dependency.jackson.version>
         <dependency.jackson-databind.version>2.10.1</dependency.jackson-databind.version>
 
-        <dependency.webscripts.version>8.1</dependency.webscripts.version>
+        <dependency.webscripts.version>8.2</dependency.webscripts.version>
         <dependency.opencmis.version>1.0.0</dependency.opencmis.version>
         <dependency.spring.version>5.2.3.RELEASE</dependency.spring.version>
         <dependency.postgresql.version>42.2.9</dependency.postgresql.version>
@@ -90,7 +90,7 @@
             <dependency>
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
-                <version>1.12.1</version>
+                <version>1.12.2</version>
             </dependency>
             <!-- update dependency from opencmis-extension -->
             <dependency>
