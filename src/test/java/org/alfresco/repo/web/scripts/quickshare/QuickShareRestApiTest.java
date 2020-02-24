@@ -364,6 +364,9 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
 
         String testNodeRef_3 = testNode.toString().replace("://", "/");
 
+        // Thumbnail creation by user one to genuinely create the thumbnail and allow the sharedId to get it
+        sendRequest(new GetRequest(AUTH_CONTENT_THUMBNAIL_URL.replace("{node_ref_3}", testNodeRef_3).replace("{thumbnailname}", "doclib")), 200, USER_ONE);
+
         Response rsp = sendRequest(new PostRequest(SHARE_URL.replace("{node_ref_3}", testNodeRef_3), "", APPLICATION_JSON), 200, USER_ONE);
         JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
         String sharedId = jsonRsp.getString("sharedId");
