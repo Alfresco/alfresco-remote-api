@@ -103,17 +103,12 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
     private static final String APPLICATION_JSON = "application/json";
     
     private NodeRef testNode;
-    private NodeRef testHTMLNode;
     private final static String TEST_NAME = "test node";
-    private final static String TEST_NAME_HTML = "test node html";
     private static byte[] TEST_CONTENT = null;
-    private static byte[] TEST_CONTENT_HTML = null;
     private final static String TEST_MIMETYPE_JPEG = MimetypeMap.MIMETYPE_IMAGE_JPEG;
     private final static String TEST_MIMETYPE_PNG = MimetypeMap.MIMETYPE_IMAGE_PNG;
-    private final static String TEST_MIMETYPE_HTML = MimetypeMap.MIMETYPE_HTML;
     private static File quickFile = null;
-    private static File quickHTMLFile = null;
-    
+
     private MutableAuthenticationService authenticationService;
     private AuthenticationComponent authenticationComponent;
     private NodeService nodeService;
@@ -154,12 +149,7 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         quickFile = AbstractContentTransformerTest.loadQuickTestFile("jpg");
         TEST_CONTENT = new byte[new Long(quickFile.length()).intValue()];
         new FileInputStream(quickFile).read(TEST_CONTENT);
-        testNode = createTestFile(userOneHome, TEST_NAME, quickFile, TEST_MIMETYPE_JPEG);
-
-        quickHTMLFile = AbstractContentTransformerTest.loadQuickTestFile("html");
-        TEST_CONTENT_HTML = new byte[new Long(quickHTMLFile.length()).intValue()];
-        new FileInputStream(quickHTMLFile).read(TEST_CONTENT_HTML);
-        testHTMLNode = createTestFile(userOneHome, TEST_NAME_HTML, quickHTMLFile, TEST_MIMETYPE_HTML);
+        testNode = createTestFile(userOneHome, TEST_NAME, quickFile);
         
         AuthenticationUtil.setFullyAuthenticatedUser(USER_TWO);
         
@@ -316,7 +306,7 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         siteService.setMembership(siteInfo.getShortName(), USER_TWO, SiteModel.SITE_CONTRIBUTOR);
         
         NodeRef siteDocLib = siteService.getContainer(siteInfo.getShortName(), SiteService.DOCUMENT_LIBRARY);
-        NodeRef testFile = createTestFile(siteDocLib, "unshare-test" + RUN_ID, quickFile, TEST_MIMETYPE_JPEG);
+        NodeRef testFile = createTestFile(siteDocLib, "unshare-test" + RUN_ID, quickFile);
         
         String strTestNodeRef = testFile.toString().replace("://", "/");
         
@@ -372,7 +362,7 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
     {
         checkTransformer();
 
-        String testNodeRef_3 = testHTMLNode.toString().replace("://", "/");
+        String testNodeRef_3 = testNode.toString().replace("://", "/");
 
         Response rsp = sendRequest(new PostRequest(SHARE_URL.replace("{node_ref_3}", testNodeRef_3), "", APPLICATION_JSON), 200, USER_ONE);
         JSONObject jsonRsp = new JSONObject(new JSONTokener(rsp.getContentAsString()));
@@ -382,6 +372,7 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         rsp = sendRequest(new GetRequest(SHARE_CONTENT_URL.replace("{shared_id}", sharedId)), 200, USER_TWO);
         assertNotNull("The response should contain a Content-Disposition entry in the header", rsp.getHeader("Content-Disposition"));
 
+        // In case of requesting the thumbnail, Content-Disposition should not be present
         rsp = sendRequest(new GetRequest(SHARE_CONTENT_THUMBNAIL_URL.replace("{shared_id}", sharedId).replace("{thumbnailname}", "doclib")), 200, USER_TWO);
         assertNull("The response should not contain a Content-Disposition entry in the header", rsp.getHeader("Content-Disposition"));
     }
@@ -414,7 +405,7 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
         }
     }
     
-    private NodeRef createTestFile(final NodeRef parent, final String name, final File quickFile, String mimetype)
+    private NodeRef createTestFile(final NodeRef parent, final String name, final File quickFile)
     {
     	return transactionHelper.doInTransaction(new RetryingTransactionHelper.RetryingTransactionCallback<NodeRef>()
         {
@@ -428,7 +419,7 @@ public class QuickShareRestApiTest extends BaseWebScriptTest
                 
                 NodeRef nodeRef = result.getChildRef();
                 ContentWriter writer = contentService.getWriter(nodeRef, ContentModel.PROP_CONTENT, true);
-                writer.setMimetype(mimetype);
+                writer.setMimetype(TEST_MIMETYPE_JPEG);
                 writer.putContent(quickFile);
                 
                 return nodeRef;
