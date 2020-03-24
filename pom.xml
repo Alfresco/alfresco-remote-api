@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>alfresco-remote-api</artifactId>
     <name>Alfresco Remote API</name>
-    <version>8.108-SNAPSHOT</version>
+    <version>8.131-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -37,18 +37,18 @@
         <dir.root>${project.build.directory}/alf_data</dir.root>
         <img.exe>convert</img.exe>
 
-        <dependency.alfresco-repository.version>8.103</dependency.alfresco-repository.version>
-        <dependency.alfresco-data-model.version>8.87</dependency.alfresco-data-model.version>
-        <dependency.alfresco-core.version>8.21</dependency.alfresco-core.version>
+        <dependency.alfresco-repository.version>8.139</dependency.alfresco-repository.version>
+        <dependency.alfresco-data-model.version>8.96</dependency.alfresco-data-model.version>
+        <dependency.alfresco-core.version>8.26</dependency.alfresco-core.version>
 
         <dependency.alfresco-pdf-renderer.version>1.1</dependency.alfresco-pdf-renderer.version>
-        <dependency.jackson.version>2.10.2</dependency.jackson.version>
+        <dependency.jackson.version>2.10.3</dependency.jackson.version>
         <dependency.jackson-databind.version>2.10.1</dependency.jackson-databind.version>
 
         <dependency.webscripts.version>8.2</dependency.webscripts.version>
         <dependency.opencmis.version>1.0.0</dependency.opencmis.version>
-        <dependency.spring.version>5.2.3.RELEASE</dependency.spring.version>
-        <dependency.postgresql.version>42.2.9</dependency.postgresql.version>
+        <dependency.spring.version>5.2.5.RELEASE</dependency.spring.version>
+        <dependency.postgresql.version>42.2.11</dependency.postgresql.version>
         <dependency.cxf.version>3.3.5</dependency.cxf.version>
     </properties>
 
@@ -90,7 +90,7 @@
             <dependency>
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
-                <version>1.12.2</version>
+                <version>1.13.1</version>
             </dependency>
             <!-- update dependency from opencmis-extension -->
             <dependency>
@@ -103,6 +103,27 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-jaxb-annotations</artifactId>
                 <version>${dependency.jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>1.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.12</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>4.4.13</version>
+            </dependency>
+            <!-- REPO-4986, REPO-4987 -->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-jms</artifactId>
+                <version>${dependency.spring.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -117,6 +138,33 @@
             <groupId>org.alfresco</groupId>
             <artifactId>alfresco-data-model</artifactId>
             <version>${dependency.alfresco-data-model.version}</version>
+            <exclusions>
+                <!-- Duplicate classes from com.sun.activation:jakarta.activation-->
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>javax.activation</artifactId>
+                </exclusion>
+                <!-- REPO-4998 - Exclusion due to classpath conflicts between org.codehaus.woodstox:woodstox-core-asl and com.fasterxml.woodstox:woodstox-core -->
+                <exclusion>
+                  <groupId>org.codehaus.woodstox</groupId>
+                  <artifactId>woodstox-core-asl</artifactId>
+                </exclusion>
+                <!-- Duplicate classes from jakarta.annotation:jakarta.annotation-api-->
+                <exclusion>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>javax.annotation-api</artifactId>
+                </exclusion>
+                <!-- REPO-5009 Excluded to avoid duplicated classes with javax.jws:javax.jws-api -->
+                <exclusion>
+                  <groupId>org.apache.geronimo.specs</groupId>
+                  <artifactId>geronimo-ws-metadata_2.0_spec</artifactId>
+                </exclusion>
+                <!-- Duplicates classes from jakarta.transaction:jakarta.transaction-api -->
+                <exclusion>
+                    <groupId>org.apache.geronimo.specs</groupId>
+                    <artifactId>geronimo-jta_1.1_spec</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -166,6 +214,23 @@
             <groupId>org.apache.chemistry.opencmis</groupId>
             <artifactId>chemistry-opencmis-test-tck</artifactId>
             <version>${dependency.opencmis.version}</version>
+            <exclusions>
+                <!-- Duplicate classes from com.sun.activation:jakarta.activation-->
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>javax.activation</artifactId>
+                </exclusion>
+                <!-- REPO-5009 Excluded to avoid duplicated classes with javax.jws:javax.jws-api -->
+                <exclusion>
+                  <groupId>org.apache.geronimo.specs</groupId>
+                  <artifactId>geronimo-ws-metadata_2.0_spec</artifactId>
+                </exclusion>
+                <!-- Duplicates classes from jakarta.transaction:jakarta.transaction-api -->
+                <exclusion>
+                    <groupId>org.apache.geronimo.specs</groupId>
+                    <artifactId>geronimo-jta_1.1_spec</artifactId>
+                </exclusion>
+            </exclusions>
             <!-- <scope>test</scope> -->
         </dependency>
         <!-- the cxf libs were updated, see dependencyManagement section -->
@@ -181,7 +246,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>3.2.4</version>
+            <version>3.3.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -203,6 +268,18 @@
             <version>${dependency.alfresco-core.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
+            <exclusions>
+                <!-- Duplicates classes from jakarta.transaction:jakarta.transaction-api -->
+                <exclusion>
+                    <groupId>javax.transaction</groupId>
+                    <artifactId>jta</artifactId>
+                </exclusion>
+                <!-- Duplicates classes from jakarta.xml.bind:jakarta.xml.bind-api -->
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.alfresco.surf</groupId>
@@ -222,6 +299,12 @@
             <artifactId>jetty-server</artifactId>
             <version>8.2.0.v20160908</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.orbit</groupId>
+                    <artifactId>javax.servlet</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -233,14 +316,21 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
             <version>8.2.0.v20160908</version>
-            <scope>test</scope> 
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.alfresco.cmis.client</groupId>
             <artifactId>alfresco-opencmis-extension</artifactId>
             <version>2.0</version>
-            <scope>test</scope> 
-        </dependency>   
+            <scope>test</scope>
+            <exclusions>
+              <!-- REPO-5009 Excluded to avoid duplicated classes with javax.jws:javax.jws-api -->
+              <exclusion>
+                <groupId>org.apache.geronimo.specs</groupId>
+                <artifactId>geronimo-ws-metadata_2.0_spec</artifactId>
+              </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
     <profiles>
          <!-- Profiles to extract the alfresco-pdf-renderer -->
