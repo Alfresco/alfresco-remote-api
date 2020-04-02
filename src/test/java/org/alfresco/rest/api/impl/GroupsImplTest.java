@@ -66,7 +66,7 @@ public class GroupsImplTest
     public void legalCharacterInGroupId() {
         groupsImpl  = new GroupsImpl();
         Group group= new Group();
-        String groupId="GROUP_IdentifierWithIllegalChar";
+        String groupId="GROUP_IdentifierWithLegalChar";
         group.setId(groupId);
         group.setDisplayName(groupId);
         AuthorityDAO authorityDAO =  Mockito.mock(AuthorityDAO.class);
