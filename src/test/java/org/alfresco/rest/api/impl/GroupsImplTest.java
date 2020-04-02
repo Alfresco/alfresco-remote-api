@@ -46,7 +46,7 @@ public class GroupsImplTest
     @Test(expected = IllegalArgumentException.class)
     public void illegalCharacterInGroupId() {
         groupsImpl  = new GroupsImpl();
-        Group group= new Group(); //Mockito.mock(Group.class);
+        Group group= new Group();
         String groupId="GROUP_Identifier\"WithIllegalChar";
         group.setId(groupId);
         group.setDisplayName(groupId);
@@ -55,19 +55,17 @@ public class GroupsImplTest
         AuthorityService authorityService = Mockito.mock(AuthorityService.class);
         groupsImpl.setAuthorityService(authorityService);
         groupsImpl.setAuthorityDAO(authorityDAO);
-        //String groupId="GROUP_Identifier WithIllegalChar";
         when(authorityService.authorityExists(anyString())).thenReturn(false);
         when(authorityService.getName(any(AuthorityType.class), anyString())).thenReturn("test");
         when(authorityService.createAuthority(any(AuthorityType.class), anyString(), anyString(), anySet())).thenReturn(PermissionService.ALL_AUTHORITIES);
         Parameters parameters = Mockito.mock(Parameters.class);
-        //when(parameters.getInclude()).thenReturn(null);
         groupsImpl.create(group, parameters);
     }
 
     @Test()
     public void legalCharacterInGroupId() {
         groupsImpl  = new GroupsImpl();
-        Group group= new Group(); //Mockito.mock(Group.class);
+        Group group= new Group();
         String groupId="GROUP_IdentifierWithIllegalChar";
         group.setId(groupId);
         group.setDisplayName(groupId);
@@ -76,12 +74,10 @@ public class GroupsImplTest
         AuthorityService authorityService = Mockito.mock(AuthorityService.class);
         groupsImpl.setAuthorityService(authorityService);
         groupsImpl.setAuthorityDAO(authorityDAO);
-        //String groupId="GROUP_Identifier WithIllegalChar";
         when(authorityService.authorityExists(anyString())).thenReturn(false);
         when(authorityService.getName(any(AuthorityType.class), anyString())).thenReturn("test");
         when(authorityService.createAuthority(any(AuthorityType.class), anyString(), anyString(), anySet())).thenReturn(PermissionService.ALL_AUTHORITIES);
         Parameters parameters = Mockito.mock(Parameters.class);
-        //when(parameters.getInclude()).thenReturn(null);
         groupsImpl.create(group, parameters);
     }
 }
