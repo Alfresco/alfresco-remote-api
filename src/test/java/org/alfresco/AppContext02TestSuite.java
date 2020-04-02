@@ -48,6 +48,7 @@ import org.junit.runners.Suite;
     org.alfresco.rest.api.tests.AuthenticationsTest.class,
     org.alfresco.rest.api.tests.DiscoveryApiTest.class,
     org.alfresco.rest.api.tests.GroupsTest.class,
+    org.alfresco.rest.api.impl.GroupsImplTest.class,
     org.alfresco.rest.api.tests.ModulePackagesApiTest.class,
     org.alfresco.rest.api.tests.NodeApiTest.class,
     org.alfresco.rest.api.tests.NodeAssociationsApiTest.class,

@@ -43,11 +43,9 @@ import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.util.GUID;
-import org.alfresco.util.testing.category.LuceneTests;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 
 import javax.servlet.http.HttpServletResponse;

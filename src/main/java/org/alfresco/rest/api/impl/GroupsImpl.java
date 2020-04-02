@@ -87,7 +87,7 @@ public class GroupsImpl implements Groups
     private static final String DISPLAY_NAME = "displayName";
     private static final String AUTHORITY_NAME = "authorityName";
     private static final String ERR_MSG_MODIFY_FIXED_AUTHORITY = "Trying to modify a fixed authority";
-    private static final char[] ILLEGAL_CHARACTERS = {'/', '\\', '\r', '\n', '"'};
+    private static final char[] ILLEGAL_CHARACTERS = {'/', '\\', '\r', '\n', '\"', '\''};
 
     private final static Map<String, String> SORT_PARAMS_TO_NAMES = new HashMap<>();
     static
