@@ -44,7 +44,7 @@ public class GroupsImplTest
     private GroupsImpl groupsImpl;
 
     @Test(expected = IllegalArgumentException.class)
-    public void illegalCharacterInGroupId() {
+    public void createGroupCheckWithillegalCharacterInGroupId() {
         groupsImpl  = new GroupsImpl();
         Group group= new Group();
         String groupId="GROUP_Identifier\"WithIllegalChar";
@@ -63,7 +63,7 @@ public class GroupsImplTest
     }
 
     @Test()
-    public void legalCharacterInGroupId() {
+    public void createGroupCheckWithlegalCharacterInGroupId() {
         groupsImpl  = new GroupsImpl();
         Group group= new Group();
         String groupId="GROUP_IdentifierWithLegalChar";
