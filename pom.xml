@@ -36,8 +36,8 @@
         <img.exe>convert</img.exe>
 
         <dependency.alfresco-core.version>7.5.7</dependency.alfresco-core.version>
-        <dependency.alfresco-repository.version>6.56.56</dependency.alfresco-repository.version>
-        <dependency.alfresco-data-model.version>8.18.12</dependency.alfresco-data-model.version>
+        <dependency.alfresco-repository.version>6.56.61</dependency.alfresco-repository.version>
+        <dependency.alfresco-data-model.version>8.18.14</dependency.alfresco-data-model.version>
 
         <maven.build.sourceVersion>11</maven.build.sourceVersion>
 
