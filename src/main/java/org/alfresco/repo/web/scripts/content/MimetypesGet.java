@@ -2,7 +2,7 @@
  * #%L
  * Alfresco Remote API
  * %%
- * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * Copyright (C) 2005 - 2020 Alfresco Software Limited
  * %%
  * This file is part of the Alfresco software. 
  * If the software was purchased under a paid Alfresco license, the terms of 
@@ -34,7 +34,6 @@ import java.util.Map;
 
 import org.alfresco.repo.content.metadata.MetadataExtracter;
 import org.alfresco.repo.content.metadata.MetadataExtracterRegistry;
-import org.alfresco.repo.content.transform.LocalTransformServiceRegistry;
 import org.alfresco.service.cmr.repository.MimetypeService;
 import org.alfresco.transform.client.registry.TransformServiceRegistry;
 import org.springframework.extensions.webscripts.Cache;
@@ -163,9 +162,15 @@ public class MimetypesGet extends DeclarativeWebScript
        return transforms;
     }
 
-    /** Note - for now, only does the best one, not all */
+    /**
+     * Note - for now, only does the best one, or not all.
+     * @deprecated as callers should not know the names of the transformers that are being used, just
+     * that a transform is possible or not.
+     * */
     protected String getTransformer(String from, long sourceSize, String to)
     {
+        // It was never intended that a TransformServiceRegistry should supply the names of transformers
+        // to the outside world. However that is what this V0 script does.
         return localTransformServiceRegistry.findTransformerName(from, sourceSize, to, Collections.emptyMap(), null);
     }
 }
