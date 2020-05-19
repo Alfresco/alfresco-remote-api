@@ -60,11 +60,13 @@ import org.alfresco.repo.domain.node.AuditablePropertiesEntity;
 import org.alfresco.repo.lock.mem.Lifetime;
 import org.alfresco.repo.model.Repository;
 import org.alfresco.repo.model.filefolder.FileFolderServiceImpl;
+import org.alfresco.repo.node.DownloadNotifierService;
 import org.alfresco.repo.node.getchildren.FilterProp;
 import org.alfresco.repo.node.getchildren.FilterPropBoolean;
 import org.alfresco.repo.node.getchildren.GetChildrenCannedQuery;
 import org.alfresco.repo.node.integrity.IntegrityException;
 import org.alfresco.repo.policy.BehaviourFilter;
+import org.alfresco.repo.policy.ClassPolicyDelegate;
 import org.alfresco.repo.rendition2.RenditionDefinition2;
 import org.alfresco.repo.rendition2.RenditionDefinitionRegistry2;
 import org.alfresco.repo.rendition2.RenditionService2;
@@ -216,6 +218,7 @@ public class NodesImpl implements Nodes
     private RetryingTransactionHelper retryingTransactionHelper;
     private LockService lockService;
     private VirtualStore smartStore; // note: remove as part of REPO-1173
+    private DownloadNotifierService downloadNotifierService;
 
     private enum Activity_Type
     {
@@ -314,6 +317,10 @@ public class NodesImpl implements Nodes
         this.smartStore = smartStore;
     }
 
+    public void setDownloadNotifierService(DownloadNotifierService downloadNotifierService)
+    {
+        this.downloadNotifierService = downloadNotifierService;
+    }
 
     // excluded namespaces (aspects, properties, assoc types)
     private static final List<String> EXCLUDED_NS = Arrays.asList(NamespaceService.SYSTEM_MODEL_1_0_URI);
@@ -2676,6 +2683,8 @@ public class NodesImpl implements Nodes
             postActivity(Activity_Type.DOWNLOADED, activityInfo, true);
         }
 
+        // TODO: REPO-5156 Add trigger point
+        downloadNotifierService.downloadNotify(nodeRef);
         return new NodeBinaryResource(nodeRef, ContentModel.PROP_CONTENT, ci, attachFileName);
     }
 
