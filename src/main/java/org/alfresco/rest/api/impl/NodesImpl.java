@@ -2682,7 +2682,6 @@ public class NodesImpl implements Nodes
             postActivity(Activity_Type.DOWNLOADED, activityInfo, true);
         }
 
-        // TODO: REPO-5156 Add trigger point
         downloadNotifierService.downloadNotify(nodeRef);
         return new NodeBinaryResource(nodeRef, ContentModel.PROP_CONTENT, ci, attachFileName);
     }
