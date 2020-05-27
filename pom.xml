@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>alfresco-remote-api</artifactId>
     <name>Alfresco Remote API</name>
-    <version>8.164-SNAPSHOT</version>
+    <version>8.170-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -38,7 +38,7 @@
         <img.exe>convert</img.exe>
 
         <dependency.alfresco-repository.version>REPO-5118-4</dependency.alfresco-repository.version>
-        <dependency.alfresco-data-model.version>8.112</dependency.alfresco-data-model.version>
+        <dependency.alfresco-data-model.version>8.115</dependency.alfresco-data-model.version>
         <dependency.alfresco-core.version>8.33</dependency.alfresco-core.version>
 
         <dependency.alfresco-pdf-renderer.version>1.1</dependency.alfresco-pdf-renderer.version>
