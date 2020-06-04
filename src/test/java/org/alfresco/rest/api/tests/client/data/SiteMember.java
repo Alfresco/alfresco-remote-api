@@ -138,8 +138,7 @@ public class SiteMember implements Serializable, ExpectedComparison, Comparable<
 		return siteMember;
 	}
 
-	public static ListResponse<SiteMember> parseSiteMembers(String siteId, JSONObject jsonObject)
-	{
+	public static ListResponse<SiteMember> parseSiteMembers(String siteId, JSONObject jsonObject) {
 		List<SiteMember> siteMembers = new ArrayList<SiteMember>();
 
 		JSONObject jsonList = (JSONObject)jsonObject.get("list");

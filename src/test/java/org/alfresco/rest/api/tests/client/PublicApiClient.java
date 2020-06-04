@@ -76,6 +76,7 @@ import org.alfresco.rest.api.tests.client.data.SiteImpl;
 import org.alfresco.rest.api.tests.client.data.SiteMember;
 import org.alfresco.rest.api.tests.client.data.SiteMembershipRequest;
 import org.alfresco.rest.api.tests.client.data.Tag;
+import org.alfresco.rest.api.tests.client.data.GroupMemberOfSite;
 import org.alfresco.rest.api.tests.util.RestApiUtil;
 import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.client.api.Document;
@@ -1132,6 +1133,22 @@ public class PublicApiClient
         {
             remove("people", personId, "favorite-sites", site.getSiteId(), "Failed to remove favourite site");
         }
+
+        public ListResponse<GroupMemberOfSite> getGroups(String siteId, Map<String, String> params) throws PublicApiException {
+            HttpResponse response = getAll("sites", siteId, "group-members", null, params, "Failed to get all site members");
+            return GroupMemberOfSite.parseGroupMemberOfSites(siteId, response.getJsonResponse());
+        }
+
+        public GroupMemberOfSite addGroup(String siteId, Group group) throws PublicApiException {
+            HttpResponse response = create("sites", siteId, "group-members", null, group.toJSON().toString() , "Failed to get all site members");
+            return GroupMemberOfSite.parseSiteGroup(siteId, response.getJsonResponse());
+        }
+
+//        GroupMemberOfSite getGroup(String siteId, String groupId);
+//        GroupMemberOfSite updateGroup(String siteId, GroupMemberOfSite groupMember);
+//        void deleteGroup(String groupId, String siteId);
+
+
     }
 
     public class SiteMembershipRequests extends AbstractProxy

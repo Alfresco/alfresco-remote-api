@@ -1319,22 +1319,28 @@ public class SitesImpl implements Sites
     }
 
     @Override
+    public GroupMemberOfSite getGroup(String siteId, String groupId) {
+        final String authorityName = authorityService.getName(AuthorityType.GROUP, groupId);
+//        siteService.setMembership(group.getId(), authorityName, group.getRole());
+        return null;
+    }
+
+    @Override
     public GroupMemberOfSite addGroup(String siteId, GroupMemberOfSite group) {
         final String authorityName = authorityService.getName(AuthorityType.GROUP, group.getId());
         siteService.setMembership(group.getId(), authorityName, group.getRole());
-        return null;
+        return group;
     }
 
     @Override
     public GroupMemberOfSite updateGroup(String siteId, GroupMemberOfSite group) {
         final String authorityName = authorityService.getName(AuthorityType.GROUP, group.getId());
         siteService.setMembership(group.getId(), authorityName, group.getRole());
-        return null;
+        return group;
     }
 
     @Override
-    public GroupMemberOfSite deleteGroup(String groupId, String siteId) {
+    public void deleteGroup(String groupId, String siteId) {
         this.siteService.removeMembership(siteId, groupId);
-        return null;
     }
 }

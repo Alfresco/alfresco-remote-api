@@ -45,6 +45,7 @@ import org.junit.runners.Suite;
     org.alfresco.rest.api.tests.TestCustomTypeAspect.class,
     org.alfresco.rest.api.tests.TestSiteContainers.class,
     org.alfresco.rest.api.tests.TestSiteMembers.class,
+    org.alfresco.rest.api.tests.TestSiteGroups.class,
     org.alfresco.rest.api.tests.TestSiteMembershipRequests.class,
     org.alfresco.rest.api.tests.TestSites.class,
     org.alfresco.rest.api.tests.TestTags.class,

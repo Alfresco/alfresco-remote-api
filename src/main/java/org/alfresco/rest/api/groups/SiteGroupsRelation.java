@@ -96,7 +96,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<Group
     @Override
     @WebApiDescription(title = "Removes groupId as a member of site siteId.")
     public void delete(String siteId, String groupId, Parameters parameters) {
-        sites.removeSiteMember(groupId, siteId);
+        sites.deleteGroup(groupId, siteId);
     }
 
     /**
@@ -118,7 +118,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<Group
     @Override
     @WebApiDescription(title = "Returns site membership information for groupId in siteId.")
     public GroupMemberOfSite readById(String siteId, String groupId, Parameters parameters) {
-        return sites.deleteGroup(groupId, siteId);
+        return sites.getGroup(groupId, siteId);
     }
 
 }

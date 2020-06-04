@@ -41,6 +41,7 @@ public class SiteMember
 {
 	private String personId;
 	private String role;
+    private boolean isMemberOfGroup;
 
 	public SiteMember()
 	{

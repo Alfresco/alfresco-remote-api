@@ -26,6 +26,7 @@
 package org.alfresco.rest.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.alfresco.rest.api.groups.SiteGroupsRelation;
 import org.alfresco.rest.api.sites.SiteEntityResource;
 import org.alfresco.rest.framework.resource.EmbeddedEntityResource;
 import org.alfresco.rest.framework.resource.UniqueId;
@@ -33,18 +34,13 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
 
 
-public class GroupMemberOfSite implements Comparable<GroupMemberOfSite>
-{
+public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
 	private String role;
 	private String id; // group id (aka authority name)
-	private NodeRef guid;
 
-	public GroupMemberOfSite()
-	{
-	}
+	public GroupMemberOfSite() {}
 
-    public GroupMemberOfSite(String id, NodeRef siteGuid, String role)
-    {
+    public GroupMemberOfSite(String id, String role) {
 		super();
 		if(id == null)
 		{
@@ -54,39 +50,23 @@ public class GroupMemberOfSite implements Comparable<GroupMemberOfSite>
 		{
 			throw new IllegalArgumentException();
 		}
-		if(siteGuid == null)
-		{
-			throw new IllegalArgumentException();
-		}
 		this.role = role;
 		this.id = id;
-		this.guid = siteGuid;
 	}
 
     public static GroupMemberOfSite getMemberOfSite(SiteInfo siteInfo, String siteRole)
     {
-    	GroupMemberOfSite memberOfSite = new GroupMemberOfSite(siteInfo.getShortName(), siteInfo.getNodeRef(), siteRole);
-    	return memberOfSite;
+    	return new GroupMemberOfSite(siteInfo.getShortName(), siteRole);
     }
 
 	@JsonProperty("id")
     @UniqueId
-    @EmbeddedEntityResource(propertyName = "site", entityResource = SiteEntityResource.class)
+    @EmbeddedEntityResource(propertyName = "group", entityResource = SiteGroupsRelation.class)
     public String getId()
 	{
 		return id;
 	}
 	
-	public NodeRef getGuid()
-	{
-		return guid;
-	}
-	
-	public void setGuid(NodeRef guid)
-	{
-		this.guid = guid;
-	}
-
 	public String getRole()
 	{
 		return role;
@@ -160,9 +140,7 @@ public class GroupMemberOfSite implements Comparable<GroupMemberOfSite>
 	}
 
 	@Override
-	public String toString()
-	{
-		return "MemberOfSite [role=" + role + ", siteShortName="
-				+ id + ", siteGuid=" + guid + "]";
+	public String toString() {
+		return "GroupMemberOfSite [role='" + role + '\'' + ", id='" + id + '\'' + ", role='" + role + '\'' + "]";
 	}
 }

@@ -81,6 +81,7 @@ public interface Sites
 
     CollectionWithPagingInfo<GroupMemberOfSite> getGroups(String siteId, Parameters parameters);
     GroupMemberOfSite addGroup(String siteId, GroupMemberOfSite group);
+    GroupMemberOfSite getGroup(String siteId, String groupId);
     GroupMemberOfSite updateGroup(String siteId, GroupMemberOfSite groupMember);
-    GroupMemberOfSite deleteGroup(String groupId, String siteId);
+    void deleteGroup(String groupId, String siteId);
 }
