@@ -1464,4 +1464,8 @@
     <bean class="org.alfresco.rest.api.groups.GroupMembersRelation">
         <property name="groups" ref="Groups" />
     </bean>
+
+    <bean class="org.alfresco.rest.api.groups.SiteGroupsRelation">
+        <property name="sites" ref="Sites" />
+    </bean>
 </beans>

@@ -78,4 +78,9 @@ public interface Sites
     String PARAM_SITE_ROLE = "role";
     String PARAM_VISIBILITY = "visibility";
     String PARAM_PRESET = "preset";
+
+    CollectionWithPagingInfo<GroupMemberOfSite> getGroups(String siteId, Parameters parameters);
+    GroupMemberOfSite addGroup(String siteId, GroupMemberOfSite group);
+    GroupMemberOfSite updateGroup(String siteId, GroupMemberOfSite groupMember);
+    GroupMemberOfSite deleteGroup(String groupId, String siteId);
 }

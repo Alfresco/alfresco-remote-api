@@ -4,21 +4,21 @@
  * %%
  * Copyright (C) 2005 - 2016 Alfresco Software Limited
  * %%
- * This file is part of the Alfresco software. 
- * If the software was purchased under a paid Alfresco license, the terms of 
- * the paid license agreement will prevail.  Otherwise, the software is 
+ * This file is part of the Alfresco software.
+ * If the software was purchased under a paid Alfresco license, the terms of
+ * the paid license agreement will prevail.  Otherwise, the software is
  * provided under the following open source license terms:
- * 
+ *
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
  * #L%
@@ -84,6 +84,8 @@ import org.alfresco.service.cmr.preference.PreferenceService;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.AccessStatus;
+import org.alfresco.service.cmr.security.AuthorityService;
+import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
@@ -101,7 +103,7 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * Centralises access to site services and maps between representations.
- * 
+ *
  * @author steveglover
  * @author janv
  * @since publicapi1.0
@@ -159,6 +161,7 @@ public class SitesImpl implements Sites
     protected SiteSurfConfig siteSurfConfig;
     protected PermissionService permissionService;
     protected SiteServiceImpl siteServiceImpl;
+    protected AuthorityService authorityService;
 
     public void setPreferenceService(PreferenceService preferenceService)
     {
@@ -255,6 +258,7 @@ public class SitesImpl implements Sites
         return siteInfo;
     }
 
+//    get all user by siteID
     public CollectionWithPagingInfo<SiteMember> getSiteMembers(String siteId, Parameters parameters)
     {
         SiteInfo siteInfo = validateSite(siteId);
@@ -287,18 +291,18 @@ public class SitesImpl implements Sites
 
         return CollectionWithPagingInfo.asPaged(paging, ret, pagedResults.hasMoreItems(), null);
     }
-    
+
     public String getSiteRole(String siteId)
     {
         String personId = AuthenticationUtil.getFullyAuthenticatedUser();
         return getSiteRole(siteId, personId);
     }
-    
+
     public String getSiteRole(String siteId, String personId)
     {
         return siteService.getMembersRole(siteId, personId);
     }
-    
+
     public Site getSite(String siteId)
     {
         return getSite(siteId, true);
@@ -326,7 +330,7 @@ public class SitesImpl implements Sites
         }
         return new Site(siteInfo, role);
     }
-    
+
     /**
      * people/<personId>/sites/<siteId>
      *
@@ -371,7 +375,7 @@ public class SitesImpl implements Sites
     	if(siteInfo == null)
     	{
     		// site does not exist
-            logger.debug("Site does not exist: "+siteId);            
+            logger.debug("Site does not exist: "+siteId);
     		throw new RelationshipResourceNotFoundException(personId, siteId);
     	}
     	siteId = siteInfo.getShortName();
@@ -387,7 +391,7 @@ public class SitesImpl implements Sites
             logger.debug("Getting member role but role is null");
     		throw new RelationshipResourceNotFoundException(personId, siteId);
     	}
-        
+
         return siteMember;
     }
 
@@ -403,14 +407,14 @@ public class SitesImpl implements Sites
     	}
     	// set the site id to the short name (to deal with case sensitivity issues with using the siteId from the url)
     	siteId = siteInfo.getShortName();
-    	
+
     	String role = siteMember.getRole();
     	if(role == null)
     	{
 			logger.debug("addSiteMember:  Must provide a role "+siteMember);
     		throw new InvalidArgumentException("Must provide a role");
     	}
-    	
+
     	if(siteService.isMember(siteId, personId))
     	{
 			logger.debug("addSiteMember:  "+ personId + " is already a member of site " + siteId);
@@ -578,7 +582,7 @@ public class SitesImpl implements Sites
                 counter++;
                 continue;
             }
-            
+
             if (counter <= pageDetails.getEnd() - 1)
             {
                 SiteInfo siteInfo = siteMember.getSiteInfo();
@@ -679,7 +683,7 @@ public class SitesImpl implements Sites
             }
         };
     }
-    
+
     public CollectionWithPagingInfo<Site> getSites(final Parameters parameters)
     {
         final BeanPropertiesFilter filter = parameters.getFilter();
@@ -687,7 +691,7 @@ public class SitesImpl implements Sites
         Paging paging = parameters.getPaging();
         PagingRequest pagingRequest = Util.getPagingRequest(paging);
 //    	pagingRequest.setRequestTotalCountMax(requestTotalCountMax)
-        
+
         List<Pair<QName, Boolean>> sortProps = new ArrayList<Pair<QName, Boolean>>();
         List<SortColumn> sortCols = parameters.getSorting();
         if ((sortCols != null) && (sortCols.size() > 0))
@@ -893,7 +897,7 @@ public class SitesImpl implements Sites
             throw new RelationshipResourceNotFoundException(personId, siteId);
         }
     }
-    
+
     public void addFavouriteSite(String personId, FavouriteSite favouriteSite)
     {
         personId = people.validatePerson(personId);
@@ -924,7 +928,7 @@ public class SitesImpl implements Sites
         preferences.put(prefKey.toString(), Boolean.TRUE);
         preferenceService.setPreferences(personId, preferences);
     }
-    
+
     public void removeFavouriteSite(String personId, String siteId)
     {
         personId = people.validatePerson(personId);
@@ -948,7 +952,7 @@ public class SitesImpl implements Sites
 
         preferenceService.clearPreferences(personId, prefKey.toString());
     }
-    
+
     private PagingResults<SiteInfo> getFavouriteSites(String userName, PagingRequest pagingRequest)
     {
         final Collator collator = Collator.getInstance();
@@ -1098,7 +1102,7 @@ public class SitesImpl implements Sites
      * Extracted this call in a separate method because it might be needed to
      * call different site service method when creating site info (e.g.
      * siteService.createSite(String, String, String, String, SiteVisibility, QName))
-     * 
+     *
      * @param site
      * @return
      */
@@ -1110,7 +1114,7 @@ public class SitesImpl implements Sites
         }
         return siteService.createSite(DEFAULT_SITE_PRESET, site.getId(), site.getTitle(), site.getDescription(), site.getVisibility());
     }
-        
+
     /**
      * Create default/fixed preset (Share) site - with DocLib container/component
      *
@@ -1305,5 +1309,32 @@ public class SitesImpl implements Sites
             }
         };
         importerService.importView(acpHandler, location, binding, (ImporterProgress)null);
+    }
+
+
+    @Override
+    public CollectionWithPagingInfo<GroupMemberOfSite> getGroups(String siteId, Parameters parameters) {
+//        this.siteService.listMembersPaged()
+        return null;
+    }
+
+    @Override
+    public GroupMemberOfSite addGroup(String siteId, GroupMemberOfSite group) {
+        final String authorityName = authorityService.getName(AuthorityType.GROUP, group.getId());
+        siteService.setMembership(group.getId(), authorityName, group.getRole());
+        return null;
+    }
+
+    @Override
+    public GroupMemberOfSite updateGroup(String siteId, GroupMemberOfSite group) {
+        final String authorityName = authorityService.getName(AuthorityType.GROUP, group.getId());
+        siteService.setMembership(group.getId(), authorityName, group.getRole());
+        return null;
+    }
+
+    @Override
+    public GroupMemberOfSite deleteGroup(String groupId, String siteId) {
+        this.siteService.removeMembership(siteId, groupId);
+        return null;
     }
 }

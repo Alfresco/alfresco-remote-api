@@ -46,6 +46,8 @@ import org.springframework.beans.factory.InitializingBean;
  * @author steveglover
  *
  */
+
+// handles the current operation
 @RelationshipResource(name = "members", entityResource = SiteEntityResource.class, title = "Site Members")
 public class SiteMembersRelation implements RelationshipResourceAction.Read<SiteMember>, RelationshipResourceAction.Delete, 
 RelationshipResourceAction.Create<SiteMember>, RelationshipResourceAction.Update<SiteMember>, RelationshipResourceAction.ReadById<SiteMember>, InitializingBean
