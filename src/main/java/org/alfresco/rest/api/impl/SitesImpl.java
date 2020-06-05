@@ -1327,8 +1327,7 @@ public class SitesImpl implements Sites
 
     @Override
     public GroupMemberOfSite addGroup(String siteId, GroupMemberOfSite group) {
-        final String authorityName = authorityService.getName(AuthorityType.GROUP, group.getId());
-        siteService.setMembership(group.getId(), authorityName, group.getRole());
+        siteService.setMembership(siteId, group.getId(), group.getRole());
         return group;
     }
 

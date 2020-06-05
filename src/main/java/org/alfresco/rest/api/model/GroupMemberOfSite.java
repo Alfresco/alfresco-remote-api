@@ -26,13 +26,10 @@
 package org.alfresco.rest.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.alfresco.rest.api.groups.SiteGroupsRelation;
-import org.alfresco.rest.api.sites.SiteEntityResource;
+import org.alfresco.rest.api.groups.GroupsEntityResource;
 import org.alfresco.rest.framework.resource.EmbeddedEntityResource;
 import org.alfresco.rest.framework.resource.UniqueId;
-import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.site.SiteInfo;
-
 
 public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
 	private String role;
@@ -41,7 +38,6 @@ public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
 	public GroupMemberOfSite() {}
 
     public GroupMemberOfSite(String id, String role) {
-		super();
 		if(id == null)
 		{
 			throw new IllegalArgumentException();
@@ -61,7 +57,7 @@ public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
 
 	@JsonProperty("id")
     @UniqueId
-    @EmbeddedEntityResource(propertyName = "group", entityResource = SiteGroupsRelation.class)
+    @EmbeddedEntityResource(propertyName = "group", entityResource = GroupsEntityResource.class)
     public String getId()
 	{
 		return id;

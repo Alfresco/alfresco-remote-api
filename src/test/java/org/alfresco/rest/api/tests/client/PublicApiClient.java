@@ -1139,9 +1139,9 @@ public class PublicApiClient
             return GroupMemberOfSite.parseGroupMemberOfSites(siteId, response.getJsonResponse());
         }
 
-        public GroupMemberOfSite addGroup(String siteId, Group group) throws PublicApiException {
+        public GroupMemberOfSite addGroup(String siteId, GroupMemberOfSite group) throws PublicApiException {
             HttpResponse response = create("sites", siteId, "group-members", null, group.toJSON().toString() , "Failed to get all site members");
-            return GroupMemberOfSite.parseSiteGroup(siteId, response.getJsonResponse());
+            return GroupMemberOfSite.parseSiteGroup(siteId, (JSONObject)response.getJsonResponse().get("entry"));
         }
 
 //        GroupMemberOfSite getGroup(String siteId, String groupId);

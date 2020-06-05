@@ -83,9 +83,10 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<Group
      * @see RelationshipResourceAction.Create#create(String, List, Parameters)
      */
     @Override
-    @WebApiDescription(title = "Adds personId as a member of site siteId.")
+    @WebApiDescription(title = "Adds groups as a member of site siteId.")
     public List<GroupMemberOfSite> create(String siteId, List<GroupMemberOfSite> siteMembers, Parameters parameters) {
-        return siteMembers.stream().map((group) -> sites.addGroup(siteId, group)).collect(Collectors.toList());
+        List<GroupMemberOfSite> list = siteMembers.stream().map((group) -> sites.addGroup(siteId, group)).collect(Collectors.toList());
+        return list;
     }
 
     /**

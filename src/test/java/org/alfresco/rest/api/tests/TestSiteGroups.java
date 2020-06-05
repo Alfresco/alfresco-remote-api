@@ -23,18 +23,17 @@
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
  * #L%
  */
+
 package org.alfresco.rest.api.tests;
 
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.repo.tenant.TenantUtil.TenantRunAsWork;
-import org.alfresco.rest.api.tests.RepoService.TestNetwork;
-import org.alfresco.rest.api.tests.RepoService.TestPerson;
 import org.alfresco.rest.api.tests.RepoService.TestSite;
 import org.alfresco.rest.api.tests.client.PublicApiClient.Sites;
-import org.alfresco.rest.api.tests.client.RequestContext;
-import org.alfresco.rest.api.tests.client.data.Group;
+import org.alfresco.rest.api.tests.client.PublicApiException;
 import org.alfresco.rest.api.tests.client.data.GroupMemberOfSite;
+import org.alfresco.rest.api.tests.client.data.SiteRole;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.site.SiteVisibility;
@@ -42,11 +41,7 @@ import org.alfresco.util.GUID;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class TestSiteGroups extends AbstractBaseApiTest {
     protected AuthorityService authorityService;
@@ -61,17 +56,33 @@ public class TestSiteGroups extends AbstractBaseApiTest {
     @Test
     public void testCreateGroupMembers() {
         String groupName = null;
+        Sites sitesProxy = publicApiClient.sites();
 
         try {
             groupName = createAuthorityContext(user1);
-            System.out.println(groupName);
 
+            setRequestContext(networkOne.getId(), DEFAULT_ADMIN, DEFAULT_ADMIN_PWD);
+
+
+            TestSite site = TenantUtil.runAsUserTenant(new TenantRunAsWork<TestSite>() {
+                @Override
+                public TestSite doWork() throws Exception {
+                     return networkOne.createSite(SiteVisibility.PRIVATE);
+                }
+            }, DEFAULT_ADMIN, networkOne.getId());
+
+
+            GroupMemberOfSite reponse = sitesProxy.addGroup(site.getSiteId(), new GroupMemberOfSite(groupName, SiteRole.SiteCollaborator.name()));
+            assertEquals(reponse.getGroup().getId(), groupName);
+            assertEquals(reponse.getRole(), SiteRole.SiteCollaborator.name());
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             clearAuthorityContext(groupName);
         }
     }
 
-    private String createAuthorityContext(String userName) {
+    private String createAuthorityContext(String userName) throws PublicApiException {
         String groupName = "Test_GroupA" + GUID.generate();
         AuthenticationUtil.setRunAsUser(userName);
 
@@ -82,10 +93,12 @@ public class TestSiteGroups extends AbstractBaseApiTest {
 
             groupName = authorityService.createAuthority(AuthorityType.GROUP, groupName);
             authorityService.setAuthorityDisplayName(groupName, "Test Group A");
-
         }
+
+
         authorityService.addAuthority(groupName, user1);
         authorityService.addAuthority(groupName, user2);
+
         return groupName;
     }
 
@@ -95,96 +108,6 @@ public class TestSiteGroups extends AbstractBaseApiTest {
             authorityService.deleteAuthority(groupName, true);
         }
     }
-
-
-    @Test
-    public void testSiteGroups() throws Exception {
-        Group firstGroup = new Group();
-        Group secondGroup = new Group();
-        Sites sitesProxy = publicApiClient.sites();
-
-        // test: create site membership, remove it, get list of site membership
-        Iterator<TestNetwork> accountsIt = getTestFixture().getNetworksIt();
-        assertTrue(accountsIt.hasNext());
-        final TestNetwork network = accountsIt.next();
-        assertTrue(accountsIt.hasNext());
-
-        final List<TestPerson> people = new ArrayList<TestPerson>();
-
-        AuthenticationUtil.setAdminUserAsFullyAuthenticatedUser();
-
-        // Create user
-        TenantUtil.runAsSystemTenant(new TenantRunAsWork<Void>() {
-            @Override
-            public Void doWork() throws Exception {
-                TestPerson person = network.createUser();
-                people.add(person);
-                person = network.createUser();
-                people.add(person);
-                person = network.createUser();
-                people.add(person);
-                person = network.createUser();
-                people.add(person);
-
-                return null;
-            }
-        }, network.getId());
-
-        TestPerson person1 = people.get(0);
-        TestPerson person2 = people.get(1);
-        TestPerson person3 = people.get(2);
-        TestPerson person4 = people.get(3);
-
-        //add users to groups
-        firstGroup.setId("GROUP_firstGroup");
-        firstGroup.setDisplayName("firstGroup");
-        String firstAuthName = authorityService.createAuthority(AuthorityType.GROUP, firstGroup.getId());
-        authorityService.setAuthorityDisplayName(firstGroup.getId(), firstGroup.getDisplayName());
-
-        secondGroup.setId("GROUP_secondGroup");
-        secondGroup.setDisplayName("Aaaaah, a secondGroup!");
-        String secondAuthName = authorityService.createAuthority(AuthorityType.GROUP, secondGroup.getId());
-        authorityService.setAuthorityDisplayName(secondGroup.getId(), secondGroup.getDisplayName());
-
-        authorityService.addAuthority(firstAuthName, person2.getId());
-        authorityService.addAuthority(firstAuthName, person3.getId());
-        authorityService.addAuthority(secondAuthName, person4.getId());
-
-        // Create site
-        TestSite site = TenantUtil.runAsUserTenant(new TenantRunAsWork<TestSite>() {
-            @Override
-            public TestSite doWork() throws Exception {
-                TestSite site = network.createSite(SiteVisibility.PRIVATE);
-                return site;
-            }
-        }, person1.getId(), network.getId());
-
-        {
-            // create a site member
-            publicApiClient.setRequestContext(new RequestContext(network.getId(), person2.getId()));
-//            GroupMemberOfSite siteMember = sitesProxy.addGroup(site.getSiteId(), firstGroup);
-//            System.out.println(siteMember);
-
-//				// create another site member
-//				publicApiClient.setRequestContext(new RequestContext(network.getId(), person2.getId()));
-//				SiteMember siteMemberAno = sitesProxy.createSiteMember(site.getSiteId(), new SiteMember(person3.getId(), SiteRole.SiteCollaborator.toString()));
-//				assertEquals(person3.getId(), siteMemberAno.getMemberId());
-//				assertEquals(SiteRole.SiteCollaborator.toString(), siteMemberAno.getRole());
-//				siteMemberAno.setSiteId(site.getSiteId()); // note: needed for contains check below, ugh
-//
-//				// unknown site
-//				try {
-//					publicApiClient.setRequestContext(new RequestContext(network.getId(), person2.getId()));
-//					sitesProxy.removeSiteMember(GUID.generate(), siteMember);
-//					fail();
-//				} catch (PublicApiException e) {
-//					assertEquals(HttpStatus.SC_NOT_FOUND, e.getHttpResponse().getStatusCode());
-//				}
-//
-
-        }
-    }
-
 
     @Override
     public String getScope() {
