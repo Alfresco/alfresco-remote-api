@@ -65,7 +65,7 @@ import org.alfresco.rest.api.tests.client.data.FolderNode;
 import org.alfresco.rest.api.tests.client.data.Group;
 import org.alfresco.rest.api.tests.client.data.GroupMember;
 import org.alfresco.rest.api.tests.client.data.JSONAble;
-import org.alfresco.rest.api.tests.client.data.MemberOfSite;
+import org.alfresco.rest.api.tests.client.data.SiteGroup;
 import org.alfresco.rest.api.tests.client.data.NodeRating;
 import org.alfresco.rest.api.tests.client.data.Person;
 import org.alfresco.rest.api.tests.client.data.PersonNetwork;
@@ -76,7 +76,7 @@ import org.alfresco.rest.api.tests.client.data.SiteImpl;
 import org.alfresco.rest.api.tests.client.data.SiteMember;
 import org.alfresco.rest.api.tests.client.data.SiteMembershipRequest;
 import org.alfresco.rest.api.tests.client.data.Tag;
-import org.alfresco.rest.api.tests.client.data.GroupMemberOfSite;
+import org.alfresco.rest.api.tests.client.data.MemberOfSite;
 import org.alfresco.rest.api.tests.util.RestApiUtil;
 import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.client.api.Document;
@@ -1134,18 +1134,18 @@ public class PublicApiClient
             remove("people", personId, "favorite-sites", site.getSiteId(), "Failed to remove favourite site");
         }
 
-        public ListResponse<GroupMemberOfSite> getGroups(String siteId, Map<String, String> params) throws PublicApiException {
+        public ListResponse<SiteGroup> getGroups(String siteId, Map<String, String> params) throws PublicApiException {
             HttpResponse response = getAll("sites", siteId, "group-members", null, params, "Failed to get all site members");
-            return GroupMemberOfSite.parseGroupMemberOfSites(siteId, response.getJsonResponse());
+            return SiteGroup.parseGroupMemberOfSites(siteId, response.getJsonResponse());
         }
 
-        public GroupMemberOfSite addGroup(String siteId, GroupMemberOfSite group) throws PublicApiException {
+        public SiteGroup addGroup(String siteId, SiteGroup group) throws PublicApiException {
             HttpResponse response = create("sites", siteId, "group-members", null, group.toJSON().toString() , "Failed to get all site members");
-            return GroupMemberOfSite.parseSiteGroup(siteId, (JSONObject)response.getJsonResponse().get("entry"));
+            return SiteGroup.parseSiteGroup(siteId, (JSONObject)response.getJsonResponse().get("entry"));
         }
 
-//        GroupMemberOfSite getGroup(String siteId, String groupId);
-//        GroupMemberOfSite updateGroup(String siteId, GroupMemberOfSite groupMember);
+//        SiteGroup getGroup(String siteId, String groupId);
+//        SiteGroup updateGroup(String siteId, SiteGroup groupMember);
 //        void deleteGroup(String groupId, String siteId);
 
 

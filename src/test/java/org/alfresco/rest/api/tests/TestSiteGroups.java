@@ -32,7 +32,7 @@ import org.alfresco.repo.tenant.TenantUtil.TenantRunAsWork;
 import org.alfresco.rest.api.tests.RepoService.TestSite;
 import org.alfresco.rest.api.tests.client.PublicApiClient.Sites;
 import org.alfresco.rest.api.tests.client.PublicApiException;
-import org.alfresco.rest.api.tests.client.data.GroupMemberOfSite;
+import org.alfresco.rest.api.tests.client.data.SiteGroup;
 import org.alfresco.rest.api.tests.client.data.SiteRole;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.AuthorityType;
@@ -54,15 +54,13 @@ public class TestSiteGroups extends AbstractBaseApiTest {
     }
 
     @Test
-    public void testCreateGroupMembers() {
+    public void shouldCreateSiteGroups() {
         String groupName = null;
         Sites sitesProxy = publicApiClient.sites();
 
         try {
             groupName = createAuthorityContext(user1);
-
             setRequestContext(networkOne.getId(), DEFAULT_ADMIN, DEFAULT_ADMIN_PWD);
-
 
             TestSite site = TenantUtil.runAsUserTenant(new TenantRunAsWork<TestSite>() {
                 @Override
@@ -71,8 +69,7 @@ public class TestSiteGroups extends AbstractBaseApiTest {
                 }
             }, DEFAULT_ADMIN, networkOne.getId());
 
-
-            GroupMemberOfSite reponse = sitesProxy.addGroup(site.getSiteId(), new GroupMemberOfSite(groupName, SiteRole.SiteCollaborator.name()));
+            SiteGroup reponse = sitesProxy.addGroup(site.getSiteId(), new SiteGroup(groupName, SiteRole.SiteCollaborator.name()));
             assertEquals(reponse.getGroup().getId(), groupName);
             assertEquals(reponse.getRole(), SiteRole.SiteCollaborator.name());
         } catch (Exception e) {

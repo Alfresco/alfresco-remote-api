@@ -1313,26 +1313,26 @@ public class SitesImpl implements Sites
 
 
     @Override
-    public CollectionWithPagingInfo<GroupMemberOfSite> getGroups(String siteId, Parameters parameters) {
+    public CollectionWithPagingInfo<SiteGroup> getGroups(String siteId, Parameters parameters) {
 //        this.siteService.listMembersPaged()
         return null;
     }
 
     @Override
-    public GroupMemberOfSite getGroup(String siteId, String groupId) {
+    public SiteGroup getGroup(String siteId, String groupId) {
         final String authorityName = authorityService.getName(AuthorityType.GROUP, groupId);
 //        siteService.setMembership(group.getId(), authorityName, group.getRole());
         return null;
     }
 
     @Override
-    public GroupMemberOfSite addGroup(String siteId, GroupMemberOfSite group) {
+    public SiteGroup addGroup(String siteId, SiteGroup group) {
         siteService.setMembership(siteId, group.getId(), group.getRole());
         return group;
     }
 
     @Override
-    public GroupMemberOfSite updateGroup(String siteId, GroupMemberOfSite group) {
+    public SiteGroup updateGroup(String siteId, SiteGroup group) {
         final String authorityName = authorityService.getName(AuthorityType.GROUP, group.getId());
         siteService.setMembership(group.getId(), authorityName, group.getRole());
         return group;

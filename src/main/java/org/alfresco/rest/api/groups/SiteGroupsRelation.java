@@ -26,7 +26,7 @@
 package org.alfresco.rest.api.groups;
 
 import org.alfresco.rest.api.Sites;
-import org.alfresco.rest.api.model.GroupMemberOfSite;
+import org.alfresco.rest.api.model.SiteGroup;
 import org.alfresco.rest.api.sites.SiteEntityResource;
 import org.alfresco.rest.framework.WebApiDescription;
 import org.alfresco.rest.framework.resource.RelationshipResource;
@@ -43,11 +43,11 @@ import java.util.stream.Collectors;
 
 // handles the group operation
 @RelationshipResource(name = "group-members", entityResource = SiteEntityResource.class, title = "Site Groups")
-public class SiteGroupsRelation implements RelationshipResourceAction.Read<GroupMemberOfSite>,
+public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteGroup>,
         RelationshipResourceAction.Delete,
-        RelationshipResourceAction.Create<GroupMemberOfSite>,
-        RelationshipResourceAction.Update<GroupMemberOfSite>,
-        RelationshipResourceAction.ReadById<GroupMemberOfSite>,
+        RelationshipResourceAction.Create<SiteGroup>,
+        RelationshipResourceAction.Update<SiteGroup>,
+        RelationshipResourceAction.ReadById<SiteGroup>,
         InitializingBean {
 
     private static final Log logger = LogFactory.getLog(SiteGroupsRelation.class);
@@ -69,7 +69,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<Group
      */
     @Override
     @WebApiDescription(title = "A paged list of all the groups of the site 'siteId'.")
-    public CollectionWithPagingInfo<GroupMemberOfSite> readAll(String siteId, Parameters parameters) {
+    public CollectionWithPagingInfo<SiteGroup> readAll(String siteId, Parameters parameters) {
         return sites.getGroups(siteId, parameters);
     }
 
@@ -84,8 +84,8 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<Group
      */
     @Override
     @WebApiDescription(title = "Adds groups as a member of site siteId.")
-    public List<GroupMemberOfSite> create(String siteId, List<GroupMemberOfSite> siteMembers, Parameters parameters) {
-        List<GroupMemberOfSite> list = siteMembers.stream().map((group) -> sites.addGroup(siteId, group)).collect(Collectors.toList());
+    public List<SiteGroup> create(String siteId, List<SiteGroup> siteMembers, Parameters parameters) {
+        List<SiteGroup> list = siteMembers.stream().map((group) -> sites.addGroup(siteId, group)).collect(Collectors.toList());
         return list;
     }
 
@@ -107,7 +107,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<Group
      */
     @Override
     @WebApiDescription(title = "Updates the membership of groupId in the site.")
-    public GroupMemberOfSite update(String siteId, GroupMemberOfSite groupMember, Parameters parameters) {
+    public SiteGroup update(String siteId, SiteGroup groupMember, Parameters parameters) {
         return sites.updateGroup(siteId, groupMember);
     }
 
@@ -118,7 +118,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<Group
      */
     @Override
     @WebApiDescription(title = "Returns site membership information for groupId in siteId.")
-    public GroupMemberOfSite readById(String siteId, String groupId, Parameters parameters) {
+    public SiteGroup readById(String siteId, String groupId, Parameters parameters) {
         return sites.getGroup(groupId, siteId);
     }
 

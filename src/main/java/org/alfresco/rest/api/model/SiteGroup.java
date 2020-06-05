@@ -31,13 +31,13 @@ import org.alfresco.rest.framework.resource.EmbeddedEntityResource;
 import org.alfresco.rest.framework.resource.UniqueId;
 import org.alfresco.service.cmr.site.SiteInfo;
 
-public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
+public class SiteGroup implements Comparable<SiteGroup> {
 	private String role;
 	private String id; // group id (aka authority name)
 
-	public GroupMemberOfSite() {}
+	public SiteGroup() {}
 
-    public GroupMemberOfSite(String id, String role) {
+    public SiteGroup(String id, String role) {
 		if(id == null)
 		{
 			throw new IllegalArgumentException();
@@ -50,9 +50,9 @@ public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
 		this.id = id;
 	}
 
-    public static GroupMemberOfSite getMemberOfSite(SiteInfo siteInfo, String siteRole)
+    public static SiteGroup getMemberOfSite(SiteInfo siteInfo, String siteRole)
     {
-    	return new GroupMemberOfSite(siteInfo.getShortName(), siteRole);
+    	return new SiteGroup(siteInfo.getShortName(), siteRole);
     }
 
 	@JsonProperty("id")
@@ -115,7 +115,7 @@ public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
 			return false;
 		}
 		
-		GroupMemberOfSite other = (GroupMemberOfSite) obj;
+		SiteGroup other = (SiteGroup) obj;
 		if (role != other.role)
 		{
 			return false;
@@ -125,7 +125,7 @@ public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
 	}
 
 	@Override
-	public int compareTo(GroupMemberOfSite o)
+	public int compareTo(SiteGroup o)
 	{
         int i = id.compareTo(o.getId());
         if(i == 0)
@@ -137,6 +137,6 @@ public class GroupMemberOfSite implements Comparable<GroupMemberOfSite> {
 
 	@Override
 	public String toString() {
-		return "GroupMemberOfSite [role='" + role + '\'' + ", id='" + id + '\'' + ", role='" + role + '\'' + "]";
+		return "SiteGroup [role='" + role + '\'' + ", id='" + id + '\'' + ", role='" + role + '\'' + "]";
 	}
 }

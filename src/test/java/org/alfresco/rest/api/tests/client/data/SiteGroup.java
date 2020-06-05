@@ -37,23 +37,23 @@ import java.util.List;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class GroupMemberOfSite implements Serializable, ExpectedComparison, Comparable<GroupMemberOfSite> {
+public class SiteGroup implements Serializable, ExpectedComparison, Comparable<SiteGroup> {
 	private static final long serialVersionUID = 505331886661880399L;
 
 	private String role;
 	private String id; // group id (aka authority name)
 	private Group group;
 
-	public GroupMemberOfSite() {
+	public SiteGroup() {
 		super();
 	}
 
-	public GroupMemberOfSite(String id, String role) {
+	public SiteGroup(String id, String role) {
 		this.role = role;
 		this.id = id;
 	}
 
-	public GroupMemberOfSite(String id, Group group, String role) {
+	public SiteGroup(String id, Group group, String role) {
 		this.role = role;
 		this.id = id;
 		this.group = group;
@@ -91,18 +91,18 @@ public class GroupMemberOfSite implements Serializable, ExpectedComparison, Comp
 		this.collator = collator;
 	}
 
-	public static GroupMemberOfSite parseSiteGroup(String siteId, JSONObject jsonObject)
+	public static SiteGroup parseSiteGroup(String siteId, JSONObject jsonObject)
 	{
 		String id = (String)jsonObject.get("id");
 		String role = (String)jsonObject.get("role");
 		JSONObject personJSON = (JSONObject)jsonObject.get("group");
 		Group group = Group.parseGroup(personJSON);
-		GroupMemberOfSite siteMember = new GroupMemberOfSite(id, group, role);
+		SiteGroup siteMember = new SiteGroup(id, group, role);
 		return siteMember;
 	}
 
-	public static PublicApiClient.ListResponse<GroupMemberOfSite> parseGroupMemberOfSites(String siteId, JSONObject jsonObject) {
-		List<GroupMemberOfSite> groups = new ArrayList<GroupMemberOfSite>();
+	public static PublicApiClient.ListResponse<SiteGroup> parseGroupMemberOfSites(String siteId, JSONObject jsonObject) {
+		List<SiteGroup> groups = new ArrayList<SiteGroup>();
 
 		JSONObject jsonList = (JSONObject)jsonObject.get("list");
 		assertNotNull(jsonList);
@@ -118,9 +118,7 @@ public class GroupMemberOfSite implements Serializable, ExpectedComparison, Comp
 		}
 
 		PublicApiClient.ExpectedPaging paging = PublicApiClient.ExpectedPaging.parsePagination(jsonList);
-
-		PublicApiClient.ListResponse<GroupMemberOfSite> resp = new PublicApiClient.ListResponse<GroupMemberOfSite>(paging, groups);
-		return resp;
+		return new PublicApiClient.ListResponse<SiteGroup>(paging, groups);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -158,7 +156,7 @@ public class GroupMemberOfSite implements Serializable, ExpectedComparison, Comp
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		GroupMemberOfSite other = (GroupMemberOfSite) obj;
+		SiteGroup other = (SiteGroup) obj;
 		if (getId() == null) {
 			if (other.getId() != null)
 				return false;
@@ -175,31 +173,18 @@ public class GroupMemberOfSite implements Serializable, ExpectedComparison, Comp
 	@Override
 	public void expected(Object o)
 	{
-		assertTrue(o instanceof GroupMemberOfSite);
-
-		GroupMemberOfSite other = (GroupMemberOfSite)o;
-
+		assertTrue(o instanceof SiteGroup);
+		SiteGroup other = (SiteGroup)o;
 		AssertUtil.assertEquals("id", getId(), other.getId());
-//		if(member != null)
-//		{
-//			member.expected(other.getMember());
-//		}
-//		AssertUtil.assertEquals("siteId", siteId, other.getSiteId());
-//		AssertUtil.assertEquals("role", role, other.getRole());
-//		if(status != null)
-//		{
-//			status.expected(other.getStatus());
-//		}
 	}
 
 	private Collator collator = Collator.getInstance();
 
 	@Override
-	public int compareTo(GroupMemberOfSite o)
+	public int compareTo(SiteGroup o)
 	{
 		String displayName = group.getDisplayName();
-		int ret = collator.compare(displayName, o.getGroup().getDisplayName());
-		return ret;
+		return collator.compare(displayName, o.getGroup().getDisplayName());
 	}
 
 }
