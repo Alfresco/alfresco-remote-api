@@ -88,6 +88,7 @@ import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteInfo;
+import org.alfresco.service.cmr.site.SiteMemberInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.service.cmr.view.ImportPackageHandler;
@@ -258,7 +259,6 @@ public class SitesImpl implements Sites
         return siteInfo;
     }
 
-//    get all user by siteID
     public CollectionWithPagingInfo<SiteMember> getSiteMembers(String siteId, Parameters parameters)
     {
         SiteInfo siteInfo = validateSite(siteId);
@@ -1314,32 +1314,75 @@ public class SitesImpl implements Sites
 
     @Override
     public CollectionWithPagingInfo<SiteGroup> getGroups(String siteId, Parameters parameters) {
-//        this.siteService.listMembersPaged()
-        return null;
-    }
+        validateSite(siteId);
 
-    @Override
-    public SiteGroup getGroup(String siteId, String groupId) {
-        final String authorityName = authorityService.getName(AuthorityType.GROUP, groupId);
-//        siteService.setMembership(group.getId(), authorityName, group.getRole());
-        return null;
+        List<SiteGroup> groups = new ArrayList<>();
+        siteService.listMembers(siteId, null, null, false, new SiteService.SiteMembersCallback() {
+            @Override
+            public void siteMember(String authority, String permission) {
+                if(AuthorityType.getAuthorityType(authority).equals(AuthorityType.GROUP)) {
+                    groups.add(new SiteGroup(authority, permission));
+                }
+            }
+
+            @Override
+            public boolean isDone() {
+                return false;
+            }
+        });
+
+
+        return CollectionWithPagingInfo.asPaged(parameters.getPaging(), groups, true, null);
     }
 
     @Override
     public SiteGroup addGroup(String siteId, SiteGroup group) {
+        validateSiteGroup(siteId, group.getId());
+        validateRole(siteId, group.getId(), group.getRole());
+
         siteService.setMembership(siteId, group.getId(), group.getRole());
         return group;
     }
 
     @Override
+    public SiteGroup getGroup(String siteId, String groupId) {
+        validateSiteGroup(siteId, groupId);
+        SiteMemberInfo groupInfo = siteService.getMembersRoleInfo(siteId, groupId);
+        validateRole(siteId, groupId, groupInfo.getMemberRole());
+        return new SiteGroup(groupId, groupInfo.getMemberRole());
+    }
+
+    @Override
     public SiteGroup updateGroup(String siteId, SiteGroup group) {
-        final String authorityName = authorityService.getName(AuthorityType.GROUP, group.getId());
-        siteService.setMembership(group.getId(), authorityName, group.getRole());
+        validateSiteGroup(siteId, group.getId());
+        siteService.setMembership(siteId, group.getId(), group.getRole());
         return group;
     }
 
     @Override
-    public void deleteGroup(String groupId, String siteId) {
+    public void deleteGroup(String siteId, String groupId) {
+        validateSiteGroup(siteId, groupId);
         this.siteService.removeMembership(siteId, groupId);
+    }
+
+    private void validateSiteGroup(String siteId, String groupId) throws EntityNotFoundException {
+        String authorityName = authorityService.getName(null, groupId);
+        SiteInfo siteInfo = validateSite(siteId);
+        if(siteInfo == null) {
+            logger.debug("Site does not exist: " + siteId);
+            throw new EntityNotFoundException(siteId);
+        }
+
+        if(authorityName == null) {
+            logger.debug("AuthorityName does not exist: " + groupId);
+            throw new EntityNotFoundException(groupId);
+        }
+    }
+
+    private void validateRole(String siteId, String groupId, String role) throws RelationshipResourceNotFoundException {
+        if(role == null) {
+            logger.debug("Getting member role but role is null");
+            throw new RelationshipResourceNotFoundException(groupId, siteId);
+        }
     }
 }

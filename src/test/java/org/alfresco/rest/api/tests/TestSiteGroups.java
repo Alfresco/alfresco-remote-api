@@ -30,9 +30,11 @@ import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.repo.tenant.TenantUtil.TenantRunAsWork;
 import org.alfresco.rest.api.tests.RepoService.TestSite;
+import org.alfresco.rest.api.tests.client.PublicApiClient;
 import org.alfresco.rest.api.tests.client.PublicApiClient.Sites;
 import org.alfresco.rest.api.tests.client.PublicApiException;
 import org.alfresco.rest.api.tests.client.data.SiteGroup;
+import org.alfresco.rest.api.tests.client.data.SiteMember;
 import org.alfresco.rest.api.tests.client.data.SiteRole;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.AuthorityType;
@@ -41,12 +43,15 @@ import org.alfresco.util.GUID;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 public class TestSiteGroups extends AbstractBaseApiTest {
     protected AuthorityService authorityService;
+    private List<SiteMember> expectedSiteMembers = new ArrayList<SiteMember>();
 
-    @Override
     @Before
     public void setup() throws Exception {
         super.setup();
@@ -57,6 +62,10 @@ public class TestSiteGroups extends AbstractBaseApiTest {
     public void shouldCreateSiteGroups() {
         String groupName = null;
         Sites sitesProxy = publicApiClient.sites();
+        int skipCount = 0;
+        int maxItems = 10;
+        PublicApiClient.Paging paging = null;
+        PublicApiClient.ListResponse<SiteMember> siteMembers = null;
 
         try {
             groupName = createAuthorityContext(user1);
@@ -69,9 +78,17 @@ public class TestSiteGroups extends AbstractBaseApiTest {
                 }
             }, DEFAULT_ADMIN, networkOne.getId());
 
+
             SiteGroup reponse = sitesProxy.addGroup(site.getSiteId(), new SiteGroup(groupName, SiteRole.SiteCollaborator.name()));
             assertEquals(reponse.getGroup().getId(), groupName);
             assertEquals(reponse.getRole(), SiteRole.SiteCollaborator.name());
+
+            paging = getPaging(skipCount, maxItems, 10, null);
+            sitesProxy.getGroups(site.getSiteId(), createParams(paging, null));
+
+            siteMembers = sitesProxy.getSiteMembers(site.getSiteId(), createParams(paging, null));
+            checkList(expectedSiteMembers.subList(skipCount, skipCount + paging.getExpectedPaging().getCount()), paging.getExpectedPaging(), siteMembers);
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

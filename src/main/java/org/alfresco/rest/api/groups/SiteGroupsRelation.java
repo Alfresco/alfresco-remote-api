@@ -41,7 +41,6 @@ import org.springframework.beans.factory.InitializingBean;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// handles the group operation
 @RelationshipResource(name = "group-members", entityResource = SiteEntityResource.class, title = "Site Groups")
 public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteGroup>,
         RelationshipResourceAction.Delete,
@@ -63,17 +62,6 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     }
 
     /**
-     * Returns a paged list of all the groups of the site 'siteId'.
-     * <p>
-     * If siteId does not exist, throws NotFoundException (status 404).
-     */
-    @Override
-    @WebApiDescription(title = "A paged list of all the groups of the site 'siteId'.")
-    public CollectionWithPagingInfo<SiteGroup> readAll(String siteId, Parameters parameters) {
-        return sites.getGroups(siteId, parameters);
-    }
-
-    /**
      * POST sites/<siteId>/group-members
      * <p>
      * Adds groups to site
@@ -85,19 +73,29 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     @Override
     @WebApiDescription(title = "Adds groups as a member of site siteId.")
     public List<SiteGroup> create(String siteId, List<SiteGroup> siteMembers, Parameters parameters) {
-        List<SiteGroup> list = siteMembers.stream().map((group) -> sites.addGroup(siteId, group)).collect(Collectors.toList());
-        return list;
+        return siteMembers.stream().map((group) -> sites.addGroup(siteId, group)).collect(Collectors.toList());
     }
 
     /**
-     * DELETE sites/<siteId>/group-members/<groupId>
+     * Returns a paged list of all the groups of the site 'siteId'.
      * <p>
-     * Remove a group from site.
+     * If siteId does not exist, throws NotFoundException (status 404).
      */
     @Override
-    @WebApiDescription(title = "Removes groupId as a member of site siteId.")
-    public void delete(String siteId, String groupId, Parameters parameters) {
-        sites.deleteGroup(groupId, siteId);
+    @WebApiDescription(title = "A paged list of all the groups of the site 'siteId'.")
+    public CollectionWithPagingInfo<SiteGroup> readAll(String siteId, Parameters parameters) {
+        return sites.getGroups(siteId, parameters);
+    }
+
+    /**
+     * Returns site membership information for groupId in siteId.
+     * <p>
+     * GET sites/<siteId>/group-members/<groupId>
+     */
+    @Override
+    @WebApiDescription(title = "Returns site membership information for groupId in siteId.")
+    public SiteGroup readById(String siteId, String groupId, Parameters parameters) {
+        return sites.getGroup(groupId, siteId);
     }
 
     /**
@@ -112,14 +110,14 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     }
 
     /**
-     * Returns site membership information for groupId in siteId.
+     * DELETE sites/<siteId>/group-members/<groupId>
      * <p>
-     * GET sites/<siteId>/group-members/<groupId>
+     * Remove a group from site.
      */
     @Override
-    @WebApiDescription(title = "Returns site membership information for groupId in siteId.")
-    public SiteGroup readById(String siteId, String groupId, Parameters parameters) {
-        return sites.getGroup(groupId, siteId);
+    @WebApiDescription(title = "Removes groupId as a member of site siteId.")
+    public void delete(String siteId, String groupId, Parameters parameters) {
+        sites.deleteGroup(siteId, groupId);
     }
 
 }

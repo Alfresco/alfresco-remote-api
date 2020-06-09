@@ -43,6 +43,7 @@ public class MemberOfSite implements Comparable<MemberOfSite>
 	private String role;
 	private String siteShortName;
 	private NodeRef guid;
+	private boolean isMemberOfGroup;
 
 	public MemberOfSite()
 	{
