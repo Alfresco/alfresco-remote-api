@@ -325,11 +325,13 @@ public class Node
         this.targets = targets;
     }
 
-    public NodeDefinition getDefinition() {
+    public NodeDefinition getDefinition() 
+    {
         return definition;
     }
 
-    public void setDefinition(NodeDefinition definition) {
+    public void setDefinition(NodeDefinition definition) 
+    {
         this.definition = definition;
     }
 

@@ -42,15 +42,18 @@ import org.alfresco.service.cmr.i18n.MessageLookup;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 
-public class NodeDefinitionMapperImpl implements NodeDefinitionMapper {
+public class NodeDefinitionMapperImpl implements NodeDefinitionMapper 
+{
 
     private final List<String> EXCLUDED_NS = Arrays.asList(NamespaceService.SYSTEM_MODEL_1_0_URI);
 
     @Override
     public NodeDefinition fromTypeDefinition(String nodeTypeId, TypeDefinition typeDefinition,
-            MessageLookup messageLookup) {
+            MessageLookup messageLookup) 
+    {
         
-        if (typeDefinition == null) {
+        if (typeDefinition == null)
+        {
             throw new AlfrescoRuntimeException("Impossible to retrieve the node definition");
         }
         NodeDefinition nodeDefinition = new NodeDefinition();
@@ -63,19 +66,23 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper {
         return nodeDefinition;
     }
         
-    private String getParentTypeId(QName parentName) {
+    private String getParentTypeId(QName parentName) 
+    {
         String parentTypeId = null;
-        if (parentName != null){
+        if (parentName != null)
+        {
             parentTypeId = parentName.getPrefixString();
         }
         return parentTypeId;
     }
 
-    private boolean isPropertyExcluded(QName propertyName) {
+    private boolean isPropertyExcluded(QName propertyName) 
+    {
         return EXCLUDED_NS.contains(propertyName.getNamespaceURI());
     }
 
-    private List <NodeDefinitionProperty> getProperties(Map<QName, PropertyDefinition> propertiesMap, MessageLookup messageLookup){
+    private List <NodeDefinitionProperty> getProperties(Map<QName, PropertyDefinition> propertiesMap, MessageLookup messageLookup)
+    {
         return propertiesMap.values().stream()
                 .filter(p -> !isPropertyExcluded(p.getName()))
                 .map(p -> fromPropertyDefinitionToProperty(p , messageLookup))
@@ -83,9 +90,11 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper {
     }
     
     private NodeDefinitionProperty fromPropertyDefinitionToProperty(PropertyDefinition propertyDefinition,
-            MessageLookup messageLookup){
+            MessageLookup messageLookup)
+    {
         
-        if (propertyDefinition == null) {
+        if (propertyDefinition == null) 
+        {
             throw new AlfrescoRuntimeException("Impossible to retrieve properties for the node definition");
         }
         NodeDefinitionProperty property = new NodeDefinitionProperty();
@@ -105,7 +114,8 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper {
     }
     
     private List<NodeDefinitionConstraint> getConstraints( Collection<ConstraintDefinition> constraintDefinitions,
-            MessageLookup messageLookup) {
+            MessageLookup messageLookup)
+    {
 
         return constraintDefinitions.stream()
                 .map(constraint -> fromConstraintDefinitionToConstraint(constraint, messageLookup))
@@ -113,9 +123,11 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper {
     }
 
     private NodeDefinitionConstraint fromConstraintDefinitionToConstraint(ConstraintDefinition constraintDefinition, 
-            MessageLookup messageLookup) {
+            MessageLookup messageLookup) 
+    {
 
-        if (constraintDefinition == null || constraintDefinition.getConstraint() == null) {
+        if (constraintDefinition == null || constraintDefinition.getConstraint() == null)
+        {
             throw new AlfrescoRuntimeException("Impossible to retrieve constraints for the node definition");
         }
         NodeDefinitionConstraint constraint = new NodeDefinitionConstraint();

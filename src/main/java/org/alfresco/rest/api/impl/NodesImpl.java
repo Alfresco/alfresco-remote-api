@@ -1038,7 +1038,8 @@ public class NodesImpl implements Nodes
         }
 
         String nodeType = nodeTypeQName.toPrefixString(namespaceService);
-        if (includeParam.contains(PARAM_INCLUDE_DEFINITION)) {
+        if (includeParam.contains(PARAM_INCLUDE_DEFINITION)) 
+        {
             NodeDefinition nodeDefinition = nodeDefinitionMapper.fromTypeDefinition(nodeType, 
                     getTypeDefinition(nodeRef), dictionaryService);
             node.setDefinition(nodeDefinition);
@@ -1050,7 +1051,8 @@ public class NodesImpl implements Nodes
         return node;
     }
 
-    private TypeDefinition getTypeDefinition(NodeRef nodeRef){
+    private TypeDefinition getTypeDefinition(NodeRef nodeRef)
+    {
         QName type = nodeService.getType(nodeRef);
         Set<QName> aspectNames = nodeService.getAspects(nodeRef);
         TypeDefinition typeDefinition = dictionaryService.getAnonymousType(type, aspectNames);

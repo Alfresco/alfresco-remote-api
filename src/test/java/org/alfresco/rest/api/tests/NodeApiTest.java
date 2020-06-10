@@ -5859,7 +5859,8 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
         checkDefinitionProperties(nodeDefinition.getProperties());
     }
     
-    private void checkDefinitionProperties(List<NodeDefinitionProperty> properties){
+    private void checkDefinitionProperties(List<NodeDefinitionProperty> properties)
+    {
         assertNotNull(properties);
 
         //Check system properties are excluded
