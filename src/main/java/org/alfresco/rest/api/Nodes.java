@@ -375,6 +375,7 @@ public interface Nodes
     String PARAM_INCLUDE_ISFAVORITE = "isFavorite";
 
     String PARAM_INCLUDE_ASSOCIATION = "association";
+    String PARAM_INCLUDE_DEFINITION = "definition";
 
     String PARAM_ISFOLDER = "isFolder";
     String PARAM_ISFILE = "isFile";
