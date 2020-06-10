@@ -5892,66 +5892,55 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
     {
         setRequestContext(networkOne.getId(), user1, null);
         
-        //Create a node
         String node1 = "nodeSample" + RUNID + "_1";
         String node1Type = TYPE_CM_CONTENT;
-
         Map<String,Object> props = new HashMap<>();
-        props.put("cm:title", "my test node");
-        
+        props.put("cm:name", "my test node");
         Node node = createNode(Nodes.PATH_MY, node1, node1Type, props);
         String nodeId = node.getId();
-
-
-        Map params = new HashMap<>();
-        params.put("include", "definition");
         
-
-        // Check if permission are retrieved if 'include=permissions' is not
-        // sent in the request
         HttpResponse  response = getSingle(NodesEntityResource.class, nodeId, null, 200);
         Node nodeResp = RestApiUtil.parseRestApiEntry(response.getJsonResponse(), Node.class);
         assertNull("Definition should not be retrieved unless included!", nodeResp.getDefinition());
-        
-        // Call again with 'include=definition'
+
+        Map params = new HashMap<>();
+        params.put("include", "definition");
         response = getSingle(NodesEntityResource.class, nodeId, params, 200);
         nodeResp = RestApiUtil.parseRestApiEntry(response.getJsonResponse(), Node.class);
-        // Check definition is retrieved
         NodeDefinition nodeDefinition = nodeResp.getDefinition();
         assertNotNull(nodeDefinition);
-        //Check the type is correct
         assertEquals(nodeDefinition.getTypeId(), node1Type);
         assertEquals(nodeDefinition.getParentTypeId(), TYPE_CM_OBJECT);
-        
         checkDefinitionProperties(nodeDefinition.getProperties());
     }
     
     private void checkDefinitionProperties(List<NodeDefinitionProperty> properties)
     {
         assertNotNull(properties);
-
-        //Check system properties are excluded
-        assertTrue(properties.stream()
-                .noneMatch(property -> property.getId()
-                        .startsWith(NamespaceService.SYSTEM_MODEL_PREFIX)));
-        
-        //Check contains test properties
-        assertTrue(properties.stream()
-                .anyMatch(property -> property.getId()
-                        .equals("cm:title")));
-        
-        //Check property from parent cm:object
-        assertTrue(properties.stream()
-                .anyMatch(property -> property.getId()
-                        .equals("cm:name")));
-        
-        //check constraints for the property cm:name
         NodeDefinitionProperty testProperty = properties.stream().
-                filter(property -> property.getId()
-                        .equals("cm:name")
-                ).findFirst()
+                filter(property -> 
+                        property.getId().equals("cm:name"))
+                .findFirst()
                 .get();
+        assertNotNull(testProperty);
         assertNotNull(testProperty.getConstraints());
+
+        shouldNotContainSystemProperties(properties);
+        shouldContainParentProperties(properties);
+    }
+    
+    private void shouldNotContainSystemProperties(List<NodeDefinitionProperty> properties)
+    {
+        assertTrue(properties.stream()
+                .noneMatch(property -> 
+                        property.getId().startsWith(NamespaceService.SYSTEM_MODEL_PREFIX)));
+    }
+    
+    private void shouldContainParentProperties(List<NodeDefinitionProperty> properties)
+    {
+        assertTrue(properties.stream()
+                .anyMatch(property -> 
+                        property.getId().equals("cm:created")));
     }
 
 }

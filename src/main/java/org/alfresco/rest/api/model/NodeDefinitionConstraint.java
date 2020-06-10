@@ -26,7 +26,11 @@
 package org.alfresco.rest.api.model;
 
 import java.util.Map;
-
+/**
+ * Represents a constraint of a node definition property.
+ *
+ * @author gfertuso
+ */
 public class NodeDefinitionConstraint
 {
     private String id;
