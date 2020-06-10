@@ -41,7 +41,11 @@ import org.alfresco.service.cmr.dictionary.TypeDefinition;
 import org.alfresco.service.cmr.i18n.MessageLookup;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
-
+/**
+ * Maps representations from TypeDefinition to NodeDefinition
+ *
+ * @author gfertuso
+ */
 public class NodeDefinitionMapperImpl implements NodeDefinitionMapper 
 {
 
@@ -54,7 +58,7 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper
         
         if (typeDefinition == null)
         {
-            throw new AlfrescoRuntimeException("Impossible to retrieve the node definition");
+            throw new AlfrescoRuntimeException("Undefined definition for the type: " + nodeTypeId);
         }
         NodeDefinition nodeDefinition = new NodeDefinition();
         nodeDefinition.setTypeId(nodeTypeId);
@@ -92,11 +96,6 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper
     private NodeDefinitionProperty fromPropertyDefinitionToProperty(PropertyDefinition propertyDefinition,
             MessageLookup messageLookup)
     {
-        
-        if (propertyDefinition == null) 
-        {
-            throw new AlfrescoRuntimeException("Impossible to retrieve properties for the node definition");
-        }
         NodeDefinitionProperty property = new NodeDefinitionProperty();
         property.setId(propertyDefinition.getName().toPrefixString());
         property.setTitle(propertyDefinition.getTitle(messageLookup));
@@ -118,6 +117,7 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper
     {
 
         return constraintDefinitions.stream()
+                .filter(constraint -> constraint.getConstraint() != null)
                 .map(constraint -> fromConstraintDefinitionToConstraint(constraint, messageLookup))
                 .collect(Collectors.toList());
     }
@@ -125,18 +125,12 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper
     private NodeDefinitionConstraint fromConstraintDefinitionToConstraint(ConstraintDefinition constraintDefinition, 
             MessageLookup messageLookup) 
     {
-
-        if (constraintDefinition == null || constraintDefinition.getConstraint() == null)
-        {
-            throw new AlfrescoRuntimeException("Impossible to retrieve constraints for the node definition");
-        }
         NodeDefinitionConstraint constraint = new NodeDefinitionConstraint();
         constraint.setId(constraintDefinition.getConstraint().getShortName());
         constraint.setType(constraintDefinition.getConstraint().getType());
         constraint.setTitle(constraintDefinition.getTitle(messageLookup));
         constraint.setDescription(constraintDefinition.getDescription(messageLookup));
         constraint.setParameters(constraintDefinition.getConstraint().getParameters());
-        
         return constraint;
     }
 

@@ -26,7 +26,11 @@
 package org.alfresco.rest.api.model;
 
 import java.util.List;
-
+/**
+ * Represents the node definition (aka type).
+ *
+ * @author gfertuso
+ */
 public class NodeDefinition
 {
     

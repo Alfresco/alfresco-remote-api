@@ -26,7 +26,11 @@
 package org.alfresco.rest.api.model;
 
 import java.util.List;
-
+/**
+ * Represents a property of the node definition.
+ *
+ * @author gfertuso
+ */
 public class NodeDefinitionProperty 
 {
     private String id;
