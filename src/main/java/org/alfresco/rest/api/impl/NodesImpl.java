@@ -1037,15 +1037,13 @@ public class NodesImpl implements Nodes
             }
         }
 
-        String nodeType = nodeTypeQName.toPrefixString(namespaceService);
         if (includeParam.contains(PARAM_INCLUDE_DEFINITION)) 
         {
-            NodeDefinition nodeDefinition = nodeDefinitionMapper.fromTypeDefinition(nodeType, 
-                    getTypeDefinition(nodeRef), dictionaryService);
+            NodeDefinition nodeDefinition = nodeDefinitionMapper.fromTypeDefinition(getTypeDefinition(nodeRef), dictionaryService);
             node.setDefinition(nodeDefinition);
         }
 
-        node.setNodeType(nodeType);
+        node.setNodeType(nodeTypeQName.toPrefixString(namespaceService));
         node.setPath(pathInfo);
 
         return node;

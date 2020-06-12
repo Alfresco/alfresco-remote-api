@@ -52,32 +52,18 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper
     private final List<String> EXCLUDED_NS = Arrays.asList(NamespaceService.SYSTEM_MODEL_1_0_URI);
 
     @Override
-    public NodeDefinition fromTypeDefinition(String nodeTypeId, TypeDefinition typeDefinition,
+    public NodeDefinition fromTypeDefinition(TypeDefinition typeDefinition,
             MessageLookup messageLookup) 
     {
         
         if (typeDefinition == null)
         {
-            throw new AlfrescoRuntimeException("Undefined definition for the type: " + nodeTypeId);
+            throw new AlfrescoRuntimeException("Undefined definition for the node");
         }
         NodeDefinition nodeDefinition = new NodeDefinition();
-        nodeDefinition.setTypeId(nodeTypeId);
-        nodeDefinition.setTitle(typeDefinition.getTitle(messageLookup));
-        nodeDefinition.setParentTypeId(getParentTypeId(typeDefinition.getParentName()));
-        nodeDefinition.setDescription(typeDefinition.getDescription(messageLookup));
         nodeDefinition.setProperties(getProperties(typeDefinition.getProperties(), messageLookup));
         
         return nodeDefinition;
-    }
-        
-    private String getParentTypeId(QName parentName) 
-    {
-        String parentTypeId = null;
-        if (parentName != null)
-        {
-            parentTypeId = parentName.getPrefixString();
-        }
-        return parentTypeId;
     }
 
     private boolean isPropertyExcluded(QName propertyName) 

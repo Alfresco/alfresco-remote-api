@@ -5842,8 +5842,6 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
         nodeResp = RestApiUtil.parseRestApiEntry(response.getJsonResponse(), Node.class);
         NodeDefinition nodeDefinition = nodeResp.getDefinition();
         assertNotNull(nodeDefinition);
-        assertEquals(nodeDefinition.getTypeId(), node1Type);
-        assertEquals(nodeDefinition.getParentTypeId(), TYPE_CM_OBJECT);
         checkDefinitionProperties(nodeDefinition.getProperties());
     }
     
