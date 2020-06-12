@@ -35,5 +35,5 @@ import org.alfresco.service.cmr.i18n.MessageLookup;
  */
 public interface NodeDefinitionMapper 
 {
-    NodeDefinition fromTypeDefinition(String nodeTypeId, TypeDefinition typeDefinition, MessageLookup messageLookup);
+    NodeDefinition fromTypeDefinition(TypeDefinition typeDefinition, MessageLookup messageLookup);
 }

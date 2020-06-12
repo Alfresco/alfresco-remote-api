@@ -27,29 +27,15 @@ package org.alfresco.rest.api.model;
 
 import java.util.List;
 /**
- * Represents the node definition (aka type).
+ * Represents the node definition.
  *
  * @author gfertuso
  */
 public class NodeDefinition
 {
     
-    private String typeId;
-    private String title;
-    private String parentTypeId;
-    private String description;
     List <NodeDefinitionProperty> properties;
     
-    public String getTypeId() 
-    {
-        return typeId;
-    }
-
-    public void setTypeId(String typeId) 
-    {
-        this.typeId = typeId;
-    }
-
     public List<NodeDefinitionProperty> getProperties() 
     {
         return properties;
@@ -58,36 +44,6 @@ public class NodeDefinition
     public void setProperties(List<NodeDefinitionProperty> properties) 
     {
         this.properties = properties;
-    }
-
-    public String getTitle() 
-    {
-        return title;
-    }
-
-    public void setTitle(String title) 
-    {
-        this.title = title;
-    }
-
-    public String getParentTypeId() 
-    {
-        return parentTypeId;
-    }
-
-    public void setParentTypeId(String parentTypeId)
-    {
-        this.parentTypeId = parentTypeId;
-    }
-
-    public String getDescription() 
-    {
-        return description;
-    }
-
-    public void setDescription(String description) 
-    {
-        this.description = description;
     }
     
 }
