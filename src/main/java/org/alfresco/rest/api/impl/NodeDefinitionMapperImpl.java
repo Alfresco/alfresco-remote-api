@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.alfresco.error.AlfrescoRuntimeException;
+import org.alfresco.model.ContentModel;
 import org.alfresco.rest.api.NodeDefinitionMapper;
 import org.alfresco.rest.api.model.NodeDefinitionConstraint;
 import org.alfresco.rest.api.model.NodeDefinition;
@@ -50,6 +51,7 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper
 {
 
     private final List<String> EXCLUDED_NS = Arrays.asList(NamespaceService.SYSTEM_MODEL_1_0_URI);
+    private static final List<QName> EXCLUDED_PROPS = Arrays.asList(ContentModel.PROP_CONTENT);
 
     @Override
     public NodeDefinition fromTypeDefinition(TypeDefinition typeDefinition,
@@ -68,7 +70,7 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper
 
     private boolean isPropertyExcluded(QName propertyName) 
     {
-        return EXCLUDED_NS.contains(propertyName.getNamespaceURI());
+        return EXCLUDED_NS.contains(propertyName.getNamespaceURI()) || EXCLUDED_PROPS.contains(propertyName);
     }
 
     private List <NodeDefinitionProperty> getProperties(Map<QName, PropertyDefinition> propertiesMap, MessageLookup messageLookup)
