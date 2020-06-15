@@ -38,57 +38,69 @@ import java.util.List;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class SiteGroup implements Serializable, ExpectedComparison, Comparable<SiteGroup> {
+public class SiteGroup implements Serializable, ExpectedComparison, Comparable<SiteGroup>
+{
 	private static final long serialVersionUID = 505331886661880399L;
 
 	private String role;
 	private String id; // group id (aka authority name)
 	private Group group;
 
-	public SiteGroup() {
+	public SiteGroup()
+	{
 		super();
 	}
 
-	public SiteGroup(String id, String role) {
+	public SiteGroup(String id, String role)
+	{
 		this.role = role;
 		this.id = id;
 	}
 
-	public SiteGroup(String id, Group group, String role) {
+	public SiteGroup(String id, Group group, String role)
+	{
 		this.role = role;
 		this.id = id;
 		this.group = group;
 	}
 
-	public String getRole() {
+	public String getRole()
+	{
 		return role;
 	}
 
-	public void setRole(String role) {
+	public void setRole(String role)
+	{
 		this.role = role;
 	}
 
-	public String getId() {
+	public String getId()
+	{
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(String id)
+	{
 		this.id = id;
 	}
 
-	public Group getGroup() {
+	public Group getGroup()
+	{
 		return group;
 	}
 
-	public void setGroup(Group group) {
+	public void setGroup(Group group)
+	{
 		this.group = group;
 	}
 
-	public Collator getCollator() {
+	public Collator getCollator()
+	{
 		return collator;
 	}
 
-	public void setCollator(Collator collator) {
+	public void setCollator(Collator collator)
+	{
 		this.collator = collator;
 	}
 
@@ -102,7 +114,8 @@ public class SiteGroup implements Serializable, ExpectedComparison, Comparable<S
 		return siteMember;
 	}
 
-	public static PublicApiClient.ListResponse<SiteGroup> parseGroupMemberOfSites(String siteId, JSONObject jsonObject) {
+	public static PublicApiClient.ListResponse<SiteGroup> parseGroupMemberOfSites(String siteId, JSONObject jsonObject)
+	{
 		List<SiteGroup> groups = new ArrayList<SiteGroup>();
 
 		JSONObject jsonList = (JSONObject)jsonObject.get("list");
@@ -141,7 +154,8 @@ public class SiteGroup implements Serializable, ExpectedComparison, Comparable<S
 	}
 
 	@Override
-	public int hashCode() {
+	public int hashCode()
+	{
 		final int prime = 31;
 		int result = 1;
 		result = prime * result;
@@ -150,7 +164,8 @@ public class SiteGroup implements Serializable, ExpectedComparison, Comparable<S
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(Object obj)
+	{
 		if (this == obj)
 			return true;
 		if (obj == null)
