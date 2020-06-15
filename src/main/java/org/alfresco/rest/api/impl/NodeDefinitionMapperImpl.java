@@ -90,7 +90,6 @@ public class NodeDefinitionMapperImpl implements NodeDefinitionMapper
         property.setDescription(propertyDefinition.getDescription(messageLookup));
         property.setDefaultValue(propertyDefinition.getDefaultValue());
         property.setDataType(propertyDefinition.getDataType().getName().toPrefixString());
-        property.setIsOverride(propertyDefinition.isOverride());
         property.setIsMultiValued(propertyDefinition.isMultiValued());
         property.setIsMandatory(propertyDefinition.isMandatory());
         property.setIsMandatoryEnforced(propertyDefinition.isMandatoryEnforced());

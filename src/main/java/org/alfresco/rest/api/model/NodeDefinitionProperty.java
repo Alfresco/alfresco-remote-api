@@ -38,7 +38,6 @@ public class NodeDefinitionProperty
     private String description;
     private String defaultValue;
     private String dataType;
-    private Boolean isOverride;
     private Boolean isMultiValued;
     private Boolean isMandatory;
     private Boolean isMandatoryEnforced;
@@ -113,16 +112,6 @@ public class NodeDefinitionProperty
     public void setConstraints(List<NodeDefinitionConstraint> constraints) 
     {
         this.constraints = constraints;
-    }
-
-    public boolean getIsOverride() 
-    {
-        return isOverride;
-    }
-
-    public void setIsOverride(boolean isOverride) 
-    {
-        this.isOverride = isOverride;
     }
 
     public boolean getIsMultiValued() 
