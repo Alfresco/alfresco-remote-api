@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.model.ContentModel;
@@ -84,8 +85,11 @@ import org.alfresco.service.cmr.preference.PreferenceService;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.AccessStatus;
+import org.alfresco.service.cmr.security.AuthorityService;
+import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteInfo;
+import org.alfresco.service.cmr.site.SiteMemberInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.site.SiteVisibility;
 import org.alfresco.service.cmr.view.ImportPackageHandler;
@@ -159,6 +163,7 @@ public class SitesImpl implements Sites
     protected SiteSurfConfig siteSurfConfig;
     protected PermissionService permissionService;
     protected SiteServiceImpl siteServiceImpl;
+    protected AuthorityService authorityService;
 
     public void setPreferenceService(PreferenceService preferenceService)
     {
@@ -215,6 +220,13 @@ public class SitesImpl implements Sites
         this.siteServiceImpl = siteServiceImpl;
     }
 
+    public AuthorityService getAuthorityService() {
+        return authorityService;
+    }
+
+    public void setAuthorityService(AuthorityService authorityService) {
+        this.authorityService = authorityService;
+    }
 
     public SiteInfo validateSite(NodeRef guid)
     {
@@ -1305,5 +1317,81 @@ public class SitesImpl implements Sites
             }
         };
         importerService.importView(acpHandler, location, binding, (ImporterProgress)null);
+    }
+
+    @Override
+    public CollectionWithPagingInfo<SiteGroup> getGroups(String siteId, Parameters parameters) {
+        validateSite(siteId);
+
+        PagingRequest pagingRequest = Util.getPagingRequest(parameters.getPaging());
+        PagingResults<SiteMembership> pagedResults = siteService.listGroupsPaged(siteId, new ArrayList<>(), pagingRequest);
+        List<SiteGroup> groups = pagedResults.getPage().stream().map(siteMembership -> new SiteGroup(siteMembership.getId(), siteMembership.getRole())).collect(Collectors.toList());
+        return CollectionWithPagingInfo.asPaged(parameters.getPaging(), groups);
+    }
+
+    @Override
+    public SiteGroup addGroup(String siteId, SiteGroup group) {
+        validateSiteGroup(siteId, group.getId());
+
+        SiteMemberInfo groupInfo = siteService.getMembersRoleInfo(siteId, group.getId());
+        if(groupInfo != null) {
+            logger.debug("addGroup:  "+ group.getId() + " is already a member of site " + siteId);
+            throw new ConstraintViolatedException(group.getId() + " is already a member of site " + siteId);
+        }
+        if(group.getRole() == null) {
+            logger.debug("Getting member role but role is null");
+            throw new RelationshipResourceNotFoundException(group.getId(), siteId);
+        }
+
+        siteService.setMembership(siteId, group.getId(), group.getRole());
+        return group;
+    }
+
+    @Override
+    public SiteGroup getGroup(String siteId, String groupId) {
+        SiteMemberInfo groupInfo = isMemberOfSite(siteId, groupId);
+        return new SiteGroup(groupId, groupInfo.getMemberRole());
+    }
+
+    @Override
+    public SiteGroup updateGroup(String siteId, SiteGroup group) {
+        isMemberOfSite(siteId, group.getId());
+        siteService.setMembership(siteId, group.getId(), group.getRole());
+        return group;
+    }
+
+    @Override
+    public void deleteGroup(String siteId, String groupId) {
+        isMemberOfSite(siteId, groupId);
+        this.siteService.removeMembership(siteId, groupId);
+    }
+
+    private SiteMemberInfo isMemberOfSite(String siteId, String groupId) {
+        validateSiteGroup(siteId, groupId);
+
+        SiteMemberInfo groupInfo = siteService.getMembersRoleInfo(siteId, groupId);
+        if(groupInfo == null) {
+            logger.debug("Group is not a member of the site");
+            throw new InvalidArgumentException("Group is not a member of the site");
+        }
+        if(groupInfo.getMemberRole() == null) {
+            logger.debug("Getting member role but role is null");
+            throw new RelationshipResourceNotFoundException(groupInfo.getMemberName(), siteId);
+        }
+        return  groupInfo;
+    }
+
+    private void validateSiteGroup(String siteId, String groupId) throws EntityNotFoundException {
+        SiteInfo siteInfo = validateSite(siteId);
+        if(siteInfo == null) {
+            logger.debug("Site does not exist: " + siteId);
+            throw new EntityNotFoundException(siteId);
+        }
+
+        String authorityName = authorityService.getName(AuthorityType.GROUP, groupId);
+        if(authorityName == null) {
+            logger.debug("AuthorityName does not exist: " + groupId);
+            throw new EntityNotFoundException(groupId);
+        }
     }
 }
