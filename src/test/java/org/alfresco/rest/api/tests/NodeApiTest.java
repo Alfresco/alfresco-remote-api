@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.alfresco.model.ContentModel;
 import org.alfresco.repo.content.ContentLimitProvider.SimpleFixedLimitProvider;
 import org.alfresco.repo.content.MimetypeMap;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
@@ -62,6 +63,7 @@ import org.alfresco.rest.AbstractSingleNetworkSiteTest;
 import org.alfresco.rest.api.Nodes;
 import org.alfresco.rest.api.model.LockInfo;
 import org.alfresco.rest.api.model.NodeDefinition;
+import org.alfresco.rest.api.model.NodeDefinitionConstraint;
 import org.alfresco.rest.api.model.NodePermissions;
 import org.alfresco.rest.api.model.NodeTarget;
 import org.alfresco.rest.api.model.NodeDefinitionProperty;
@@ -132,6 +134,8 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
     protected PermissionService permissionService;
     protected AuthorityService authorityService;
     private NodeService nodeService;
+    private NamespaceService namespaceService;
+
 
     private String rootGroupName = null;
     private String groupA = null;
@@ -145,6 +149,7 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
         permissionService = applicationContext.getBean("permissionService", PermissionService.class);
         authorityService = (AuthorityService) applicationContext.getBean("AuthorityService");
         nodeService = applicationContext.getBean("NodeService", NodeService.class);
+        namespaceService= (NamespaceService) applicationContext.getBean("NamespaceService");
     }
     
     @After
@@ -5828,7 +5833,7 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
         String node1 = "nodeSample" + RUNID + "_1";
         String node1Type = TYPE_CM_CONTENT;
         Map<String,Object> props = new HashMap<>();
-        props.put("cm:name", "my test node");
+        props.put("cm:title", "add aspect property");
         Node node = createNode(Nodes.PATH_MY, node1, node1Type, props);
         String nodeId = node.getId();
         
@@ -5848,30 +5853,73 @@ public class NodeApiTest extends AbstractSingleNetworkSiteTest
     private void checkDefinitionProperties(List<NodeDefinitionProperty> properties)
     {
         assertNotNull(properties);
+        shouldNotContainSystemProperties(properties);
+        shouldContainParentProperties(properties);
+        shouldContainAspectProperties(properties);
+
         NodeDefinitionProperty testProperty = properties.stream().
-                filter(property -> 
+                filter(property ->
                         property.getId().equals("cm:name"))
                 .findFirst()
                 .get();
         assertNotNull(testProperty);
-        assertNotNull(testProperty.getConstraints());
+        assertEquals("Name", testProperty.getTitle());
+        assertEquals("d:text", testProperty.getDataType());
+        assertEquals("Name", testProperty.getDescription());
+        assertTrue(testProperty.getIsMandatory());
+        assertTrue(testProperty.getIsMandatoryEnforced());
+        assertFalse(testProperty.getIsMultiValued());
+        assertNull(testProperty.getDefaultValue());
+        checkPropertyConstraints(testProperty.getConstraints());
 
-        shouldNotContainSystemProperties(properties);
-        shouldContainParentProperties(properties);
     }
     
     private void shouldNotContainSystemProperties(List<NodeDefinitionProperty> properties)
     {
         assertTrue(properties.stream()
                 .noneMatch(property -> 
-                        property.getId().startsWith(NamespaceService.SYSTEM_MODEL_PREFIX)));
+                        property.getId().startsWith(NamespaceService.SYSTEM_MODEL_PREFIX) ||
+                                property.getId().equals(ContentModel.PROP_CONTENT.toPrefixString(namespaceService))));
     }
     
     private void shouldContainParentProperties(List<NodeDefinitionProperty> properties)
     {
         assertTrue(properties.stream()
                 .anyMatch(property -> 
-                        property.getId().equals("cm:created")));
+                        property.getId().equals("cm:name")));
+    }
+
+    private void shouldContainAspectProperties(List<NodeDefinitionProperty> properties)
+    {
+        NodeDefinitionProperty mandatoryAspectProperty = properties.stream()
+                .filter(property -> property.getId().equals("cm:created"))
+                .findFirst()
+                .get();
+        assertNotNull(mandatoryAspectProperty);
+
+        NodeDefinitionProperty nodeAspectProperty = properties.stream()
+                .filter(property -> property.getId().equals("cm:title"))
+                .findFirst()
+                .get();
+        assertNotNull(nodeAspectProperty);
+    }
+
+    private void checkPropertyConstraints(List<NodeDefinitionConstraint> constraints)
+    {
+        assertNotNull(constraints);
+        NodeDefinitionConstraint  nodeDefinitionConstraint = constraints.stream()
+                .filter(constraint -> constraint.getId().equals("cm:filename"))
+                .findFirst()
+                .get();
+        assertNotNull(nodeDefinitionConstraint);
+        assertEquals("REGEX", nodeDefinitionConstraint.getType());
+        Map<String, Object> constraintParameters = nodeDefinitionConstraint.getParameters();
+        assertNotNull(constraintParameters);
+        assertNull(nodeDefinitionConstraint.getDescription());
+        assertNull(nodeDefinitionConstraint.getTitle());
+        assertEquals(2, constraintParameters.size());
+        assertEquals("(.*[\\\"\\*\\\\\\>\\<\\?\\/\\:\\|]+.*)|(.*[\\.]?.*[\\.]+$)|(.*[ ]+$)", constraintParameters.get("expression"));
+        assertFalse((Boolean) constraintParameters.get("requiresMatch"));
     }
 
 }
