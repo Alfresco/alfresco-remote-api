@@ -54,11 +54,7 @@ import org.alfresco.repo.node.getchildren.FilterPropString;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.security.authority.UnknownAuthorityException;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
-import org.alfresco.repo.site.SiteMembership;
-import org.alfresco.repo.site.SiteMembershipComparator;
-import org.alfresco.repo.site.SiteModel;
-import org.alfresco.repo.site.SiteServiceException;
-import org.alfresco.repo.site.SiteServiceImpl;
+import org.alfresco.repo.site.*;
 import org.alfresco.rest.antlr.WhereClauseParser;
 import org.alfresco.rest.api.Nodes;
 import org.alfresco.rest.api.People;
@@ -77,6 +73,7 @@ import org.alfresco.rest.framework.resource.parameters.Parameters;
 import org.alfresco.rest.framework.resource.parameters.SortColumn;
 import org.alfresco.rest.framework.resource.parameters.where.Query;
 import org.alfresco.rest.framework.resource.parameters.where.QueryHelper;
+import org.alfresco.rest.workflow.api.impl.MapBasedQueryWalker;
 import org.alfresco.rest.workflow.api.impl.MapBasedQueryWalkerOrSupported;
 import org.alfresco.service.cmr.dictionary.DictionaryService;
 import org.alfresco.service.cmr.favourites.FavouritesService;
@@ -125,6 +122,7 @@ public class SitesImpl implements Sites
     private static final String SITE_ID_VALID_CHARS_PARTIAL_REGEX = "A-Za-z0-9\\-";
 
     private static final String DEFAULT_SITE_PRESET = "site-dashboard";
+    private static final String PARAM_IS_MEMBER_OF_GROUP = "isMemberOfGroup";
 
     private final static Map<String,QName> SORT_PARAMS_TO_QNAMES;
     static
@@ -150,7 +148,7 @@ public class SitesImpl implements Sites
     }
 
     // list children filtering (via where clause)
-    private final static Set<String> LIST_SITES_EQUALS_QUERY_PROPERTIES = new HashSet<>(Arrays.asList(new String[] { PARAM_VISIBILITY, PARAM_PRESET }));
+    private final static Set<String> LIST_SITES_EQUALS_QUERY_PROPERTIES = new HashSet<>(Arrays.asList(PARAM_VISIBILITY, PARAM_PRESET));
 
     protected Nodes nodes;
     protected People people;
@@ -220,11 +218,13 @@ public class SitesImpl implements Sites
         this.siteServiceImpl = siteServiceImpl;
     }
 
-    public AuthorityService getAuthorityService() {
+    public AuthorityService getAuthorityService()
+    {
         return authorityService;
     }
 
-    public void setAuthorityService(AuthorityService authorityService) {
+    public void setAuthorityService(AuthorityService authorityService)
+    {
         this.authorityService = authorityService;
     }
 
@@ -279,23 +279,28 @@ public class SitesImpl implements Sites
         siteId = siteInfo.getShortName();
 
         Paging paging = parameters.getPaging();
-
         PagingRequest pagingRequest = Util.getPagingRequest(paging);
+
+        MapBasedQueryWalker propertyWalker = new MapBasedQueryWalker(new HashSet<>(Collections.singletonList(PARAM_IS_MEMBER_OF_GROUP)), null);;
+        QueryHelper.walk(parameters.getQuery(), propertyWalker);
+
+        Boolean expandGroups = propertyWalker.getProperty(PARAM_IS_MEMBER_OF_GROUP, WhereClauseParser.EQUALS, Boolean.class);
+
+        if (expandGroups == null) {
+            expandGroups = true;
+        }
 
         final List<Pair<SiteService.SortFields, Boolean>> sort = new ArrayList<Pair<SiteService.SortFields, Boolean>>();
         sort.add(new Pair<SiteService.SortFields, Boolean>(SiteService.SortFields.LastName, Boolean.TRUE));
         sort.add(new Pair<SiteService.SortFields, Boolean>(SiteService.SortFields.FirstName, Boolean.TRUE));
         sort.add(new Pair<SiteService.SortFields, Boolean>(SiteService.SortFields.Role, Boolean.TRUE));
         sort.add(new Pair<SiteService.SortFields, Boolean>(SiteService.SortFields.Username, Boolean.TRUE));
-        PagingResults<SiteMembership> pagedResults = siteService.listMembersPaged(siteId, true, sort, pagingRequest);
+        PagingResults<SiteUserMembership> pagedResults = siteService.listMembersPaged(siteId, sort, pagingRequest, expandGroups);
 
-        List<SiteMembership> siteMembers = pagedResults.getPage();
-        List<SiteMember> ret = new ArrayList<SiteMember>(siteMembers.size());
-        for(SiteMembership siteMembership : siteMembers)
-        {
-            SiteMember siteMember = new SiteMember(siteMembership.getPersonId(), siteMembership.getRole());
-            ret.add(siteMember);
-        }
+        List<SiteMember> ret = pagedResults.getPage()
+                .stream()
+                .map((siteMembership) -> new SiteMember(siteMembership.getPersonId(), siteMembership.getRole(), siteMembership.isMemberOfGroup()))
+                .collect(Collectors.toList());
 
         return CollectionWithPagingInfo.asPaged(paging, ret, pagedResults.hasMoreItems(), null);
     }
@@ -922,7 +927,7 @@ public class SitesImpl implements Sites
         StringBuilder prefKey = new StringBuilder(FAVOURITE_SITES_PREFIX);
         prefKey.append(siteId);
         String value = (String)preferenceService.getPreference(personId, prefKey.toString());
-        boolean isFavouriteSite = (value == null ? false : value.equalsIgnoreCase("true"));
+        boolean isFavouriteSite = (value != null && value.equalsIgnoreCase("true"));
 
         if(isFavouriteSite)
         {
@@ -951,7 +956,7 @@ public class SitesImpl implements Sites
         StringBuilder prefKey = new StringBuilder(FAVOURITE_SITES_PREFIX);
         prefKey.append(siteId);
         String value = (String)preferenceService.getPreference(personId, prefKey.toString());
-        boolean isFavouriteSite = (value == null ? false : value.equalsIgnoreCase("true"));
+        boolean isFavouriteSite = (value != null && value.equalsIgnoreCase("true"));
 
         if(!isFavouriteSite)
         {
@@ -1316,29 +1321,33 @@ public class SitesImpl implements Sites
                 return null;
             }
         };
-        importerService.importView(acpHandler, location, binding, (ImporterProgress)null);
+        importerService.importView(acpHandler, location, binding, null);
     }
 
     @Override
-    public CollectionWithPagingInfo<SiteGroup> getGroups(String siteId, Parameters parameters) {
+    public CollectionWithPagingInfo<SiteGroup> getGroups(String siteId, Parameters parameters)
+    {
         validateSite(siteId);
 
         PagingRequest pagingRequest = Util.getPagingRequest(parameters.getPaging());
-        PagingResults<SiteMembership> pagedResults = siteService.listGroupsPaged(siteId, new ArrayList<>(), pagingRequest);
+        PagingResults<SiteGroupMembership> pagedResults = siteService.listGroupsPaged(siteId, new ArrayList<>(), pagingRequest);
         List<SiteGroup> groups = pagedResults.getPage().stream().map(siteMembership -> new SiteGroup(siteMembership.getId(), siteMembership.getRole())).collect(Collectors.toList());
         return CollectionWithPagingInfo.asPaged(parameters.getPaging(), groups);
     }
 
     @Override
-    public SiteGroup addGroup(String siteId, SiteGroup group) {
+    public SiteGroup addGroup(String siteId, SiteGroup group)
+    {
         validateSiteGroup(siteId, group.getId());
 
         SiteMemberInfo groupInfo = siteService.getMembersRoleInfo(siteId, group.getId());
-        if(groupInfo != null) {
+        if(groupInfo != null)
+        {
             logger.debug("addGroup:  "+ group.getId() + " is already a member of site " + siteId);
             throw new ConstraintViolatedException(group.getId() + " is already a member of site " + siteId);
         }
-        if(group.getRole() == null) {
+        if(group.getRole() == null)
+        {
             logger.debug("Getting member role but role is null");
             throw new RelationshipResourceNotFoundException(group.getId(), siteId);
         }
@@ -1348,48 +1357,57 @@ public class SitesImpl implements Sites
     }
 
     @Override
-    public SiteGroup getGroup(String siteId, String groupId) {
+    public SiteGroup getGroup(String siteId, String groupId)
+    {
         SiteMemberInfo groupInfo = isMemberOfSite(siteId, groupId);
         return new SiteGroup(groupId, groupInfo.getMemberRole());
     }
 
     @Override
-    public SiteGroup updateGroup(String siteId, SiteGroup group) {
+    public SiteGroup updateGroup(String siteId, SiteGroup group)
+    {
         isMemberOfSite(siteId, group.getId());
         siteService.setMembership(siteId, group.getId(), group.getRole());
         return group;
     }
 
     @Override
-    public void deleteGroup(String siteId, String groupId) {
+    public void deleteGroup(String siteId, String groupId)
+    {
         isMemberOfSite(siteId, groupId);
         this.siteService.removeMembership(siteId, groupId);
     }
 
-    private SiteMemberInfo isMemberOfSite(String siteId, String groupId) {
+    private SiteMemberInfo isMemberOfSite(String siteId, String groupId)
+    {
         validateSiteGroup(siteId, groupId);
 
         SiteMemberInfo groupInfo = siteService.getMembersRoleInfo(siteId, groupId);
-        if(groupInfo == null) {
+        if(groupInfo == null)
+        {
             logger.debug("Group is not a member of the site");
             throw new InvalidArgumentException("Group is not a member of the site");
         }
-        if(groupInfo.getMemberRole() == null) {
+        if(groupInfo.getMemberRole() == null)
+        {
             logger.debug("Getting member role but role is null");
             throw new RelationshipResourceNotFoundException(groupInfo.getMemberName(), siteId);
         }
         return  groupInfo;
     }
 
-    private void validateSiteGroup(String siteId, String groupId) throws EntityNotFoundException {
+    private void validateSiteGroup(String siteId, String groupId) throws EntityNotFoundException
+    {
         SiteInfo siteInfo = validateSite(siteId);
-        if(siteInfo == null) {
+        if(siteInfo == null)
+        {
             logger.debug("Site does not exist: " + siteId);
             throw new EntityNotFoundException(siteId);
         }
 
         String authorityName = authorityService.getName(AuthorityType.GROUP, groupId);
-        if(authorityName == null) {
+        if(authorityName == null)
+        {
             logger.debug("AuthorityName does not exist: " + groupId);
             throw new EntityNotFoundException(groupId);
         }

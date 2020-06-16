@@ -45,16 +45,19 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
         RelationshipResourceAction.Create<SiteGroup>,
         RelationshipResourceAction.Update<SiteGroup>,
         RelationshipResourceAction.ReadById<SiteGroup>,
-        InitializingBean {
+        InitializingBean
+{
 
     private Sites sites;
 
-    public void setSites(Sites sites) {
+    public void setSites(Sites sites)
+    {
         this.sites = sites;
     }
 
     @Override
-    public void afterPropertiesSet() {
+    public void afterPropertiesSet()
+    {
         ParameterCheck.mandatory("sites", this.sites);
     }
 
@@ -69,7 +72,8 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
      */
     @Override
     @WebApiDescription(title = "Adds groups as a member of site siteId.")
-    public List<SiteGroup> create(String siteId, List<SiteGroup> siteMembers, Parameters parameters) {
+    public List<SiteGroup> create(String siteId, List<SiteGroup> siteMembers, Parameters parameters)
+    {
         return siteMembers.stream().map((group) -> sites.addGroup(siteId, group)).collect(Collectors.toList());
     }
 
@@ -80,7 +84,8 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
      */
     @Override
     @WebApiDescription(title = "A paged list of all the groups of the site 'siteId'.")
-    public CollectionWithPagingInfo<SiteGroup> readAll(String siteId, Parameters parameters) {
+    public CollectionWithPagingInfo<SiteGroup> readAll(String siteId, Parameters parameters)
+    {
         return sites.getGroups(siteId, parameters);
     }
 
@@ -91,7 +96,8 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
      */
     @Override
     @WebApiDescription(title = "Returns site membership information for groupId in siteId.")
-    public SiteGroup readById(String siteId, String groupId, Parameters parameters) {
+    public SiteGroup readById(String siteId, String groupId, Parameters parameters)
+    {
         return sites.getGroup(siteId, groupId);
     }
 
@@ -102,7 +108,8 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
      */
     @Override
     @WebApiDescription(title = "Updates the membership of groupId in the site.")
-    public SiteGroup update(String siteId, SiteGroup groupMember, Parameters parameters) {
+    public SiteGroup update(String siteId, SiteGroup groupMember, Parameters parameters)
+    {
         return sites.updateGroup(siteId, groupMember);
     }
 
@@ -113,7 +120,8 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
      */
     @Override
     @WebApiDescription(title = "Removes groupId as a member of site siteId.")
-    public void delete(String siteId, String groupId, Parameters parameters) {
+    public void delete(String siteId, String groupId, Parameters parameters)
+    {
         sites.deleteGroup(siteId, groupId);
     }
 

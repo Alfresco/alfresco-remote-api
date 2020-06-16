@@ -173,12 +173,14 @@ public class SiteGroup implements Serializable, ExpectedComparison, Comparable<S
 		if (getClass() != obj.getClass())
 			return false;
 		SiteGroup other = (SiteGroup) obj;
-		if (getId() == null) {
+		if (getId() == null)
+		{
 			if (other.getId() != null)
 				return false;
 		} else if (!getId().equals(other.getId()))
 			return false;
-		if (role == null) {
+		if (role == null)
+		{
 			if (other.role != null)
 				return false;
 		} else if (!role.equals(other.role))

@@ -30,14 +30,15 @@ import org.alfresco.rest.api.groups.GroupsEntityResource;
 import org.alfresco.rest.framework.resource.EmbeddedEntityResource;
 import org.alfresco.rest.framework.resource.UniqueId;
 
-public class SiteGroup implements Comparable<SiteGroup> {
+public class SiteGroup implements Comparable<SiteGroup>
+{
     private String role;
     private String id; // group id (aka authority name)
 
-    public SiteGroup() {
-    }
+    public SiteGroup() {}
 
-    public SiteGroup(String id, String role) {
+    public SiteGroup(String id, String role)
+    {
         if (id == null) {
             throw new IllegalArgumentException();
         }
@@ -48,37 +49,45 @@ public class SiteGroup implements Comparable<SiteGroup> {
         this.id = id;
     }
 
-    public static SiteGroup getMemberOfSite(String id, String role) {
+    public static SiteGroup getMemberOfSite(String id, String role)
+    {
         return new SiteGroup(id, role);
     }
 
     @JsonProperty("id")
     @UniqueId
     @EmbeddedEntityResource(propertyName = "group", entityResource = GroupsEntityResource.class)
-    public String getId() {
+    public String getId()
+    {
         return id;
     }
 
-    public String getRole() {
+    public String getRole()
+    {
         return role;
     }
 
-    public void setRole(String role) {
-        if (role == null) {
+    public void setRole(String role)
+    {
+        if (role == null)
+        {
             throw new IllegalArgumentException();
         }
         this.role = role;
     }
 
-    public void setId(String id) {
-        if (id == null) {
+    public void setId(String id)
+    {
+        if (id == null)
+        {
             throw new IllegalArgumentException();
         }
         this.id = id;
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode()
+    {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((role == null) ? 0 : role.hashCode());
@@ -87,21 +96,26 @@ public class SiteGroup implements Comparable<SiteGroup> {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
             return true;
         }
 
-        if (obj == null) {
+        if (obj == null)
+        {
             return false;
         }
 
-        if (getClass() != obj.getClass()) {
+        if (getClass() != obj.getClass())
+        {
             return false;
         }
 
         SiteGroup other = (SiteGroup) obj;
-        if (role != other.role) {
+        if (role != other.role)
+        {
             return false;
         }
 
@@ -109,24 +123,19 @@ public class SiteGroup implements Comparable<SiteGroup> {
     }
 
     @Override
-    public int compareTo(SiteGroup o) {
+    public int compareTo(SiteGroup o)
+    {
         int i = id.compareTo(o.getId());
-        if (i == 0) {
+        if (i == 0)
+        {
             i = role.compareTo(o.getRole());
         }
         return i;
     }
 
     @Override
-    public String toString() {
-        return "SiteGroup [role='" + role
-                + '\''
-                + ", id='"
-                + id
-                + '\''
-                + ", role='"
-                + role
-                + '\''
-                + "]";
+    public String toString()
+    {
+        return "SiteGroup [role='" + role + '\'' + ", id='" + id + '\'' + ", role='" + role + '\'' + "]";
     }
 }
