@@ -39,10 +39,12 @@ public class SiteGroup implements Comparable<SiteGroup>
 
     public SiteGroup(String id, String role)
     {
-        if (id == null) {
+        if (id == null)
+        {
             throw new IllegalArgumentException();
         }
-        if (role == null) {
+        if (role == null)
+        {
             throw new IllegalArgumentException();
         }
         this.role = role;
