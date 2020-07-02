@@ -86,7 +86,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     @WebApiDescription(title = "A paged list of all the groups of the site 'siteId'.")
     public CollectionWithPagingInfo<SiteGroup> readAll(String siteId, Parameters parameters)
     {
-        return sites.getSiteGroupMembership(siteId, parameters);
+        return sites.getSiteGroupMemberships(siteId, parameters);
     }
 
     /**
@@ -122,7 +122,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     @WebApiDescription(title = "Removes groupId as a member of site siteId.")
     public void delete(String siteId, String groupId, Parameters parameters)
     {
-        sites.deleteSiteGroupMembership(siteId, groupId);
+        sites.removeSiteGroupMembership(siteId, groupId);
     }
 
 }

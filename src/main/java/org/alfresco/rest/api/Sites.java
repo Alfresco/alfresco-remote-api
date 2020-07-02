@@ -67,11 +67,11 @@ public interface Sites
     String getSiteRole(String siteId);
     String getSiteRole(String siteId, String personId);
 
-    CollectionWithPagingInfo<SiteGroup> getSiteGroupMembership(String siteId, Parameters parameters);
+    CollectionWithPagingInfo<SiteGroup> getSiteGroupMemberships(String siteId, Parameters parameters);
     SiteGroup addSiteGroupMembership(String siteId, SiteGroup group);
     SiteGroup getSiteGroupMembership(String siteId, String groupId);
     SiteGroup updateSiteGroupMembership(String siteId, SiteGroup group);
-    void deleteSiteGroupMembership(String groupId, String siteId);
+    void removeSiteGroupMembership(String groupId, String siteId);
 
     String PARAM_PERMANENT = "permanent";
     String PARAM_SKIP_ADDTOFAVORITES = "skipAddToFavorites";

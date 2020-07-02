@@ -1325,7 +1325,7 @@ public class SitesImpl implements Sites
     }
 
     @Override
-    public CollectionWithPagingInfo<SiteGroup> getSiteGroupMembership(String siteId, Parameters parameters)
+    public CollectionWithPagingInfo<SiteGroup> getSiteGroupMemberships(String siteId, Parameters parameters)
     {
         validateSite(siteId);
 
@@ -1380,7 +1380,7 @@ public class SitesImpl implements Sites
     }
 
     @Override
-    public void deleteSiteGroupMembership(String siteId, String groupId)
+    public void removeSiteGroupMembership(String siteId, String groupId)
     {
         isMemberOfSite(siteId, groupId);
         String role = this.siteService.getMembersRole(siteId, groupId);
