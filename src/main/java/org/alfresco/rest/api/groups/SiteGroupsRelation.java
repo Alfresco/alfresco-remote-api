@@ -74,7 +74,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     @WebApiDescription(title = "Adds groups as a member of site siteId.")
     public List<SiteGroup> create(String siteId, List<SiteGroup> siteMembers, Parameters parameters)
     {
-        return siteMembers.stream().map((group) -> sites.addGroup(siteId, group)).collect(Collectors.toList());
+        return siteMembers.stream().map((group) -> sites.addSiteGroupMembership(siteId, group)).collect(Collectors.toList());
     }
 
     /**
@@ -86,7 +86,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     @WebApiDescription(title = "A paged list of all the groups of the site 'siteId'.")
     public CollectionWithPagingInfo<SiteGroup> readAll(String siteId, Parameters parameters)
     {
-        return sites.getGroups(siteId, parameters);
+        return sites.getSiteGroupMembership(siteId, parameters);
     }
 
     /**
@@ -98,7 +98,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     @WebApiDescription(title = "Returns site membership information for groupId in siteId.")
     public SiteGroup readById(String siteId, String groupId, Parameters parameters)
     {
-        return sites.getGroup(siteId, groupId);
+        return sites.getSiteGroupMembership(siteId, groupId);
     }
 
     /**
@@ -110,7 +110,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     @WebApiDescription(title = "Updates the membership of groupId in the site.")
     public SiteGroup update(String siteId, SiteGroup groupMember, Parameters parameters)
     {
-        return sites.updateGroup(siteId, groupMember);
+        return sites.updateSiteGroupMembership(siteId, groupMember);
     }
 
     /**
@@ -122,7 +122,7 @@ public class SiteGroupsRelation implements RelationshipResourceAction.Read<SiteG
     @WebApiDescription(title = "Removes groupId as a member of site siteId.")
     public void delete(String siteId, String groupId, Parameters parameters)
     {
-        sites.deleteGroup(siteId, groupId);
+        sites.deleteSiteGroupMembership(siteId, groupId);
     }
 
 }
