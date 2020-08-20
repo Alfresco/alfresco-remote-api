@@ -365,7 +365,22 @@ public abstract class BaseKerberosAuthenticationFilter extends BaseSSOAuthentica
                         req.getRemoteAddr() + ":" + req.getRemotePort() + ")");
             
             // Send back a request for SPNEGO authentication
-            logonStartAgain(context, req, resp, true);
+
+            // MNT-21702 fixing Kerberos SSO fallback machanism for WebDAV
+            if (req.getRequestURL().toString().contains("webdav"))
+            {
+                if ( getLogger().isDebugEnabled()) {
+                    getLogger().debug("WebDAV request, fallback");
+                }
+                logonStartAgain(context, req, resp, false);
+            }
+            else
+            {
+                if ( getLogger().isDebugEnabled()) {
+                    getLogger().debug("Non-WebDAV request, don't fallback");
+                }
+                logonStartAgain(context, req, resp, true);
+            }
 
             return false;
         }
