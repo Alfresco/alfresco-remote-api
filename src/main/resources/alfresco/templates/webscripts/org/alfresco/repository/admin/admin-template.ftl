@@ -689,7 +689,7 @@ Admin.addEventListener(window, 'load', function() {
    <#switch type>
       <#case "java.util.Date">
          <#if value?has_content>
-            <#return value?datetime>
+            <#return value?datetime?string.full>
          <#else>
             <#return value>
          </#if>
