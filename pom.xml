@@ -42,7 +42,7 @@
         <maven.build.sourceVersion>11</maven.build.sourceVersion>
 
         <dependency.alfresco-pdf-renderer.version>1.1</dependency.alfresco-pdf-renderer.version>
-        <dependency.jackson.version>2.9.9</dependency.jackson.version>
+        <dependency.jackson.version>2.11.2</dependency.jackson.version>
         <dependency.jackson-databind.version>2.11.2</dependency.jackson-databind.version>
 
         <dependency.webscripts.version>7.9</dependency.webscripts.version>
