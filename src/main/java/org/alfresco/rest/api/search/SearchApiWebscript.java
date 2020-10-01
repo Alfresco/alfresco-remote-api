@@ -82,7 +82,7 @@ public class SearchApiWebscript extends AbstractWebScript implements RecognizedP
     @Override
     public void execute(WebScriptRequest webScriptRequest, WebScriptResponse webScriptResponse) throws IOException
     {
-
+        long startTime = System.currentTimeMillis();
         try {
             //Turn JSON into a Java object respresentation
             SearchQuery searchQuery = extractJsonContent(webScriptRequest, assistant.getJsonHelper(), SearchQuery.class);
@@ -104,11 +104,16 @@ public class SearchApiWebscript extends AbstractWebScript implements RecognizedP
             //Post-process the request and pass in params, eg. params.getFilter()
             Object toRender = helper.processAdditionsToTheResponse(null, null, null, params, resultJson);
 
+            // store execution time in a special header
+            long elapsed = System.currentTimeMillis() - startTime;
+            webScriptResponse.addHeader("X-Response-Time", elapsed+"ms");
+
             //Write response
             setResponse(webScriptResponse, DEFAULT_SUCCESS);
             renderJsonResponse(webScriptResponse, toRender, assistant.getJsonHelper());
 
         } catch (Exception exception) {
+            exception.printStackTrace();
             renderException(exception,webScriptResponse,assistant);
         }
     }
