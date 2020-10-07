@@ -82,6 +82,7 @@ public class JacksonHelper implements InitializingBean
         //Configure the objectMapper ready for use
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(module);
+        objectMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.configOverride(java.util.Map.class)
                         .setInclude(JsonInclude.Value.construct(JsonInclude.Include.NON_EMPTY, null));
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
