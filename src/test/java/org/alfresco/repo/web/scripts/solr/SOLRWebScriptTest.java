@@ -25,10 +25,13 @@
  */
 package org.alfresco.repo.web.scripts.solr;
 
+import static java.util.Arrays.asList;
+
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -37,6 +40,7 @@ import java.util.Set;
 
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.domain.node.NodeDAO;
+import org.alfresco.repo.search.impl.solr.facet.SolrFacetModel;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.solr.Acl;
 import org.alfresco.repo.solr.AclChangeSet;
@@ -48,6 +52,9 @@ import org.alfresco.repo.web.scripts.BaseWebScriptTest;
 import org.alfresco.service.ServiceRegistry;
 import org.alfresco.service.cmr.model.FileFolderService;
 import org.alfresco.service.cmr.model.FileInfo;
+import org.alfresco.service.cmr.repository.ContentReader;
+import org.alfresco.service.cmr.repository.ContentService;
+import org.alfresco.service.cmr.repository.ContentWriter;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.repository.Path;
@@ -82,6 +89,7 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
     private TransactionService transactionService;
     private NodeService nodeService;
     private FileFolderService fileFolderService;
+    private ContentService contentService;
     private RetryingTransactionHelper txnHelper;
     private NamespaceService namespaceService;
 
@@ -104,6 +112,7 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         transactionService = serviceRegistry.getTransactionService();
         nodeService = serviceRegistry.getNodeService();
         fileFolderService = serviceRegistry.getFileFolderService();
+        contentService = serviceRegistry.getContentService();
         namespaceService = serviceRegistry.getNamespaceService();
         txnHelper = transactionService.getRetryingTransactionHelper();
         nodeDAO = (NodeDAO)ctx.getBean("nodeDAO");
@@ -693,7 +702,158 @@ public class SOLRWebScriptTest extends BaseWebScriptTest
         assertTrue("Expected author aspect", containsAspect(aspects, ContentModel.ASPECT_AUTHOR));
         assertTrue("Expected author property", containsProperty(propertyMap, ContentModel.PROP_AUTHOR, "ste\"ve"));
     }
-    
+
+    private NodeRef container8;
+
+    private void buildTransactions8()
+    {
+        txnHelper.doInTransaction((RetryingTransactionCallback<Void>) () -> {
+            PropertyMap props = new PropertyMap();
+            props.put(ContentModel.PROP_NAME, "Container8");
+            container8 = nodeService.createNode(
+                    rootNodeRef,
+                    ContentModel.ASSOC_CHILDREN,
+                    ContentModel.ASSOC_CHILDREN,
+                    ContentModel.TYPE_FOLDER,
+                    props).getChildRef();
+
+            FileInfo contentInfo = fileFolderService.create(container8, "Node content", ContentModel.TYPE_CONTENT);
+            contents.add(contentInfo.getNodeRef());
+
+            nodeService.addAspect(contentInfo.getNodeRef(), ContentModel.ASPECT_PREFERENCES, Collections.emptyMap());
+            ContentWriter writer = contentService.getWriter(contentInfo.getNodeRef(), ContentModel.PROP_PREFERENCE_VALUES, true);
+            writer.putContent("Property \" value \n with \\ invalid \t characters");
+
+            return null;
+        });
+    }
+
+    public void testContentPropertyIsNotExposed() throws Exception
+    {
+        long fromCommitTime = System.currentTimeMillis();
+
+        buildTransactions8();
+
+        JSONArray transactions = getTransactions(fromCommitTime);
+        assertEquals("Number of transactions is incorrect", 1, transactions.length());
+
+        List<Long> transactionIds = getTransactionIds(transactions);
+
+        GetNodesParameters params = new GetNodesParameters();
+        params.setTransactionIds(transactionIds);
+        params.setStoreProtocol(storeRef.getProtocol());
+        params.setStoreIdentifier(storeRef.getIdentifier());
+        JSONArray nodes = getNodes(params, 0, 2);
+
+        List<Long> nodeIds = new ArrayList<>(nodes.length());
+        for (int i = 0; i < nodes.length(); i++)
+        {
+            JSONObject node = nodes.getJSONObject(i);
+            nodeIds.add(node.getLong("id"));
+        }
+
+        JSONArray nodesMetaData = getNodesMetaData(nodeIds, 0, 2);
+
+        // Test second entry (second node created in buildTransactions).
+        JSONObject node = nodesMetaData.getJSONObject(1);
+        NodeRef nodeRef = new NodeRef(node.getString("nodeRef"));
+
+        NodeRef expectedNodeRef = contents.get(0);
+        assertEquals("NodeRef is incorrect", expectedNodeRef, nodeRef);
+
+        // Check that the preferences aspect is included in the response.
+        JSONArray aspects = node.getJSONArray("aspects");
+        assertTrue("Expected preferences aspect", containsAspect(aspects, ContentModel.ASPECT_PREFERENCES));
+
+        // Check that content can be accessed via the content service.
+        ContentReader reader = contentService.getReader(nodeRef, ContentModel.PROP_PREFERENCE_VALUES);
+        assertTrue("Expected content to exist in preference values property.", reader.exists());
+        assertEquals("Unexpected preference values property",
+                "Property \" value \n with \\ invalid \t characters", reader.getContentString());
+
+        // Check that the content is not exposed via the nodes endpoint.
+        JSONObject properties = node.getJSONObject("properties");
+        Map<QName, String> propertyMap = getPropertyMap(properties);
+        String preferenceValues = propertyMap.get(ContentModel.PROP_PREFERENCE_VALUES);
+        assertTrue("Expected preferences values property to contain content length: " + preferenceValues,
+                preferenceValues.contains("Property \" value \n with \\ invalid \t characters".length() + "\""));
+        // The response should only contain metadata about the content - check that a few words from the content are not included.
+        for (String word : asList("Property", "invalid", "characters"))
+        {
+            assertFalse("Didn't expect preferences values property to contain '" + word + "'. Property value: " + preferenceValues,
+                    preferenceValues.contains(word));
+        }
+    }
+
+    private NodeRef container9;
+
+    private void buildTransactions9()
+    {
+        txnHelper.doInTransaction((RetryingTransactionCallback<Void>) () -> {
+            PropertyMap props = new PropertyMap();
+            props.put(ContentModel.PROP_NAME, "Container9");
+            container9 = nodeService.createNode(
+                    rootNodeRef,
+                    ContentModel.ASSOC_CHILDREN,
+                    ContentModel.ASSOC_CHILDREN,
+                    ContentModel.TYPE_FOLDER,
+                    props).getChildRef();
+
+            FileInfo contentInfo = fileFolderService.create(container9, "Node content", ContentModel.TYPE_CONTENT);
+            contents.add(contentInfo.getNodeRef());
+
+            Map<QName, Serializable> propertiesMap = new HashMap<>();
+            propertiesMap.put(SolrFacetModel.PROP_EXTRA_INFORMATION, "Property \" value \n with \\ invalid \t characters");
+            nodeService.addAspect(contentInfo.getNodeRef(), SolrFacetModel.ASPECT_CUSTOM_PROPERTIES, propertiesMap);
+
+            return null;
+        });
+    }
+
+    public void testDAnyTypePropertyIsEscaped() throws Exception
+    {
+        long fromCommitTime = System.currentTimeMillis();
+
+        buildTransactions9();
+
+        JSONArray transactions = getTransactions(fromCommitTime);
+        assertEquals("Number of transactions is incorrect", 1, transactions.length());
+
+        List<Long> transactionIds = getTransactionIds(transactions);
+
+        GetNodesParameters params = new GetNodesParameters();
+        params.setTransactionIds(transactionIds);
+        params.setStoreProtocol(storeRef.getProtocol());
+        params.setStoreIdentifier(storeRef.getIdentifier());
+        JSONArray nodes = getNodes(params, 0, 2);
+
+        List<Long> nodeIds = new ArrayList<>(nodes.length());
+        for (int i = 0; i < nodes.length(); i++)
+        {
+            JSONObject node = nodes.getJSONObject(i);
+            nodeIds.add(node.getLong("id"));
+        }
+
+        JSONArray nodesMetaData = getNodesMetaData(nodeIds, 0, 2);
+
+        // Test second entry (second node created in buildTransactions).
+        JSONObject node = nodesMetaData.getJSONObject(1);
+        NodeRef nodeRef = new NodeRef(node.getString("nodeRef"));
+
+        NodeRef expectedNodeRef = contents.get(0);
+        assertEquals("NodeRef is incorrect", expectedNodeRef, nodeRef);
+
+        // Check that the custom facet properties aspect is included in the response.
+        JSONArray aspects = node.getJSONArray("aspects");
+        assertTrue("Expected custom facet properties aspect", containsAspect(aspects, SolrFacetModel.ASPECT_CUSTOM_PROPERTIES));
+
+        // Check that the string has been escaped and can be retrieved from the JSON.
+        JSONObject properties = node.getJSONObject("properties");
+        JSONArray extraInformationList = properties.getJSONArray("{http://www.alfresco.org/model/solrfacetcustomproperty/1.0}extraInformation");
+        assertEquals("Expected value to be escaped.", "Property \" value \n with \\ invalid \t characters", extraInformationList.get(0));
+        assertEquals("Only expected a single entry in extra information list.", 1, extraInformationList.length());
+    }
+
     public void testNodeMetaDataManyNodes() throws Exception
     {
         long fromCommitTime = System.currentTimeMillis();
